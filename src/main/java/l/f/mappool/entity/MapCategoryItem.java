@@ -1,8 +1,12 @@
 package l.f.mappool.entity;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import org.hibernate.annotations.DynamicUpdate;
+
+import java.util.List;
 
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 @Entity
@@ -13,22 +17,27 @@ public class MapCategoryItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Integer id;
 
-    @Column(name = "category_id")
-    Integer categoryId;
+    @ManyToOne()
+    @JsonManagedReference
+    @JoinColumn(name = "category_id")
+    MapCategory category;
 
-    @Column(name = "name", columnDefinition = "text")
-    String name;
+    /***
+     * 推荐者 id
+     */
+    @Column(name = "creater_id")
+    Integer createrId;
 
     @Column(name = "info", columnDefinition = "text")
     String info;
 
-    Integer sorted;
+    Integer sort;
 
+    Long chous;
 
-    @Column(name = "type", columnDefinition = "text")
-    String type;
-
-    Integer choused;
+    @JsonBackReference
+    @OneToMany(mappedBy = "item")
+    List<MapFeedback> feedbacks;
 
     public Integer getId() {
         return id;
@@ -39,19 +48,13 @@ public class MapCategoryItem {
     }
 
     public Integer getCategoryId() {
-        return categoryId;
+        return category.id;
     }
 
     public void setCategoryId(Integer categoryId) {
-        this.categoryId = categoryId;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
+        var g = new MapCategory();
+        g.setId(categoryId);
+        this.category = g;
     }
 
     public String getInfo() {
@@ -62,27 +65,35 @@ public class MapCategoryItem {
         this.info = info;
     }
 
-    public Integer getSorted() {
-        return sorted;
+    public Integer getSort() {
+        return sort;
     }
 
-    public void setSorted(Integer sorted) {
-        this.sorted = sorted;
+    public void setSort(Integer sort) {
+        this.sort = sort;
     }
 
-    public String getType() {
-        return type;
+    public Long getChous() {
+        return chous;
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public void setChous(Long chous) {
+        this.chous = chous;
     }
 
-    public Integer getChoused() {
-        return choused;
+    public MapCategory getCategory() {
+        return category;
     }
 
-    public void setChoused(Integer choused) {
-        this.choused = choused;
+    public void setCategory(MapCategory category) {
+        this.category = category;
+    }
+
+    public Integer getCreaterId() {
+        return createrId;
+    }
+
+    public void setCreaterId(Integer createrId) {
+        this.createrId = createrId;
     }
 }

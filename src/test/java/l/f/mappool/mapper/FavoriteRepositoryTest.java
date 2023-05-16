@@ -8,8 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class NotationRepositoryTest {
-    Logger log = LoggerFactory.getLogger(NotationRepositoryTest.class);
+class FavoriteRepositoryTest {
+    Logger log = LoggerFactory.getLogger(FavoriteRepositoryTest.class);
     @Autowired
     NotationRepository notationRepository;
     @Test

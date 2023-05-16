@@ -5,9 +5,7 @@ import com.fasterxml.jackson.annotation.*;
 import jakarta.persistence.*;
 import l.f.mappool.enums.ReankStatus;
 import org.hibernate.annotations.DynamicUpdate;
-//import org.hibernate.type.TextType;
 
-//import javax.persistence.Convert;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
@@ -35,8 +33,7 @@ public class BeatMap {
     String version;
 
     @JsonProperty("ranked")
-    @Column(name = "status",columnDefinition = "text")
-//    @Convert(converter = TextType.class)
+    @Column(name = "status")
     Integer status;
 
     @JsonProperty("difficulty_rating")
@@ -72,8 +69,10 @@ public class BeatMap {
     @JsonProperty("count_spinners")
     Integer spinners;
 
-    @Transient
+    @ManyToOne()
+    @JsonManagedReference
     @JsonProperty("beatmapset")
+    @JoinColumn(name = "beatmapset_id_set")
     BeatMapSet beatMapSet;
 
     public BeatMapSet getBeatMapSet() {
@@ -117,7 +116,7 @@ public class BeatMap {
         return ReankStatus.fromInteger(this.status).name();
     }
 
-    @JsonIgnore
+    @JsonSetter("status")
     public void setStatus(Integer status) {
         this.status = status;
     }

@@ -20,10 +20,10 @@ public class ApplicationConfig {
     @Bean
     public RestTemplate defaultRest() {
         var tempFactory = new OkHttp3ClientHttpRequestFactory();
-        tempFactory.setConnectTimeout(3*60*1000);
-        tempFactory.setReadTimeout(3*60*1000);
+        tempFactory.setConnectTimeout(3 * 60 * 1000);
+        tempFactory.setReadTimeout(3 * 60 * 1000);
         var template = new RestTemplate(tempFactory);
-        template.setErrorHandler(new DefaultResponseErrorHandler(){
+        template.setErrorHandler(new DefaultResponseErrorHandler() {
             @Override
             public void handleError(URI url, HttpMethod method, ClientHttpResponse response) throws IOException {
                 String body = null;
@@ -46,6 +46,4 @@ public class ApplicationConfig {
         });
         return template;
     }
-
-
 }

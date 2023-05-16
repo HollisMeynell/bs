@@ -1,50 +1,77 @@
 package l.f.mappool.dao;
 
-import l.f.mappool.entity.MapCategory;
-import l.f.mappool.entity.MapCategoryItem;
-import l.f.mappool.entity.MapPool;
-import l.f.mappool.entity.MapPoolUser;
+import jakarta.persistence.EntityManager;
+import l.f.mappool.entity.*;
 import l.f.mappool.enums.PoolPermission;
 import l.f.mappool.exception.PermissionException;
-import l.f.mappool.repository.MapCategoryRepository;
-import l.f.mappool.repository.MapPoolRepository;
-import l.f.mappool.repository.MapPoolUserRepository;
+import l.f.mappool.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Component
 public class MapPoolDao {
     private final MapPoolRepository poolRepository;
+    private final MapFeedbackRepository feedbackRepository;
     private final MapPoolUserRepository poolUserRepository;
     private final MapCategoryRepository categoryRepository;
+    private final MapCategoryItemRepository categoryItemRepository;
+    private final MapCategoryGroupRepository categoryGroupRepository;
+
+    private final EntityManager entityManager;
 
     @Autowired
-    public MapPoolDao(MapPoolRepository mapPoolRepository, MapPoolUserRepository mapPoolUserRepository, MapCategoryRepository mapCategoryRepository) {
+    public MapPoolDao(MapPoolRepository mapPoolRepository,
+                      MapPoolUserRepository mapPoolUserRepository,
+                      MapCategoryRepository mapCategoryRepository,
+                      MapCategoryGroupRepository mapCategoryGroupRepository,
+                      MapCategoryItemRepository mapCategoryItemRepository,
+                      MapFeedbackRepository mapFeedbackRepository,
+                      EntityManager entityManager
+    ) {
         poolRepository = mapPoolRepository;
         poolUserRepository = mapPoolUserRepository;
         categoryRepository = mapCategoryRepository;
+        categoryGroupRepository = mapCategoryGroupRepository;
+        categoryItemRepository = mapCategoryItemRepository;
+        feedbackRepository = mapFeedbackRepository;
+        this.entityManager = entityManager;
     }
 
-    public MapPool createPool(long userId, String poolName, String info) {
+    /***
+     * 创建
+     * @return 新 MapPool
+     */
+    public MapPool createPool(long userId, String poolName, String banner, String info) {
         var map = new MapPool();
         map.setName(poolName);
         map.setInfo(info);
+        map.setBanner(banner);
         map = poolRepository.save(map);
 
-        var admin = new MapPoolUser();
-        admin.setPoolId(map.getId());
-        admin.setUserId(userId);
-        admin.setPermission(PoolPermission.CREATE);
-        poolUserRepository.save(admin);
+        // 写入权限
+        addUser(userId, map.getId(), PoolPermission.CREATE);
         return map;
     }
 
+    public List<MapPool> queryByName(String name, int page, int size){
+        return poolRepository.queryByName(name, PageRequest.of(page, size));
+    }
+    public int countByName(String name){
+        return poolRepository.countByName(name);
+    }
+    public Optional<MapPool> queryById(int id){
+        return poolRepository.findById(id);
+    }
+
     public MapPoolUser addAdminUser(long userId, long addUserId, int poolId) {
-        if (!isCreater(poolId, userId)) {
+        if (!isCreaterByPool(poolId, userId)) {
             throw new PermissionException();
         }
         return addUser(addUserId, poolId, PoolPermission.ADMIN);
@@ -52,97 +79,214 @@ public class MapPoolDao {
 
 
     public MapPoolUser addChooserUser(long userId, long addUserId, int poolId) {
-        if (!isAdmin(poolId, userId)) {
+        if (!isAdminByPool(poolId, userId)) {
             throw new PermissionException();
         }
         return addUser(addUserId, poolId, PoolPermission.CHOOSER);
     }
 
     public MapPoolUser addTesterUser(long userId, long addUserId, int poolId) {
-        if (!isAdmin(poolId, userId)) {
+        if (!isAdminByPool(poolId, userId)) {
             throw new PermissionException();
         }
         return addUser(addUserId, poolId, PoolPermission.TESTER);
     }
 
-    public MapCategory createCategory(long userId, int poolId, String categoryName, String categoryType, int categoryColor) {
-        if (!isAdmin(poolId, userId)) {
+    /***
+     *  创建分组 比如NM组
+     * @param userId
+     * @param poolId
+     * @param name
+     * @param info
+     * @param color
+     * @return
+     */
+    public MapCategoryGroup createCategoryGroup(long userId, int poolId, String name, String info, int color) {
+        if (!isAdminByPool(poolId, userId)) {
+            throw new PermissionException();
+        }
+
+        var mg = new MapCategoryGroup();
+        mg.setPoolId(poolId);
+        mg.setColor(color);
+        mg.setName(name);
+        mg.setInfo(info);
+        mg.setSort(0);
+        return categoryGroupRepository.save(mg);
+    }
+
+    /**
+     * 创建具体分类 比如NM1
+     * @param groupId CategoryGroup.id
+     * @param categoryName
+     * @return
+     */
+    public MapCategory createCategory(long userId, int groupId, String categoryName) {
+        if (!isAdminByGroup(groupId, userId)) {
             throw new PermissionException();
         }
 
         var category = new MapCategory();
-        category.setPoolId(poolId);
+        category.setGroupId(groupId);
         category.setName(categoryName);
-        category.setType(categoryType);
-        category.setColor(categoryColor);
-
-        category = categoryRepository.save(category);
-        return category;
+        return categoryRepository.save(category);
     }
 
-    public MapCategoryItem createCategoryItem(long userId, int categoryId, String name, String type, String sorted,String info){
+    /***
+     * 加一张图
+     * @return 包含推荐人id, bid, 描述信息的结构
+     */
+    public MapCategoryItem createCategoryItem(long userId, int categoryId, long bid, String info) {
         var categoryOpt = categoryRepository.findById(categoryId);
         if (categoryOpt.isEmpty()) {
-            // TODO throw exception
-            return null;
+            throw new RuntimeException("not found");
         }
         var category = categoryOpt.get();
-        if (!isAdmin(category.getPoolId(), userId)) {
+        if (!isChooserByGroup(category.getGroupId(), userId)) {
             throw new PermissionException();
         }
         var categoryItem = new MapCategoryItem();
-        categoryItem.setType(type);
-        categoryItem.setName(name);
-        categoryItem.setSorted(0);
+        categoryItem.setSort(0);
         categoryItem.setInfo(info);
-        // TODO
-        return categoryItem;
+        categoryItem.setChous(bid);
+        categoryItem.setCategoryId(categoryId);
+        return categoryItemRepository.save(categoryItem);
     }
 
+    public MapFeedback createFeedback(long userId, int categoryItemId, @Nullable Boolean agree, String msg) {
+        var categoryItem = categoryItemRepository.findById(categoryItemId);
+        if (categoryItem.isEmpty()) {
+            throw new RuntimeException("not found");
+        }
+        var category = categoryItem.get().getCategory();
+        if (!isUserByGroup(category.getGroupId(), userId)) {
+            throw new PermissionException();
+        }
+        var feedback = new MapFeedback();
+        feedback.setAgree(agree);
+        feedback.setFeedback(msg);
+        feedback.setCreaterId(userId);
+        feedback.setItemId(categoryItemId);
+        return feedbackRepository.save(feedback);
+    }
+
+    public List<MapPool> getPublicPool(){
+        return poolRepository.getAllOpenPool();
+    }
+
+    /***
+     * 获取用户下所有可见的图池
+     * @param userId uid
+     * @return 权限+图池
+     */
     public Map<PoolPermission, List<MapPool>> getAllPool(long userId) {
         var map = new HashMap<PoolPermission, List<MapPool>>();
         var ulist = poolUserRepository.searchAllByUserId(userId);
-        var uCreate = ulist.stream().filter(u->u.getPermission() == PoolPermission.CREATE).map(MapPoolUser::getPoolId).toList();
-        var uAdmin = ulist.stream().filter(u->u.getPermission() == PoolPermission.ADMIN).map(MapPoolUser::getPoolId).toList();
-        var uChooser = ulist.stream().filter(u->u.getPermission() == PoolPermission.CHOOSER).map(MapPoolUser::getPoolId).toList();
-        var uTester = ulist.stream().filter(u->u.getPermission() == PoolPermission.TESTER).map(MapPoolUser::getPoolId).toList();
 
-        var plist = poolRepository.searchAllByUserId(userId);
-        map.put(PoolPermission.CREATE, plist.stream().filter(p -> uCreate.contains(p.getId())).toList());
-        map.put(PoolPermission.ADMIN, plist.stream().filter(p -> uAdmin.contains(p.getId())).toList());
-        map.put(PoolPermission.CHOOSER, plist.stream().filter(p -> uChooser.contains(p.getId())).toList());
-        map.put(PoolPermission.TESTER, plist.stream().filter(p -> uTester.contains(p.getId())).toList());
+        var uCreates = ulist.stream().filter(u -> u.getPermission() == PoolPermission.CREATE).map(MapPoolUser::getPool).toList();
+        var uAdmins = ulist.stream().filter(u -> u.getPermission() == PoolPermission.ADMIN).map(MapPoolUser::getPool).toList();
+        var uChoosers = ulist.stream().filter(u -> u.getPermission() == PoolPermission.CHOOSER).map(MapPoolUser::getPool).toList();
+        var uTesters = ulist.stream().filter(u -> u.getPermission() == PoolPermission.TESTER).map(MapPoolUser::getPool).toList();
+
+        map.put(PoolPermission.CREATE, uCreates);
+        map.put(PoolPermission.ADMIN, uAdmins);
+        map.put(PoolPermission.CHOOSER, uChoosers);
+        map.put(PoolPermission.TESTER, uTesters);
 
         return map;
     }
 
-    private boolean testPermission(int poolId, long userId, PoolPermission... poolPermissions) {
-        var userOpt = poolUserRepository.getMapPoolUserByPoolIdAndUserId(poolId, userId);
+    public List<MapPool> getAllPublicPool(){
+        return poolRepository.getAllOpenPool();
+    }
+    public List<MapPool> getAllPublicPoolExcludeUser(long uid){
+        return poolRepository.getAllOpenPool();
+    }
+
+    public List<MapCategoryGroup> getAllCategotys(int poolId){
+        var groups = categoryRepository.getAllCategory(poolId);
+        for (var g : groups){
+            g.setCategories(categoryRepository.getAllByGroup(g));
+        }
+        return groups;
+    }
+
+    public List<MapCategoryItem> getAllCategoryItems(int categoryId){
+        var selectAttr = new MapCategory();
+        selectAttr.setId(categoryId);
+        return categoryItemRepository.findAllByCategory(selectAttr);
+    }
+
+    private boolean testBef(Optional<MapPoolUser> userOpt, PoolPermission... poolPermissions) {
         if (userOpt.isEmpty()) {
             return false;
         }
-        var user = userOpt.get();
+        if (poolPermissions.length == PoolPermission.values().length){
+            return true;
+        }
+        var user = userOpt.get().getPermission();
         for (var p : poolPermissions) {
-            if (p == user.getPermission()) {
+            if (p.equals(user)) {
                 return true;
             }
         }
         return false;
     }
 
-    private boolean isCreater(int poolId, long userId) {
-        return testPermission(poolId, userId, PoolPermission.CREATE);
+    /**
+     * 查询权限 pool
+     *
+     * @param poolPermissions 包含
+     * @return
+     */
+    public boolean testPermissionByPool(int poolId, long userId, PoolPermission... poolPermissions) {
+        var userOpt = poolUserRepository.getMapPoolUserByPoolIdAndUserId(poolId, userId);
+        return testBef(userOpt, poolPermissions);
     }
 
-    private boolean isAdmin(int poolId, long userId) {
-        return testPermission(poolId, userId, PoolPermission.CREATE, PoolPermission.ADMIN);
+
+
+    public boolean isCreaterByPool(int poolId, long userId) {
+        return testPermissionByPool(poolId, userId, PoolPermission.CREATE);
     }
 
-    private boolean isChooser(int poolId, long userId) {
-        return testPermission(poolId, userId, PoolPermission.CREATE, PoolPermission.ADMIN, PoolPermission.CHOOSER);
+    public boolean isAdminByPool(int poolId, long userId) {
+        return testPermissionByPool(poolId, userId, PoolPermission.CREATE, PoolPermission.ADMIN);
     }
 
-    private MapPoolUser addUser (long addUserId, int poolId, PoolPermission permission) {
+    public boolean isChooserByPool(int poolId, long userId) {
+        return testPermissionByPool(poolId, userId, PoolPermission.CREATE, PoolPermission.ADMIN, PoolPermission.CHOOSER);
+    }
+
+    public boolean isUserByPool(int poolId, long userId) {
+        return testPermissionByPool(poolId, userId, PoolPermission.values());
+    }
+
+    public boolean testPermissionByCategoryGroup(int groupId, long userId, PoolPermission... poolPermissions) {
+        var userOpt = poolUserRepository.getMapPoolUserByGroupIdAndUserId(groupId, userId);
+        return testBef(userOpt, poolPermissions);
+    }
+
+    public boolean isCreaterByGroup(int groupId, long userId) {
+        return testPermissionByCategoryGroup(groupId, userId, PoolPermission.CREATE);
+    }
+
+    public boolean isAdminByGroup(int groupId, long userId) {
+        return testPermissionByCategoryGroup(groupId, userId, PoolPermission.CREATE, PoolPermission.ADMIN);
+    }
+
+    public boolean isChooserByGroup(int groupId, long userId) {
+        return testPermissionByCategoryGroup(groupId, userId, PoolPermission.CREATE, PoolPermission.ADMIN, PoolPermission.CHOOSER);
+    }
+    public boolean isChooserByCategory(int categoryId, long userId) {
+        var userOpt = poolUserRepository.getMapPoolUserByCategoryIdAndUserId(categoryId, userId);
+        return testBef(userOpt, PoolPermission.CREATE, PoolPermission.ADMIN, PoolPermission.CHOOSER);
+    }
+    public boolean isUserByGroup(int groupId, long userId) {
+        return testPermissionByCategoryGroup(groupId, userId, PoolPermission.values());
+    }
+
+    public MapPoolUser addUser(long addUserId, int poolId, PoolPermission permission) {
         var u = poolUserRepository.getMapPoolUserByPoolIdAndUserId(poolId, addUserId);
         MapPoolUser addUser;
         if (u.isPresent()) {
@@ -155,5 +299,9 @@ public class MapPoolDao {
             addUser.setPermission(permission);
         }
         return poolUserRepository.save(addUser);
+    }
+
+    public List<MapPool> getAllMarkPool(long uid){
+        return poolRepository.queryByUserMark(uid);
     }
 }

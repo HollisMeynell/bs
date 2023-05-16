@@ -1,5 +1,6 @@
 package l.f.mappool.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -9,16 +10,24 @@ import org.hibernate.annotations.DynamicUpdate;
 
 @Entity
 @DynamicUpdate
-@Table(name = "bind_user")
-public class BindUser {
+@Table(name = "osu_user")
+public class OsuUser {
     @Id
     @Column(name = "osu_id")
     private Long osuId;
 
-    @Column(name = "access_token")
+    @JsonProperty("username")
+    @Column(name = "name", columnDefinition = "text")
+    String name;
+
+    @JsonProperty("max_size")
+    @Column(name = "max_poolsize")
+    Integer maxPoolSize = 10;
+
+    @Column(name = "access_token", columnDefinition = "text")
     String accessToken;
 
-    @Column(name = "refresh_token")
+    @Column(name = "refresh_token", columnDefinition = "text")
     String refreshToken;
 
     private Long time;
@@ -72,5 +81,21 @@ public class BindUser {
 
     public boolean isPassed() {
         return System.currentTimeMillis() > time;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Integer getMaxPoolSize() {
+        return maxPoolSize;
+    }
+
+    public void setMaxPoolSize(Integer maxPoolSize) {
+        this.maxPoolSize = maxPoolSize;
     }
 }

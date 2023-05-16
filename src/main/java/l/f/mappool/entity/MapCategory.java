@@ -1,9 +1,16 @@
 package l.f.mappool.entity;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import org.hibernate.annotations.DynamicUpdate;
 
+import java.util.List;
+
+/***
+ * 类别, NM1/NM2 ...
+ */
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 @Entity
 @DynamicUpdate
@@ -13,15 +20,22 @@ public class MapCategory {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Integer id;
 
-    Integer poolId;
+    @ManyToOne()
+    @JsonManagedReference
+    @JoinColumn(name = "group_id")
+    MapCategoryGroup group;
 
     @Column(name = "name", columnDefinition = "text")
     String name;
 
-    @Column(name = "type", columnDefinition = "text")
-    String type;
+    /**
+     * 未选择敲定是NULL,已经确定就是对应的 bid
+     */
+    Long chosed;
 
-    Integer color;
+    @JsonBackReference
+    @OneToMany(mappedBy = "category")
+    List<MapCategoryItem> items;
 
     public Integer getId() {
         return id;
@@ -31,13 +45,6 @@ public class MapCategory {
         this.id = id;
     }
 
-    public Integer getPoolId() {
-        return poolId;
-    }
-
-    public void setPoolId(Integer poolId) {
-        this.poolId = poolId;
-    }
 
     public String getName() {
         return name;
@@ -47,19 +54,37 @@ public class MapCategory {
         this.name = name;
     }
 
-    public String getType() {
-        return type;
+    public Integer getGroupId() {
+        return group.getId();
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public void setGroupId(Integer groupId) {
+        var g = new MapCategoryGroup();
+        g.setId(groupId);
+        this.group = g;
     }
 
-    public Integer getColor() {
-        return color;
+    public MapCategoryGroup getGroup() {
+        return group;
     }
 
-    public void setColor(Integer color) {
-        this.color = color;
+    public void setGroup(MapCategoryGroup group) {
+        this.group = group;
+    }
+
+    public Long getChosed() {
+        return chosed;
+    }
+
+    public void setChosed(Long chosed) {
+        this.chosed = chosed;
+    }
+
+    public List<MapCategoryItem> getItems() {
+        return items;
+    }
+
+    public void setItems(List<MapCategoryItem> items) {
+        this.items = items;
     }
 }

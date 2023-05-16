@@ -1,6 +1,8 @@
 package l.f.mappool.entity;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import l.f.mappool.enums.PoolPermission;
 import org.hibernate.annotations.DynamicUpdate;
@@ -9,19 +11,25 @@ import org.hibernate.annotations.DynamicUpdate;
 @Entity
 @DynamicUpdate
 @Table(name = "pool_user" , indexes = {
-        @Index(name = "upid", columnList = "pool_id,user_id")
+        @Index(name = "upid", columnList = "user_id")
 })
 public class MapPoolUser {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Integer id;
 
-    @Column(name = "pool_id")
-    Integer poolId;
+    @ManyToOne
+    @JoinColumn(name = "pool_id")
+    @JsonManagedReference
+    MapPool pool;
 
+    /**
+     * OSU id
+     */
     @Column(name = "user_id")
     Long userId;
 
+    @Enumerated(EnumType.STRING)
     PoolPermission permission;
 
     public Integer getId() {
@@ -33,11 +41,13 @@ public class MapPoolUser {
     }
 
     public Integer getPoolId() {
-        return poolId;
+        return pool.getId();
     }
 
     public void setPoolId(Integer poolId) {
-        this.poolId = poolId;
+        var p = new MapPool();
+        p.setId(poolId);
+        this.pool = p;
     }
 
     public Long getUserId() {
@@ -54,5 +64,13 @@ public class MapPoolUser {
 
     public void setPermission(PoolPermission permission) {
         this.permission = permission;
+    }
+
+    public MapPool getPool() {
+        return pool;
+    }
+
+    public void setPool(MapPool pool) {
+        this.pool = pool;
     }
 }

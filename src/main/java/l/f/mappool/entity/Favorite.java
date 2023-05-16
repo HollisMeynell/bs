@@ -6,14 +6,13 @@ import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.Type;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
 @DynamicUpdate
-@Table(name = "notation", indexes = {
+@Table(name = "favorite", indexes = {
         @Index(name = "obid", columnList = "user_id,bid")
 })
-public class Notation {
+public class Favorite {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Integer id;
@@ -32,7 +31,7 @@ public class Notation {
     @Column(name = "tags",columnDefinition = "text[]")
     String[] tags;
 
-    public Notation(){
+    public Favorite(){
         created = LocalDateTime.now();
     }
 

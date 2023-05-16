@@ -2,12 +2,12 @@ package l.f.mappool.entity;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import org.hibernate.annotations.DynamicUpdate;
+
+import java.util.List;
 //import org.hibernate.type.TextType;
 
 //import javax.persistence.Convert;
@@ -30,29 +30,27 @@ public class BeatMapSet {
 
     @JsonProperty("creator")
     @Column(name = "mapper_name",columnDefinition = "text")
-//    @Convert(converter = TextType.class)
     String mapperName;
 
     @JsonProperty("artist")
     @Column(name = "artist",columnDefinition = "text")
-//    @Convert(converter = TextType.class)
     String artist;
 
     @JsonProperty("artist_unicode")
     @Column(name = "artist_unicode",columnDefinition = "text")
-//    @Convert(converter = TextType.class)
     String artistUTF8;
 
     @JsonProperty("title")
     @Column(name = "title",columnDefinition = "text")
-//    @Convert(converter = TextType.class)
     String title;
 
     @JsonProperty("title_unicode")
     @Column(name = "title_unicode",columnDefinition = "text")
-//    @Convert(converter = TextType.class)
     String titleUTF8;
 
+    @JsonManagedReference
+    @OneToMany(mappedBy = "beatMapSet")
+    List<BeatMap> beatMaps;
 
     public Long getId() {
         return id;
