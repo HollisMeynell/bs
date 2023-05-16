@@ -1,11 +1,21 @@
 package l.f.mappool.entity;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.DynamicUpdate;
 
+import java.util.List;
+
+/***
+ * 类别, NM1/NM2 ...
+ */
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 @Entity
+@Getter
+@Setter
 @DynamicUpdate
 @Table(name = "pool_category")
 public class MapCategory {
@@ -13,53 +23,34 @@ public class MapCategory {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Integer id;
 
-    Integer poolId;
+    @ManyToOne()
+    @JoinColumn(name = "group_id")
+    @JsonIgnoreProperties({"categories"})
+    MapCategoryGroup group;
 
     @Column(name = "name", columnDefinition = "text")
     String name;
 
-    @Column(name = "type", columnDefinition = "text")
-    String type;
+    /**
+     * 未选择敲定是NULL,已经确定就是对应的 bid
+     */
+    Long chosed;
 
-    Integer color;
+    /**
+     * 防止加载到评论, 评论需要单独加载, 用于排除隐藏评论
+     */
+    @JsonIgnoreProperties({"category", "feedbacks"})
+    @OneToMany(mappedBy = "category", fetch = FetchType.EAGER)
+    List<MapCategoryItem> items;
 
-    public Integer getId() {
-        return id;
+    public Integer getGroupId() {
+        if (group == null) return null;
+        return group.getId();
     }
 
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public Integer getPoolId() {
-        return poolId;
-    }
-
-    public void setPoolId(Integer poolId) {
-        this.poolId = poolId;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public Integer getColor() {
-        return color;
-    }
-
-    public void setColor(Integer color) {
-        this.color = color;
+    public void setGroupId(Integer groupId) {
+        var g = new MapCategoryGroup();
+        g.setId(groupId);
+        this.group = g;
     }
 }

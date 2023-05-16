@@ -1,14 +1,18 @@
 package l.f.mappool.enums;
 
 public enum ReankStatus {
-    graveyard,
-    wip,
-    pending,
-    ranked,
-    approved,
-    qualified,
-    loved,
-    unknown;
+    graveyard(-2),
+    wip(-1),
+    pending(0),
+    ranked(1),
+    approved(2),
+    qualified(3),
+    loved(4),
+    unknown(5);
+    final int value;
+    ReankStatus(int i) {
+        value = i;
+    }
     public static ReankStatus fromInteger(int i) {
         return switch (i){
             case -2 -> graveyard;
@@ -20,5 +24,8 @@ public enum ReankStatus {
             case 4 -> loved;
             default -> unknown;
         };
+    }
+    public int getStatusInt(){
+        return value;
     }
 }

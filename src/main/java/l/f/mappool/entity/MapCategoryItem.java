@@ -1,10 +1,17 @@
 package l.f.mappool.entity;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.DynamicUpdate;
 
+import java.util.List;
+
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
+@Getter
+@Setter
 @Entity
 @DynamicUpdate
 @Table(name = "pool_category_item")
@@ -13,76 +20,35 @@ public class MapCategoryItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Integer id;
 
-    @Column(name = "category_id")
-    Integer categoryId;
+    @ManyToOne()
+    @JsonIgnoreProperties({"items"})
+    @JoinColumn(name = "category_id")
+    MapCategory category;
 
-    @Column(name = "name", columnDefinition = "text")
-    String name;
+    /***
+     * 推荐者 id
+     */
+    @Column(name = "creater_id")
+    Long createrId;
 
     @Column(name = "info", columnDefinition = "text")
     String info;
 
-    Integer sorted;
+    Integer sort;
 
+    Long chous;
 
-    @Column(name = "type", columnDefinition = "text")
-    String type;
-
-    Integer choused;
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
+    @JsonIgnoreProperties({"item"})
+    @OneToMany(mappedBy = "item", fetch = FetchType.EAGER)
+    List<MapFeedback> feedbacks;
 
     public Integer getCategoryId() {
-        return categoryId;
+        return category.id;
     }
 
     public void setCategoryId(Integer categoryId) {
-        this.categoryId = categoryId;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getInfo() {
-        return info;
-    }
-
-    public void setInfo(String info) {
-        this.info = info;
-    }
-
-    public Integer getSorted() {
-        return sorted;
-    }
-
-    public void setSorted(Integer sorted) {
-        this.sorted = sorted;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public Integer getChoused() {
-        return choused;
-    }
-
-    public void setChoused(Integer choused) {
-        this.choused = choused;
+        var g = new MapCategory();
+        g.setId(categoryId);
+        this.category = g;
     }
 }

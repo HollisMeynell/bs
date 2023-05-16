@@ -4,13 +4,15 @@ package l.f.mappool.entity;
 import com.fasterxml.jackson.annotation.*;
 import jakarta.persistence.*;
 import l.f.mappool.enums.ReankStatus;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.DynamicUpdate;
-//import org.hibernate.type.TextType;
 
-//import javax.persistence.Convert;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
+@Getter
+@Setter
 @DynamicUpdate
 @Entity
 @Table(name = "beatmap")
@@ -30,13 +32,12 @@ public class BeatMap {
     Long mapperId;
 
     @JsonProperty("version")
-    @Column(name = "version",columnDefinition = "text")
+    @Column(name = "version", columnDefinition = "text")
 //    @Convert(converter = TextType.class)
     String version;
 
     @JsonProperty("ranked")
-    @Column(name = "status",columnDefinition = "text")
-//    @Convert(converter = TextType.class)
+    @Column(name = "status")
     Integer status;
 
     @JsonProperty("difficulty_rating")
@@ -72,148 +73,29 @@ public class BeatMap {
     @JsonProperty("count_spinners")
     Integer spinners;
 
-    @Transient
+    @ManyToOne()
     @JsonProperty("beatmapset")
+    @JoinColumn(name = "beatmapset_id_set")
     BeatMapSet beatMapSet;
-
-    public BeatMapSet getBeatMapSet() {
-        return beatMapSet;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Long getMapsetId() {
-        return mapsetId;
-    }
-
-    public void setMapsetId(Long mapsetId) {
-        this.mapsetId = mapsetId;
-    }
-
-    public Long getMapperId() {
-        return mapperId;
-    }
-
-    public void setMapperId(Long mapperId) {
-        this.mapperId = mapperId;
-    }
-
-    public String getVersion() {
-        return version;
-    }
-
-    public void setVersion(String version) {
-        this.version = version;
-    }
 
     @JsonGetter("status")
     public String getStatus() {
         return ReankStatus.fromInteger(this.status).name();
     }
 
-    @JsonIgnore
-    public void setStatus(Integer status) {
-        this.status = status;
+    @JsonSetter("status")
+    public void setStatus(String status) {
+        this.status = ReankStatus.valueOf(status).getStatusInt();
     }
 
-    public Float getDifficulty() {
-        return difficulty;
-    }
-
-    public void setDifficulty(Float difficulty) {
-        this.difficulty = difficulty;
-    }
-
-    public Short getModeInt() {
-        return modeInt;
-    }
-
+    @JsonGetter("mode")
     public String getMode() {
-        return switch (this.modeInt){
+        return switch (this.modeInt) {
             case 0 -> "osu";
-            default -> "?";
+            case 1 -> "taiko";
+            case 2 -> "fruits";
+            case 3 -> "mania";
+            default -> "unknown";
         };
-    }
-
-    public void setModeInt(Short modeInt) {
-        this.modeInt = modeInt;
-    }
-
-    public Float getAr() {
-        return ar;
-    }
-
-    public void setAr(Float ar) {
-        this.ar = ar;
-    }
-
-    public Float getCs() {
-        return cs;
-    }
-
-    public void setCs(Float cs) {
-        this.cs = cs;
-    }
-
-    public Float getOd() {
-        return od;
-    }
-
-    public void setOd(Float od) {
-        this.od = od;
-    }
-
-    public Float getHp() {
-        return hp;
-    }
-
-    public void setHp(Float hp) {
-        this.hp = hp;
-    }
-
-    public Integer getLength() {
-        return length;
-    }
-
-    public void setLength(Integer length) {
-        this.length = length;
-    }
-
-    public Integer getTotalLength() {
-        return totalLength;
-    }
-
-    public void setTotalLength(Integer totalLength) {
-        this.totalLength = totalLength;
-    }
-
-    public Integer getCircles() {
-        return circles;
-    }
-
-    public void setCircles(Integer circles) {
-        this.circles = circles;
-    }
-
-    public Integer getSliders() {
-        return sliders;
-    }
-
-    public void setSliders(Integer sliders) {
-        this.sliders = sliders;
-    }
-
-    public Integer getSpinners() {
-        return spinners;
-    }
-
-    public void setSpinners(Integer spinners) {
-        this.spinners = spinners;
     }
 }

@@ -5,6 +5,9 @@ import jakarta.persistence.Embeddable;
 
 import java.io.Serializable;
 
+/***
+ * 回复表
+ */
 @Embeddable
 public class FeedbackId implements Serializable {
     @Column(name = "beatmap_id")

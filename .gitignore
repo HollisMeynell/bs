@@ -33,3 +33,6 @@ build/
 .vscode/
 
 .mvn
+**tmp**
+start.ps1
+**/static/**

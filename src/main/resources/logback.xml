@@ -1,0 +1,20 @@
+<configuration>
+    <property name="LOG_PATTERN" value="%d{HH:mm:ss}[%thread]%-5level %logger{80}%n%msg%n---------%n" />
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>/home/spring/work/botlog/bot.log</file>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <root level="info">
+        <appender-ref ref="CONSOLE" />
+<!--        <appender-ref ref="FILE" />-->
+    </root>
+</configuration>

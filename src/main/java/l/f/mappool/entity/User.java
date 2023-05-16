@@ -4,27 +4,30 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.DynamicUpdate;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 @Entity
+@Getter
+@Setter
 @DynamicUpdate
-@Table(name = "o_user")
+@Table(name = "o_user", indexes = {
+        @Index(name = "ouid", columnList = "osu_id, code")
+})
 public class User {
-    @JsonProperty("id")
     @Id
+    @JsonProperty("id" )
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
+    @Column(name = "addr", columnDefinition = "text")
+    String addr;
+    @Column(name = "osu_id")
+    Long osuId;
 
-    @JsonProperty("username")
-    @Column(name = "name", columnDefinition = "text")
-    String name;
-
-    @JsonProperty("avatar_url")
-    @Column(name = "avatar", columnDefinition = "text")
-    String avatar;
+    @Column(name = "code", columnDefinition = "text")
+    String code;
 }

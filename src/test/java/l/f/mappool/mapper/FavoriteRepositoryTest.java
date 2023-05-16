@@ -1,6 +1,6 @@
 package l.f.mappool.mapper;
 
-import l.f.mappool.repository.NotationRepository;
+import l.f.mappool.repository.FavoriteRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.commons.logging.Logger;
 import org.junit.platform.commons.logging.LoggerFactory;
@@ -8,10 +8,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class NotationRepositoryTest {
-    Logger log = LoggerFactory.getLogger(NotationRepositoryTest.class);
+class FavoriteRepositoryTest {
+    Logger log = LoggerFactory.getLogger(FavoriteRepositoryTest.class);
     @Autowired
-    NotationRepository notationRepository;
+    FavoriteRepository favoriteRepository;
     @Test
     void allTags() {
         /*
@@ -30,13 +30,13 @@ class NotationRepositoryTest {
         notationRepository.save(n);
         */
 
-        var s = notationRepository.allUserTags(114514L);
+        var s = favoriteRepository.allUserTags(114514L);
         log.info(()->String.join(",", s));
 
-        var nold = notationRepository.findByBidAndUserId(15564L, 114514L);
+        var nold = favoriteRepository.findByBidAndUserId(15564L, 114514L);
         log.info(()-> nold.isPresent()?"have":"no");
 
-        var ts = notationRepository.searchAllByTags("nihk");
+        var ts = favoriteRepository.searchAllByTags("nihk");
         log.info(()-> {
             if (ts.isEmpty())
                 return "empty";
