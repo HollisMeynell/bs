@@ -19,16 +19,15 @@ public class UserService {
     @Resource
     UserRepository userRepository;
 
-    public User doLogin(String code, String addr) {
+    public OsuUser doLogin(String code) {
         var user = osuGetService.getToken(code);
         user = osuGetService.getMeInfo(user);
         osuUserRepository.saveAndFlush(user);
-        var uToken = new User();
-        uToken.setCode(UUID.randomUUID().toString());
-        uToken.setAddr(addr);
-        uToken.setOsuId(user.getOsuId());
-        userRepository.save(uToken);
-        return uToken;
+        return user;
+    }
+
+    public void saveUser(User user) {
+        userRepository.save(user);
     }
 
     public OsuUser getOsuUser(long id) {

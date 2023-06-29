@@ -2,12 +2,14 @@ package l.f.mappool.entity;
 
 import io.hypersistence.utils.hibernate.type.array.StringArrayType;
 import jakarta.persistence.*;
+import lombok.experimental.Accessors;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.Type;
 
 import java.time.LocalDateTime;
 
 @Entity
+@Accessors(chain = true)
 @DynamicUpdate
 @Table(name = "favorite", indexes = {
         @Index(name = "obid", columnList = "user_id,bid")

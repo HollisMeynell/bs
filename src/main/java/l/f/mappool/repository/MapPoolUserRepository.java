@@ -1,5 +1,6 @@
 package l.f.mappool.repository;
 
+import l.f.mappool.entity.MapPool;
 import l.f.mappool.entity.MapPoolUser;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -11,6 +12,7 @@ import java.util.Optional;
 
 @Component
 public interface MapPoolUserRepository extends JpaRepository<MapPoolUser, Integer> {
+    long deleteByPool(MapPool pool);
 
     @Transactional
     @Query(value = "select u from MapPoolUser u where u.userId=:userId and u.pool.id=:poolId ")

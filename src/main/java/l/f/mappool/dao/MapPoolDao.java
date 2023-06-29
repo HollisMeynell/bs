@@ -3,6 +3,7 @@ package l.f.mappool.dao;
 import jakarta.persistence.EntityManager;
 import l.f.mappool.entity.*;
 import l.f.mappool.enums.PoolPermission;
+import l.f.mappool.enums.PoolStatus;
 import l.f.mappool.exception.PermissionException;
 import l.f.mappool.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,11 +18,11 @@ import java.util.Optional;
 
 @Component
 public class MapPoolDao {
-    private final MapPoolRepository poolRepository;
-    private final MapFeedbackRepository feedbackRepository;
-    private final MapPoolUserRepository poolUserRepository;
-    private final MapCategoryRepository categoryRepository;
-    private final MapCategoryItemRepository categoryItemRepository;
+    private final MapPoolRepository          poolRepository;
+    private final MapFeedbackRepository      feedbackRepository;
+    private final MapPoolUserRepository      poolUserRepository;
+    private final MapCategoryRepository      categoryRepository;
+    private final MapCategoryItemRepository  categoryItemRepository;
     private final MapCategoryGroupRepository categoryGroupRepository;
 
     private final EntityManager entityManager;
@@ -53,20 +54,25 @@ public class MapPoolDao {
         map.setName(poolName);
         map.setInfo(info);
         map.setBanner(banner);
-        map = poolRepository.save(map);
-
-        // 写入权限
-        addUser(userId, map.getId(), PoolPermission.CREATE);
-        return map;
+        if (poolRepository.hasPool(poolName) == 0) {
+            map = poolRepository.save(map);
+            addUser(userId, map.getId(), PoolPermission.CREATE);
+            // 写入权限
+            return map;
+        } else {
+            throw new RuntimeException("创建失败: 图池已经存在");
+        }
     }
 
-    public List<MapPool> queryByName(String name, int page, int size){
+    public List<MapPool> queryByName(String name, int page, int size) {
         return poolRepository.queryByName(name, PageRequest.of(page, size));
     }
-    public int countByName(String name){
+
+    public int countByName(String name) {
         return poolRepository.countByName(name);
     }
-    public Optional<MapPool> queryById(int id){
+
+    public Optional<MapPool> queryById(int id) {
         return poolRepository.findById(id);
     }
 
@@ -117,7 +123,8 @@ public class MapPoolDao {
 
     /**
      * 创建具体分类 比如NM1
-     * @param groupId CategoryGroup.id
+     *
+     * @param groupId      CategoryGroup.id
      * @param categoryName
      * @return
      */
@@ -170,7 +177,7 @@ public class MapPoolDao {
         return feedbackRepository.save(feedback);
     }
 
-    public List<MapPool> getPublicPool(){
+    public List<MapPool> getPublicPool() {
         return poolRepository.getAllOpenPool();
     }
 
@@ -196,22 +203,23 @@ public class MapPoolDao {
         return map;
     }
 
-    public List<MapPool> getAllPublicPool(){
-        return poolRepository.getAllOpenPool();
-    }
-    public List<MapPool> getAllPublicPoolExcludeUser(long uid){
+    public List<MapPool> getAllPublicPool() {
         return poolRepository.getAllOpenPool();
     }
 
-    public List<MapCategoryGroup> getAllCategotys(int poolId){
+    public List<MapPool> getAllPublicPoolExcludeUser(long uid) {
+        return poolRepository.getAllOpenPool();
+    }
+
+    public List<MapCategoryGroup> getAllCategotys(int poolId) {
         var groups = categoryRepository.getAllCategory(poolId);
-        for (var g : groups){
+        for (var g : groups) {
             g.setCategories(categoryRepository.getAllByGroup(g));
         }
         return groups;
     }
 
-    public List<MapCategoryItem> getAllCategoryItems(int categoryId){
+    public List<MapCategoryItem> getAllCategoryItems(int categoryId) {
         var selectAttr = new MapCategory();
         selectAttr.setId(categoryId);
         return categoryItemRepository.findAllByCategory(selectAttr);
@@ -221,7 +229,7 @@ public class MapPoolDao {
         if (userOpt.isEmpty()) {
             return false;
         }
-        if (poolPermissions.length == PoolPermission.values().length){
+        if (poolPermissions.length == PoolPermission.values().length) {
             return true;
         }
         var user = userOpt.get().getPermission();
@@ -243,7 +251,6 @@ public class MapPoolDao {
         var userOpt = poolUserRepository.getMapPoolUserByPoolIdAndUserId(poolId, userId);
         return testBef(userOpt, poolPermissions);
     }
-
 
 
     public boolean isCreaterByPool(int poolId, long userId) {
@@ -278,10 +285,12 @@ public class MapPoolDao {
     public boolean isChooserByGroup(int groupId, long userId) {
         return testPermissionByCategoryGroup(groupId, userId, PoolPermission.CREATE, PoolPermission.ADMIN, PoolPermission.CHOOSER);
     }
+
     public boolean isChooserByCategory(int categoryId, long userId) {
         var userOpt = poolUserRepository.getMapPoolUserByCategoryIdAndUserId(categoryId, userId);
         return testBef(userOpt, PoolPermission.CREATE, PoolPermission.ADMIN, PoolPermission.CHOOSER);
     }
+
     public boolean isUserByGroup(int groupId, long userId) {
         return testPermissionByCategoryGroup(groupId, userId, PoolPermission.values());
     }
@@ -301,7 +310,47 @@ public class MapPoolDao {
         return poolUserRepository.save(addUser);
     }
 
-    public List<MapPool> getAllMarkPool(long uid){
+    public List<MapPool> getAllMarkPool(long uid) {
         return poolRepository.queryByUserMark(uid);
+    }
+
+    /***
+     * 真删除
+     * @param uid uid
+     * @param pid pool id
+     */
+    public void removePool(long uid, int pid) {
+        if (!isAdminByPool(pid, uid)) {
+            throw new PermissionException();
+        }
+        var poolOpt = poolRepository.getById(pid);
+        if (poolOpt.isEmpty()) {
+            throw new RuntimeException("已被删除");
+        }
+        var pool = poolOpt.get();
+        if (pool.getStatus() != PoolStatus.DELETE) {
+            throw new RuntimeException("先执行delete");
+        }
+        poolUserRepository.deleteByPool(pool);
+        poolRepository.delete(pool);
+    }
+
+    public void deletePool(long uid, int pid) {
+        if (!isAdminByPool(pid, uid)) {
+            throw new PermissionException();
+        }
+        var poolOpt = poolRepository.getById(pid);
+        if (poolOpt.isEmpty()) {
+            throw new RuntimeException("已被删除");
+        }
+        var pool = poolOpt.get();
+        if (!pool.getGroups().isEmpty()) {
+            throw new RuntimeException("图池不为空,请删掉全部内容.");
+        }
+        if (!pool.getUsers().isEmpty()) {
+            throw new RuntimeException("图池仍有成员,请删掉所有其他成员.");
+        }
+        pool.setStatus(PoolStatus.DELETE);
+        poolRepository.save(pool);
     }
 }

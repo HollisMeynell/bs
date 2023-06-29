@@ -19,19 +19,21 @@ public class OsuGetService {
     /***
      * https://osu.ppy.sh/users/[uid]/card
      * https://osu.ppy.sh/users/[uid]/extra-pages/historical?mode=osu
-     * https://osu.ppy.sh/users/[uid]/scores/best?mode=osu&limit=100&offset=0
+     * https://osu.ppy.sh/users/[uid]/scores/best?mode=osu&limit=100&offset=0 bp成绩
+     * https://osu.ppy.sh/users/18443135/recent_activity?limit=51&offset=0 近期活动
+     * https://osu.ppy.sh/users/17064371/scores/recent?mode=osu&limit=51&offset=0 24h打图
      */
     long time = System.currentTimeMillis();
     String accessToken;
     RestTemplate template;
     OsuUserRepository osuUserRepository;
     private final String redirectUrl;
-    private int oauthId = 6745;
-    private String oauthToken = "BNrLPAd8kR80JDhlTkiSg0mI76jQD2K56w9tyGjv";
+    private int oauthId = 22770;
+    private String oauthToken = "Ryb4RRpr44I7G7kU6H8boZ6JrgoBw255dEYdmix6";
 
     @Autowired
     public OsuGetService(RestTemplate template, OsuUserRepository osuUserRepository) {
-        this.redirectUrl = "http://localhost:8388/bd";
+        this.redirectUrl = "http://localhost:16113/bind";
         this.template = template;
         this.osuUserRepository = osuUserRepository;
     }

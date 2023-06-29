@@ -2,6 +2,7 @@ package l.f.mappool.config.interceptor;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import l.f.mappool.exception.HttpError;
 import l.f.mappool.vo.DataListVo;
 import l.f.mappool.vo.DataVo;
 import org.slf4j.Logger;
@@ -25,6 +26,13 @@ public class WebExceptionHandler {
         log.warn("接口异常[{}] : {}", request.getRequestURI(),exception.getMessage(), exception);
         response.setStatus(HttpServletResponse.SC_BAD_GATEWAY);
         return new DataVo(500, "请求出现错误", exception.getMessage());
+    }
+    @ResponseBody
+    @ExceptionHandler(value = HttpError.class)
+    public Object httpErrorHandler(HttpServletRequest request, HttpServletResponse response, HttpError error){
+        log.warn("请求错误 [{}] : {}", request.getRequestURI(),error.getMessage(), error);
+        response.setStatus(error.getCode());
+        return new DataVo(error.getCode(), "请求出现错误", error.getMessage());
     }
 
     @ResponseBody

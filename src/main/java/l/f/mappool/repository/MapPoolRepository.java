@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Component
 public interface MapPoolRepository extends JpaRepository<MapPool, Integer> {
@@ -31,4 +32,9 @@ public interface MapPoolRepository extends JpaRepository<MapPool, Integer> {
 
     @Query("select p from MapPool p where p.id in (select m.pid from MapPoolMark4User m where m.uid=:uid)")
     List<MapPool> queryByUserMark(long uid);
+
+    @Query("select count(p) from MapPool p where p.status!=l.f.mappool.enums.PoolStatus.DELETE and p.name like :name")
+    int hasPool(String name);
+
+    Optional<MapPool> getById(int id);
 }

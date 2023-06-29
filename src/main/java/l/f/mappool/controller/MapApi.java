@@ -30,6 +30,7 @@ import java.util.Map;
 
 @Slf4j
 @Controller
+@CrossOrigin
 @ResponseBody
 @RequestMapping(value = "/api/map", produces = "application/json;charset=UTF-8")
 public class MapApi {
@@ -38,7 +39,7 @@ public class MapApi {
     @Resource
     MapPoolService mapPoolService;
 
-    @GetMapping("/queryAllPublic")
+    @GetMapping("/queryPublic")
     DataListVo<MapPool> query(@Validated QueryMapPoolDto queryMapPoolDto) {
         var allCount = mapPoolService.countByNameAndId(queryMapPoolDto);
         var data = mapPoolService.queryByNameAndId(queryMapPoolDto);
@@ -57,7 +58,6 @@ public class MapApi {
     }
 
     @GetMapping("getGroup")
-
     DataListVo<MapCategoryGroup> getGroup(int id) {
         var list = mapPoolService.getCategoryGroup(id);
         return new DataListVo<MapCategoryGroup>().setData(list).setTotalItems(list.size());
@@ -80,8 +80,8 @@ public class MapApi {
     @PutMapping("createCategory")
     DataVo<MapCategory> createCategory(@RequestBody @Validated(CreateCategory.class) MapPoolDto create) {
         var u = ContextUtil.getContextUser();
-        var group = mapPoolService.createCategory(u.getOsuId(), create.getGroupId(), create.getName());
-        return new DataVo<>("创建成功", group);
+        var category = mapPoolService.createCategory(u.getOsuId(), create.getGroupId(), create.getName());
+        return new DataVo<>("创建成功", category);
     }
 
     @PutMapping("createCategoryItem")

@@ -11,16 +11,18 @@ import java.util.List;
 import java.util.Optional;
 
 @Component
-public interface NotationRepository extends JpaRepository<Favorite, Integer>, JpaSpecificationExecutor<Integer> {
+public interface FavoriteRepository extends JpaRepository<Favorite, Integer>, JpaSpecificationExecutor<Integer> {
     //select * from notation where :serchText like any(column)
     //select DISTINCT unnest(notation.tags) as all from notation where userid=
     //SELECT DISTINCT value FROM Notation e, IN(e.tags) value
     @Transactional
-    @Query(value = "select distinct unnest(notation.tags) as all from notation where user_id = :uid", nativeQuery = true)
+    @Query(value = "select distinct unnest(favorite.tags) as all from favorite where user_id = :uid", nativeQuery = true)
     List<String> allUserTags(Long uid);
 
     @Transactional
-    @Query(value = "select * from notation where :tag like any(notation.tags)", nativeQuery = true)
+    @Query(value = "select * from favorite where :tag like any(favorite.tags)", nativeQuery = true)
     List<Favorite> searchAllByTags(String tag);
+    @Transactional
+    List<Favorite> getAllByUserId(long userId);
     Optional<Favorite> findByBidAndUserId(Long bid, Long userId);
 }
