@@ -3,6 +3,8 @@ package l.f.mappool.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import l.f.mappool.entity.BeatMap;
 import l.f.mappool.entity.OsuUser;
+import l.f.mappool.properties.BeatmapSelectionProperties;
+import l.f.mappool.properties.OsuProperties;
 import l.f.mappool.repository.OsuUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
@@ -28,14 +30,20 @@ public class OsuGetService {
     RestTemplate template;
     OsuUserRepository osuUserRepository;
     private final String redirectUrl;
-    private int oauthId = 22770;
-    private String oauthToken = "Ryb4RRpr44I7G7kU6H8boZ6JrgoBw255dEYdmix6";
+    private final int oauthId;
+    private final String oauthToken;
 
     @Autowired
-    public OsuGetService(RestTemplate template, OsuUserRepository osuUserRepository) {
-        this.redirectUrl = "http://localhost:16113/bind";
+    public OsuGetService(RestTemplate template, OsuUserRepository osuUserRepository, BeatmapSelectionProperties properties, OsuProperties osuProperties) {
+        this.redirectUrl = String.format("http%s://%s%s",
+                Boolean.TRUE.equals(properties.getSsl()) ? "s" : "",
+                properties.getLocalUrl(),
+                osuProperties.getCallbackUrl()
+        );
         this.template = template;
         this.osuUserRepository = osuUserRepository;
+        this.oauthId = osuProperties.getOauth().getId();
+        this.oauthToken = osuProperties.getOauth().getToken();
     }
 
     public String getOauthUrl(String state) {
@@ -86,7 +94,7 @@ public class OsuGetService {
             throw new RuntimeException("");
         }
         String accessToken = s.get("access_token").asText();
-        String refreshToken =s.get("refresh_token").asText();
+        String refreshToken = s.get("refresh_token").asText();
         time = System.currentTimeMillis() + s.get("expires_in").asLong() * 1000;
         var user = new OsuUser();
         user.setAccessToken(accessToken);
@@ -139,7 +147,7 @@ public class OsuGetService {
         return user;
     }
 
-    public BeatMap getMapInfo(long bid){
+    public BeatMap getMapInfo(long bid) {
         String url = "https://osu.ppy.sh/api/v2/beatmaps/" + bid;
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);

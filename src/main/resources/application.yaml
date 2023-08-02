@@ -1,19 +1,20 @@
 spring:
-  profiles:
-    active: local
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     show-sql: true
-    properties:
-      hibernate:
-        temp:
-          use_jdbc_metadata_defaults: false
-        dialect: org.hibernate.dialect.HSQLDialect
-        jdbc:
-          lob:
-            non_contextual_creation: true
 logging:
   level:
     web: trace
+beatmap-selection:
+  file-path: path/
+  ssl: false
+  local-url: localhost:16113
+  osu:
+    callback-url: /callback
+    oauth:
+      id: 80
+      token: yourToken
+  profiles:
+    active: tmp
