@@ -26,6 +26,11 @@ public class UserApi {
     @Resource
     UserService userService;
 
+    /**
+     * 登录接口
+     * @param code 回调链接的授权 code
+     * @return 登录结果
+     */
     @Open
     @GetMapping("login")
     DataVo<LoginUserVo> login(@NotNull @RequestParam("code") String code, HttpServletRequest request) {

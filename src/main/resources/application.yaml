@@ -1,6 +1,6 @@
 logging:
   level:
-    web: trace
+    web: info
 beatmap-selection:
   file-path: path/
   ssl: false

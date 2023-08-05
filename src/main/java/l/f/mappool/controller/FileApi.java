@@ -3,6 +3,7 @@ package l.f.mappool.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import l.f.mappool.config.interceptor.Open;
 import l.f.mappool.dao.FileLogDao;
+import l.f.mappool.exception.LogException;
 import l.f.mappool.vo.DataVo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,11 @@ import java.util.Map;
 @ResponseBody
 @RequestMapping(value = "/api/file", produces = "application/json;charset=UTF-8")
 public class FileApi {
+    /**
+     * 上传文件
+     * @param file 文件结构 formData{ filename: xxx, ...}
+     * @return {filename: key}
+     */
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public DataVo<Map<String, String>> upload(MultipartHttpServletRequest file) {
         final Map<String, String> files = new HashMap<>();
@@ -38,6 +44,12 @@ public class FileApi {
         return new DataVo<>(files);
     }
 
+    /**
+     * 上传单个文件
+     * @param name 文件名
+     * @return key
+     * @throws IOException 文件写入失败
+     */
     @PostMapping(value = "/stream/{name}", consumes = {MediaType.APPLICATION_OCTET_STREAM_VALUE, MediaType.IMAGE_PNG_VALUE, MediaType.IMAGE_JPEG_VALUE})
     public DataVo<String> upload(@PathVariable("name") String name, HttpServletRequest request) throws IOException {
         String fileName = URLDecoder.decode(name, StandardCharsets.UTF_8);
@@ -45,16 +57,33 @@ public class FileApi {
         return new DataVo<>("ok", fileKey);
     }
 
+    /**
+     * 加载图片
+     * @param key 文件key
+     */
     @GetMapping(value = "/image/{key}", produces = MediaType.IMAGE_PNG_VALUE)
     public ResponseEntity<byte[]> getImage(@PathVariable("key")String key) throws IOException {
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentDispositionFormData("attachment", fileLogDao.getFileName(key));
-        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-        return new ResponseEntity<>(fileLogDao.getData(key), headers, HttpStatus.OK);
+        headers.setContentDisposition(ContentDisposition.inline().filename(fileLogDao.getFileName(key)).build());
+        headers.setContentType(MediaType.IMAGE_PNG);
+        try {
+            return new ResponseEntity<>(fileLogDao.getData(key), headers, HttpStatus.OK);
+        } catch (IOException e) {
+            throw new LogException("文件已失效...", 404);
+        }
     }
+
+    /**
+     * 下载文件
+     * @param key 文件key
+     */
     @GetMapping(value = "/download/{key}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public byte[] getFile(@PathVariable("key")String key) throws IOException {
-        return fileLogDao.getData(key);
+        try {
+            return fileLogDao.getData(key);
+        } catch (IOException e) {
+            throw new LogException("文件已失效...", 404);
+        }
     }
 
     private FileLogDao fileLogDao;

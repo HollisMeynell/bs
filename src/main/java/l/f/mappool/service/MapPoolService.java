@@ -49,6 +49,11 @@ public class MapPoolService {
         return pool;
     }
 
+    public MapPool updateMapPool(long userId, int poolId, String name, String banner, String info) {
+        final MapPoolDao mapPoolDao1 = mapPoolDao;
+        return null;
+    }
+
     public MapCategoryItem createCategoryItem(long uid, int categoryId, long bid, String info) {
 
         if (!mapPoolDao.isChooserByCategory(categoryId, uid)) {
@@ -133,7 +138,7 @@ public class MapPoolService {
 
     /***
      * 查收藏的
-     * @return
+     * @return 收藏列表
      */
 
     public DataListVo<FavoritesLiteVo> getMapInfo() {

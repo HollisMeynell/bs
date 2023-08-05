@@ -8,6 +8,7 @@ import l.f.mappool.dto.map.QueryMapPoolDto;
 import l.f.mappool.dto.validator.mapPool.CreateCategory;
 import l.f.mappool.dto.validator.mapPool.CreateCategoryGroup;
 import l.f.mappool.dto.validator.mapPool.CreatePool;
+import l.f.mappool.dto.validator.mapPool.SetPool;
 import l.f.mappool.entity.MapCategory;
 import l.f.mappool.entity.MapCategoryGroup;
 import l.f.mappool.entity.MapCategoryItem;
@@ -39,6 +40,11 @@ public class MapApi {
     @Resource
     MapPoolService mapPoolService;
 
+    /**
+     * 搜素图池,公开或者属于自己的图池
+     * @param queryMapPoolDto 名字或id
+     * @return 图池
+     */
     @GetMapping("/queryPublic")
     DataListVo<MapPool> query(@Validated QueryMapPoolDto queryMapPoolDto) {
         var allCount = mapPoolService.countByNameAndId(queryMapPoolDto);
@@ -51,20 +57,42 @@ public class MapApi {
                 .setCurrentPage(queryMapPoolDto.getPageNum());
     }
 
+    /**
+     *  查询所有自己参与的图池
+     * @return 图池
+     */
     @GetMapping("getMyPool")
     DataVo<Map<PoolPermission, List<MapPool>>> getAllPool() {
         var u = ContextUtil.getContextUser();
-        return new DataVo(mapPoolService.getAllPool(u.getOsuId()));
+        return new DataVo<>(mapPoolService.getAllPool(u.getOsuId()));
     }
 
+    /**
+     * 获取组别的详细信息
+     * @param id 组别id
+     * @return 组别信息
+     */
     @GetMapping("getGroup")
     DataListVo<MapCategoryGroup> getGroup(int id) {
         var list = mapPoolService.getCategoryGroup(id);
         return new DataListVo<MapCategoryGroup>().setData(list).setTotalItems(list.size());
     }
 
+    /**
+     * 创建图池
+     * @param create 包含 name, banner(文件key) info
+     * @return 创建结果
+     */
     @PutMapping("createPool")
     DataVo<MapPool> createPool(@RequestBody @Validated(CreatePool.class) MapPoolDto create) {
+        var u = ContextUtil.getContextUser();
+        var pool = mapPoolService.createMapPool(u.getOsuId(), create.getName(), create.getBanner(), create.getInfo());
+        return new DataVo<>("创建成功", pool);
+    }
+
+
+    @PutMapping("setPoolInfo")
+    DataVo<MapPool> setPoolInfo(@RequestBody @Validated(SetPool.class) MapPoolDto create) {
         var u = ContextUtil.getContextUser();
         var pool = mapPoolService.createMapPool(u.getOsuId(), create.getName(), create.getBanner(), create.getInfo());
         return new DataVo<>("创建成功", pool);
@@ -109,6 +137,7 @@ public class MapApi {
             return new DataVo().setCode(201).setMessage("无图池记录");
         }
     }
+
 
     @GetMapping("getMark")
     DataListVo<MapPool> getUserMarkPool() {

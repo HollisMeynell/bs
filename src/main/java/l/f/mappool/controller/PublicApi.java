@@ -30,16 +30,29 @@ public class PublicApi {
     @Resource
     RestTemplate  restTemplate;
 
+    /**
+     * 获取公开图池
+     */
     @GetMapping("getAllPool")
     DataVo getAllPool() {
         return new DataVo(mapPoolDao.getPublicPool());
     }
 
+    /**
+     * 获取绑定链接
+     * @return 链接
+     */
     @GetMapping("getOauthUrl")
     DataVo<String> getOauthUrl() {
         return new DataVo<>(osuService.getOauthUrl("test"));
     }
 
+    /**
+     * 前端代理, 只能支持 json 的接口
+     * @param config 请求配置
+     * @return 代理数据
+     * @throws HttpError 请求异常
+     */
     @PostMapping("proxy")
     Object proxy(@RequestBody @Validated ProxyDto config) throws HttpError {
         var method = HttpMethod.valueOf(config.getMethod().toUpperCase());

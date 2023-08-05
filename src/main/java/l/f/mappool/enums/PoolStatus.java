@@ -1,6 +1,21 @@
 package l.f.mappool.enums;
 
 public enum PoolStatus {
-    // 选图中 公开 截止 删除
-    OPEN,SHOW,STOP,DELETE
+    /**
+     * 选图中
+     */
+
+    OPEN,
+    /**
+     * 公开
+     */
+    SHOW,
+    /**
+     * 截止
+     */
+    STOP,
+    /**
+     * 已删除
+     */
+    DELETE
 }
