@@ -67,7 +67,9 @@ public class FileApi {
         headers.setContentDisposition(ContentDisposition.inline().filename(fileLogDao.getFileName(key)).build());
         headers.setContentType(MediaType.IMAGE_PNG);
         try {
-            return new ResponseEntity<>(fileLogDao.getData(key), headers, HttpStatus.OK);
+            byte[] data = fileLogDao.getData(key);
+            headers.setContentLength(data.length);
+            return new ResponseEntity<>(data, headers, HttpStatus.OK);
         } catch (IOException e) {
             throw new LogException("文件已失效...", 404);
         }
