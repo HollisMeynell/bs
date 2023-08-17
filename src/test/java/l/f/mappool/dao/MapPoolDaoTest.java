@@ -1,15 +1,12 @@
 package l.f.mappool.dao;
 
 import l.f.mappool.enums.PoolPermission;
-import l.f.mappool.enums.PoolStatus;
 import l.f.mappool.repository.MapPoolRepository;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 class MapPoolDaoTest {
@@ -33,8 +30,8 @@ class MapPoolDaoTest {
 
     @Test
     void testPageQuery() {
-        var c1 = mapPoolDao.queryByName("u", 1, 1);
-        var count = mapPoolDao.countByName("u");
+        var c1 = mapPoolDao.queryByName("u", 1, 1, 1);
+        var count = mapPoolDao.countByName("u", 1);
         log.info("count: {}, c: {}", count, c1);
     }
 
@@ -44,7 +41,7 @@ class MapPoolDaoTest {
     @Test
     void testAll() {
         var p = mapPoolDao.getAllPool(uid).get(PoolPermission.CREATE).get(0);
-        var g = mapPoolDao.createCategoryGroup(uid, p.getId(), "e name", "# e info", 000);
+        var g = mapPoolDao.createCategoryGroup(uid, p.getId(), "e name", "# e info", 0x000);
         var c = mapPoolDao.createCategory(uid, g.getId(), "eeeffff");
         var map0 = mapPoolDao.createCategoryItem(uid, c.getId(), 1155, "dsa");
         mapPoolDao.addUser(uid1, p.getId(), PoolPermission.CHOOSER);

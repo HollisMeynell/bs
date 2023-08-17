@@ -1,5 +1,10 @@
 package l.f.mappool.enums;
 
+import l.f.mappool.exception.ModsCatchException;
+
+import java.util.Arrays;
+import java.util.List;
+
 public enum Mod {
     None(0, ""),
     NoFail(1, "NF"),
@@ -53,6 +58,51 @@ public enum Mod {
     Mod(int i, String name) {
         value = i;
         abbreviation = name;
+    }
+
+    public static List<Mod> getModsList(String modsStr) {
+        var modStrArray = getModsString(modsStr);
+        var mList = Arrays.stream(modStrArray).map(Mod::fromStr).filter(e -> e != Other).toList();
+        check(mList);
+        return mList;
+    }
+
+    public static int getModsValue(String modsStr) {
+        var modStrArray = getModsString(modsStr);
+        var mList = Arrays.stream(modStrArray).map(Mod::fromStr).filter(e -> e != Other).toList();
+        return getModsValue(mList);
+    }
+
+    private static String[] getModsString(String modsStr) {
+        var newStr = modsStr.replaceAll("\\s+", "");
+        if (newStr.length() % 2 != 0) {
+            throw ModsCatchException.Create.SiseException();
+        }
+        return newStr.split("(?<=\\w)(?=(\\w{2})+$)");
+    }
+
+    private static void check(List<Mod> modList) {
+        if (modList.contains(None) && modList.size() > 1) {
+            throw ModsCatchException.Create.ConflictException(None);
+        }
+        if (modList.contains(DoubleTime) && modList.contains(HalfTime)) {
+            throw ModsCatchException.Create.ConflictException(DoubleTime, HalfTime);
+        }
+        if (modList.contains(HardRock) && modList.contains(Easy)) {
+            throw ModsCatchException.Create.ConflictException(HardRock, Easy);
+        }
+        if (modList.contains(NoFail) && (modList.contains(SuddenDeath) || modList.contains(Perfect))) {
+            throw ModsCatchException.Create.ConflictException(NoFail, SuddenDeath, Perfect);
+        }
+    }
+
+    public static int getModsValueFromStr(List<String> mList) {
+        return getModsValue(mList.stream().map(Mod::fromStr).toList());
+    }
+
+    public static int getModsValue(List<Mod> mList) {
+        check(mList);
+        return mList.stream().map(m -> m.value).reduce(0, (i, s) -> s | i);
     }
 
     public static Mod fromStr(String modStr) {

@@ -64,16 +64,20 @@ public class MapPoolDao {
         }
     }
 
-    public List<MapPool> queryByName(String name, int page, int size) {
-        return poolRepository.queryByName(name, PageRequest.of(page, size));
+    public List<MapPool> queryByName(String name, long userId, int page, int size) {
+        return poolRepository.queryByName(name, userId, PageRequest.of(page, size));
     }
 
-    public int countByName(String name) {
-        return poolRepository.countByName(name);
+    public int countByName(String name, long userId) {
+        return poolRepository.countByName(name, userId);
     }
 
     public Optional<MapPool> queryById(int id) {
-        return poolRepository.findById(id);
+        return poolRepository.getByIdNotDelete(id);
+    }
+
+    public int queryCountById(int id) {
+        return poolRepository.getCountById(id);
     }
 
     public MapPoolUser addAdminUser(long userId, long addUserId, int poolId) {
@@ -339,7 +343,7 @@ public class MapPoolDao {
         if (!isAdminByPool(pid, uid)) {
             throw new PermissionException();
         }
-        var poolOpt = poolRepository.getById(pid);
+        var poolOpt = poolRepository.getByIdNotDelete(pid);
         if (poolOpt.isEmpty()) {
             throw new RuntimeException("已被删除");
         }

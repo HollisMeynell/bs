@@ -1,12 +1,14 @@
 package l.f.mappool.entity;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
+@Getter
+@Setter
 @Entity
 @Table(name = "pool_category_group")
 public class MapCategoryGroup {
@@ -16,7 +18,6 @@ public class MapCategoryGroup {
     private Integer id;
 
     @ManyToOne()
-    @JsonManagedReference
     @JoinColumn(name = "pool_id")
     MapPool pool;
     @Column(name = "name", columnDefinition = "text")
@@ -25,20 +26,10 @@ public class MapCategoryGroup {
     @Column(name = "info", columnDefinition = "text")
     String info;
 
-    @JsonBackReference
-    @JsonIgnore
-    @OneToMany(mappedBy = "group")
+    @JsonIgnoreProperties({"group"})
+    @OneToMany(mappedBy = "group", fetch = FetchType.EAGER)
     List<MapCategory> categories;
     int sort = 0;
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
 
     public Integer getPoolId() {
         return pool.getId();
@@ -48,53 +39,5 @@ public class MapCategoryGroup {
         var p = new MapPool();
         p.setId(poolId);
         this.pool = p;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Integer getColor() {
-        return color;
-    }
-
-    public void setColor(Integer color) {
-        this.color = color;
-    }
-
-    public String getInfo() {
-        return info;
-    }
-
-    public void setInfo(String info) {
-        this.info = info;
-    }
-
-    public int getSort() {
-        return sort;
-    }
-
-    public void setSort(int sort) {
-        this.sort = sort;
-    }
-
-    public MapPool getPool() {
-        return pool;
-    }
-
-    public void setPool(MapPool pool) {
-        this.pool = pool;
-    }
-
-    public List<MapCategory> getCategories() {
-        return categories;
-    }
-
-    public void setCategories(List<MapCategory> categories) {
-        this.categories = categories;
     }
 }

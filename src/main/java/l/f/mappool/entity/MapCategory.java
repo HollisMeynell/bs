@@ -1,9 +1,10 @@
 package l.f.mappool.entity;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.DynamicUpdate;
 
 import java.util.List;
@@ -13,6 +14,8 @@ import java.util.List;
  */
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 @Entity
+@Getter
+@Setter
 @DynamicUpdate
 @Table(name = "pool_category")
 public class MapCategory {
@@ -21,7 +24,6 @@ public class MapCategory {
     Integer id;
 
     @ManyToOne()
-    @JsonManagedReference
     @JoinColumn(name = "group_id")
     MapCategoryGroup group;
 
@@ -33,26 +35,9 @@ public class MapCategory {
      */
     Long chosed;
 
-    @JsonBackReference
-    @OneToMany(mappedBy = "category")
+    @JsonIgnoreProperties({"category"})
+    @OneToMany(mappedBy = "category", fetch = FetchType.EAGER)
     List<MapCategoryItem> items;
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
 
     public Integer getGroupId() {
         return group.getId();
@@ -62,29 +47,5 @@ public class MapCategory {
         var g = new MapCategoryGroup();
         g.setId(groupId);
         this.group = g;
-    }
-
-    public MapCategoryGroup getGroup() {
-        return group;
-    }
-
-    public void setGroup(MapCategoryGroup group) {
-        this.group = group;
-    }
-
-    public Long getChosed() {
-        return chosed;
-    }
-
-    public void setChosed(Long chosed) {
-        this.chosed = chosed;
-    }
-
-    public List<MapCategoryItem> getItems() {
-        return items;
-    }
-
-    public void setItems(List<MapCategoryItem> items) {
-        this.items = items;
     }
 }

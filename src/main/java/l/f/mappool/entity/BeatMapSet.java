@@ -1,10 +1,9 @@
 package l.f.mappool.entity;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.*;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.DynamicUpdate;
 
 import java.util.List;
@@ -13,10 +12,12 @@ import java.util.List;
 //import javax.persistence.Convert;
 
 
-
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @Entity
+@Getter
+@Setter
 @DynamicUpdate
 @Table(name = "beatmapset")
 public class BeatMapSet {
@@ -29,82 +30,26 @@ public class BeatMapSet {
     Long mapperId;
 
     @JsonProperty("creator")
-    @Column(name = "mapper_name",columnDefinition = "text")
+    @Column(name = "mapper_name", columnDefinition = "text")
     String mapperName;
 
     @JsonProperty("artist")
-    @Column(name = "artist",columnDefinition = "text")
+    @Column(name = "artist", columnDefinition = "text")
     String artist;
 
     @JsonProperty("artist_unicode")
-    @Column(name = "artist_unicode",columnDefinition = "text")
+    @Column(name = "artist_unicode", columnDefinition = "text")
     String artistUTF8;
 
     @JsonProperty("title")
-    @Column(name = "title",columnDefinition = "text")
+    @Column(name = "title", columnDefinition = "text")
     String title;
 
     @JsonProperty("title_unicode")
-    @Column(name = "title_unicode",columnDefinition = "text")
+    @Column(name = "title_unicode", columnDefinition = "text")
     String titleUTF8;
 
-    @JsonManagedReference
-    @OneToMany(mappedBy = "beatMapSet")
+    @JsonIgnore
+    @OneToMany(mappedBy = "beatMapSet",cascade = {CascadeType.REFRESH}, orphanRemoval = true)
     List<BeatMap> beatMaps;
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Long getMapperId() {
-        return mapperId;
-    }
-
-    public void setMapperId(Long mapperId) {
-        this.mapperId = mapperId;
-    }
-
-    public String getMapperName() {
-        return mapperName;
-    }
-
-    public void setMapperName(String mapperName) {
-        this.mapperName = mapperName;
-    }
-
-    public String getArtist() {
-        return artist;
-    }
-
-    public void setArtist(String artist) {
-        this.artist = artist;
-    }
-
-    public String getArtistUTF8() {
-        return artistUTF8;
-    }
-
-    public void setArtistUTF8(String artistUTF8) {
-        this.artistUTF8 = artistUTF8;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getTitleUTF8() {
-        return titleUTF8;
-    }
-
-    public void setTitleUTF8(String titleUTF8) {
-        this.titleUTF8 = titleUTF8;
-    }
 }

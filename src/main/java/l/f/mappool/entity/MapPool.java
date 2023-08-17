@@ -43,13 +43,15 @@ public class MapPool {
     @Enumerated(EnumType.STRING)
     PoolStatus status = PoolStatus.OPEN;
 
+    @JsonIgnoreProperties({"pool"})
     @ToString.Exclude
-    @JsonBackReference
-    @OneToMany(mappedBy = "pool")
+    @OneToMany(mappedBy = "pool", fetch = FetchType.EAGER)
     List<MapPoolUser> users;
 
+    @JsonIgnoreProperties({"pool"})
     @ToString.Exclude
-    @JsonBackReference
-    @OneToMany(mappedBy = "pool")
+    @OneToMany(mappedBy = "pool", fetch = FetchType.EAGER)
     List<MapCategoryGroup> groups;
+
+
 }

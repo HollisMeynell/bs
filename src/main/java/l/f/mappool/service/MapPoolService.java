@@ -100,22 +100,23 @@ public class MapPoolService {
         return mapPoolDao.getAllCategotys(id);
     }
 
-    public List<MapPool> queryByNameAndId(QueryMapPoolDto query) {
+    public List<MapPool> queryByNameAndId(QueryMapPoolDto query, long userId) {
 
         if (query.getPoolId() != null) {
             var data = mapPoolDao.queryById(query.getPoolId());
             return data.map(List::of).orElseGet(() -> new ArrayList<>(0));
         } else {
             // 查询的页码从0开始
-            return mapPoolDao.queryByName(query.getPoolName(), query.getPageNum() - 1, query.getPageSize());
+
+            return mapPoolDao.queryByName(query.getPoolName(), userId, query.getPageNum() - 1, query.getPageSize());
         }
     }
 
-    public int countByNameAndId(QueryMapPoolDto query) {
+    public int countByNameAndId(QueryMapPoolDto query, long userId) {
         if (query.getPoolId() != null) {
-            return mapPoolDao.queryById(query.getPoolId()).isPresent() ? 1 : 0;
+            return mapPoolDao.queryCountById(query.getPoolId());
         }
-        return mapPoolDao.countByName(query.getPoolName());
+        return mapPoolDao.countByName(query.getPoolName(), userId);
     }
 
     public void addMarkPool(long uid, int pid) {

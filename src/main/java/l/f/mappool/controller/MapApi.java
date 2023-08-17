@@ -9,10 +9,7 @@ import l.f.mappool.dto.validator.mapPool.CreateCategory;
 import l.f.mappool.dto.validator.mapPool.CreateCategoryGroup;
 import l.f.mappool.dto.validator.mapPool.CreatePool;
 import l.f.mappool.dto.validator.mapPool.SetPool;
-import l.f.mappool.entity.MapCategory;
-import l.f.mappool.entity.MapCategoryGroup;
-import l.f.mappool.entity.MapCategoryItem;
-import l.f.mappool.entity.MapPool;
+import l.f.mappool.entity.*;
 import l.f.mappool.enums.PoolPermission;
 import l.f.mappool.service.MapPoolService;
 import l.f.mappool.service.OsuGetService;
@@ -47,8 +44,9 @@ public class MapApi {
      */
     @GetMapping("/queryPublic")
     DataListVo<MapPool> query(@Validated QueryMapPoolDto queryMapPoolDto) {
-        var allCount = mapPoolService.countByNameAndId(queryMapPoolDto);
-        var data = mapPoolService.queryByNameAndId(queryMapPoolDto);
+        var u = ContextUtil.getContextUser();
+        var allCount = mapPoolService.countByNameAndId(queryMapPoolDto, u.getOsuId());
+        var data = mapPoolService.queryByNameAndId(queryMapPoolDto, u.getOsuId());
         return new DataListVo<MapPool>()
                 .setData(data)
                 .setTotalItems(allCount)
@@ -149,7 +147,11 @@ public class MapApi {
     @GetMapping("/getMapInfo")
     DataListVo<FavoritesLiteVo> getMapInfo(@Validated @Nullable QueryMapPoolDto m) {
         var user = ContextUtil.getContextUser();
-        user.getOsuId();
         return mapPoolService.getMapInfo();
+    }
+
+    @GetMapping("/getBeatMapInfo/{bid}")
+    DataVo<BeatMap> getBeatmap(@PathVariable("bid") long bid) {
+        return new DataVo<>(osuService.getMapInfoByDB(bid));
     }
 }

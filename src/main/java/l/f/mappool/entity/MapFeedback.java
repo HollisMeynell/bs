@@ -1,14 +1,16 @@
 package l.f.mappool.entity;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.DynamicUpdate;
 
 
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 @Entity
+@Getter
+@Setter
 @DynamicUpdate
 @Table(name = "pool_feedback")
 public class MapFeedback {
@@ -21,7 +23,6 @@ public class MapFeedback {
     Long createrId;
 
     @ManyToOne()
-    @JsonManagedReference
     @JoinColumn(name = "category_item_id")
     MapCategoryItem item;
 
@@ -33,15 +34,6 @@ public class MapFeedback {
 
     Boolean agree;
 
-
-    public MapCategoryItem getItem() {
-        return item;
-    }
-
-    public void setItem(MapCategoryItem item) {
-        this.item = item;
-    }
-
     public int getItemId() {
         return item.id;
     }
@@ -50,46 +42,6 @@ public class MapFeedback {
         var i = new MapCategoryItem();
         i.setId(itemId);
         this.item = i;
-    }
-
-    public boolean isDeleted() {
-        return deleted;
-    }
-
-    public void setDeleted(boolean deleted) {
-        this.deleted = deleted;
-    }
-
-    public String getFeedback() {
-        return feedback;
-    }
-
-    public void setFeedback(String feedback) {
-        this.feedback = feedback;
-    }
-
-    public Boolean getAgree() {
-        return agree;
-    }
-
-    public void setAgree(Boolean agree) {
-        this.agree = agree;
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public Long getCreaterId() {
-        return createrId;
-    }
-
-    public void setCreaterId(Long createrId) {
-        this.createrId = createrId;
     }
 }
 

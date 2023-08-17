@@ -5,7 +5,9 @@ import l.f.mappool.entity.BeatMap;
 import l.f.mappool.entity.OsuUser;
 import l.f.mappool.properties.BeatmapSelectionProperties;
 import l.f.mappool.properties.OsuProperties;
+import l.f.mappool.repository.BeatMapRepository;
 import l.f.mappool.repository.OsuUserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -17,8 +19,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.util.Collections;
 
 @Service
+@Slf4j
 public class OsuGetService {
-    /***
+    /*
      * https://osu.ppy.sh/users/[uid]/card
      * https://osu.ppy.sh/users/[uid]/extra-pages/historical?mode=osu
      * https://osu.ppy.sh/users/[uid]/scores/best?mode=osu&limit=100&offset=0 bp成绩
@@ -29,12 +32,19 @@ public class OsuGetService {
     String accessToken;
     RestTemplate template;
     OsuUserRepository osuUserRepository;
+    BeatMapRepository beatMapRepository;
     private final String redirectUrl;
     private final int oauthId;
     private final String oauthToken;
 
     @Autowired
-    public OsuGetService(RestTemplate template, OsuUserRepository osuUserRepository, BeatmapSelectionProperties properties, OsuProperties osuProperties) {
+    public OsuGetService(
+            RestTemplate template,
+            OsuUserRepository osuUserRepository,
+            BeatmapSelectionProperties properties,
+            OsuProperties osuProperties,
+            BeatMapRepository beatMapRepository
+    ) {
         this.redirectUrl = String.format("http%s://%s%s",
                 Boolean.TRUE.equals(properties.getSsl()) ? "s" : "",
                 properties.getLocalUrl(),
@@ -44,6 +54,7 @@ public class OsuGetService {
         this.osuUserRepository = osuUserRepository;
         this.oauthId = osuProperties.getOauth().getId();
         this.oauthToken = osuProperties.getOauth().getToken();
+        this.beatMapRepository = beatMapRepository;
     }
 
     public String getOauthUrl(String state) {
@@ -71,8 +82,10 @@ public class OsuGetService {
 
         HttpEntity<?> httpEntity = new HttpEntity<>(body, headers);
         var s = template.postForObject(url, httpEntity, JsonNode.class);
-        accessToken = s.get("access_token").asText();
-        time = System.currentTimeMillis() + s.get("expires_in").asLong() * 1000;
+        if (s != null) {
+            accessToken = s.get("access_token").asText();
+            time = System.currentTimeMillis() + s.get("expires_in").asLong() * 1000;
+        }
         return accessToken;
     }
 
@@ -105,8 +118,8 @@ public class OsuGetService {
 
     /***
      * 刷新令牌
-     * @param osuUser
-     * @return
+     * @param osuUser user
+     * @return 令牌请求的原始类型
      */
     public JsonNode refreshToken(OsuUser osuUser) {
         String url = "https://osu.ppy.sh/oauth/token";
@@ -147,15 +160,26 @@ public class OsuGetService {
         return user;
     }
 
-    public BeatMap getMapInfo(long bid) {
+    private BeatMap getMapInfo(long bid) {
         String url = "https://osu.ppy.sh/api/v2/beatmaps/" + bid;
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
         headers.set("Authorization", "Bearer " + getToken());
-
         HttpEntity<String> httpEntity = new HttpEntity<>(headers);
+//        ResponseEntity<JsonNode> c = template.exchange(url, HttpMethod.GET, httpEntity, JsonNode.class);
+//        log.error("{}", c.getBody().toPrettyString());
+//        throw new RuntimeException("err");
         ResponseEntity<BeatMap> c = template.exchange(url, HttpMethod.GET, httpEntity, BeatMap.class);
         return c.getBody();
+    }
+
+    public BeatMap getMapInfoByDB(long bid) {
+        var map = beatMapRepository.findBeatMapById(bid);
+        return map.orElseGet(()->{
+            var get = getMapInfo(bid);
+            beatMapRepository.save(get);
+            return get;
+        });
     }
 }
