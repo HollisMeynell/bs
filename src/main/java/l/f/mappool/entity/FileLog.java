@@ -28,6 +28,9 @@ public class FileLog {
     @Column(name = "create_from", columnDefinition = "TIMESTAMP")
     LocalDateTime createTime = LocalDateTime.now();
 
+    @Column(name = "update_from", columnDefinition = "TIMESTAMP")
+    LocalDateTime updateTime = LocalDateTime.now();
+
     public Integer getId() {
         return id;
     }
@@ -58,5 +61,17 @@ public class FileLog {
 
     public void setCreateTime(LocalDateTime createTime) {
         this.createTime = createTime;
+    }
+
+    public LocalDateTime getUpdateTime() {
+        return updateTime;
+    }
+
+    public void setUpdateTime(LocalDateTime updateTime) {
+        this.updateTime = updateTime;
+    }
+
+    public void update() {
+        this.updateTime = LocalDateTime.now();
     }
 }

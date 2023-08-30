@@ -23,3 +23,7 @@ spring:
     show-sql: true
   profiles:
     active: tmp
+  task:
+    execution:
+      pool:
+        core-size: 10

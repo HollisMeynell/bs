@@ -3,6 +3,7 @@ package l.f.mappool.config.interceptor;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import l.f.mappool.entity.User;
+import l.f.mappool.exception.HttpError;
 import l.f.mappool.service.UserService;
 import l.f.mappool.util.ContextUtil;
 import l.f.mappool.util.JwtUtil;
@@ -40,12 +41,12 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
 
             String header = request.getHeader("Authorization");
             if (header == null || !header.startsWith("Bearer ")) {
-                throw new RuntimeException("no login");
+                throw new HttpError(401, "no login");
             }
             String token = header.substring(7);
             User user = JwtUtil.verifyToken(token);
             if (user == null || !userService.loginCheck(user)) {
-                throw new RuntimeException("身份验证失败,尝试重新登陆");
+                throw new HttpError(401, "身份验证失败,尝试重新登陆");
             }
             ContextUtil.setContextUser(user);
             return true;
