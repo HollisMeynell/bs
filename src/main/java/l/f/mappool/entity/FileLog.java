@@ -10,7 +10,9 @@ import java.time.LocalDateTime;
 
 @Entity
 @DynamicUpdate
-@Table(name = "files")
+@Table(name = "files", indexes = {
+        @Index(name = "local_name", columnList = "local")
+})
 @Accessors(chain = true)
 @AllArgsConstructor
 @NoArgsConstructor

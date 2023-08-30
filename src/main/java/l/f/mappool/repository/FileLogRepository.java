@@ -23,15 +23,15 @@ public interface FileLogRepository extends JpaRepository<FileLog, Integer> {
     }
 
     @Query("select f.localName from FileLog f where f.updateTime<:time")
-    List<String> getLocalNamesByUpdateTimeBefor(LocalDateTime time);
-
-    @Modifying
-    @Transactional
-    @Query("update FileLog f set f.updateTime=:time where f.localName=:name")
-    void updateByLocalName(String name, LocalDateTime time);
+    List<String> getLocalNamesByUpdateTimeBefore(LocalDateTime time);
 
     @Modifying
     @Transactional
     @Query("delete from FileLog f where f.localName in (:localNames)")
-    void deleteByUpdateTimeBefore(List<String> localNames);
+    void deleteByLocalName(List<String> localNames);
+
+    @Modifying
+    @Transactional
+    @Query("delete from FileLog f where f.localName=:localNames")
+    void deleteByLocalName(String localNames);
 }

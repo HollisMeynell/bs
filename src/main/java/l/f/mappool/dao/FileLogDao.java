@@ -1,5 +1,6 @@
 package l.f.mappool.dao;
 
+import l.f.mappool.entity.FileLog;
 import l.f.mappool.properties.BeatmapSelectionProperties;
 import l.f.mappool.repository.FileLogRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,8 +13,8 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Component
@@ -40,14 +41,21 @@ public class FileLogDao {
             return "unknown";
         }
     }
-    public byte[] getData(String key) throws IOException {
-        var path = Path.of(SAVE_PATH, key);
+    public Optional<FileLog> getFileLog(String key) {
+        return fileLogRepository.getFileLogByLocalName(key);
+    }
+    public byte[] getData(FileLog fileLog) throws IOException {
+        var path = Path.of(SAVE_PATH, fileLog.getLocalName());
+
         if (Files.isRegularFile(path) && Files.isReadable(path)) {
             var fileData =  Files.readAllBytes(path);
-            fileLogRepository.updateByLocalName(key, LocalDateTime.now());
+            fileLog.update();
+            fileLogRepository.save(fileLog);
             return fileData;
+        } else {
+            fileLogRepository.delete(fileLog);
         }
-        throw new IOException("file not found");
+        throw new IOException("file not in local");
     }
 
     public String writeFile(String name, InputStream in) throws IOException {
@@ -67,11 +75,19 @@ public class FileLogDao {
         return key;
     }
 
+    public void deleteFile(String key) throws IOException {
+        Path path = Path.of(SAVE_PATH, key);
+        if (Files.isRegularFile(path) && Files.isWritable(path)) {
+            Files.delete(path);
+            fileLogRepository.deleteByLocalName(key);
+        }
+    }
+
 
     public int deleteAllOldFile(){
         // when a file not visited for 30 days, delete it
-        LocalDateTime before = LocalDateTime.now();
-        List<String> files = fileLogRepository.getLocalNamesByUpdateTimeBefor(before);
+        LocalDateTime before = LocalDateTime.now().minusDays(31);
+        List<String> files = fileLogRepository.getLocalNamesByUpdateTimeBefore(before);
         if (files.isEmpty()) {
             return 0;
         }
@@ -84,7 +100,7 @@ public class FileLogDao {
                 // ignore
             }
         });
-        fileLogRepository.deleteByUpdateTimeBefore(files);
+        fileLogRepository.deleteByLocalName(files);
         return deleteCount.get();
     }
 }

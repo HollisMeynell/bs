@@ -3,6 +3,7 @@ package l.f.mappool.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import l.f.mappool.config.interceptor.Open;
 import l.f.mappool.dao.FileLogDao;
+import l.f.mappool.entity.FileLog;
 import l.f.mappool.exception.LogException;
 import l.f.mappool.vo.DataVo;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +18,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @Open
 @Slf4j
@@ -67,7 +69,11 @@ public class FileApi {
         headers.setContentDisposition(ContentDisposition.inline().filename(fileLogDao.getFileName(key)).build());
         headers.setContentType(MediaType.IMAGE_PNG);
         try {
-            byte[] data = fileLogDao.getData(key);
+            Optional<FileLog> fileLog = fileLogDao.getFileLog(key);
+            if (fileLog.isEmpty()){
+                throw new IOException();
+            }
+            byte[] data = fileLogDao.getData(fileLog.get());
             headers.setContentLength(data.length);
             return new ResponseEntity<>(data, headers, HttpStatus.OK);
         } catch (IOException e) {
@@ -82,7 +88,11 @@ public class FileApi {
     @GetMapping(value = "/download/{key}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public byte[] getFile(@PathVariable("key")String key) throws IOException {
         try {
-            return fileLogDao.getData(key);
+            Optional<FileLog> fileLog = fileLogDao.getFileLog(key);
+            if (fileLog.isEmpty()){
+                throw new IOException();
+            }
+            return fileLogDao.getData(fileLog.get());
         } catch (IOException e) {
             throw new LogException("文件已失效...", 404);
         }
