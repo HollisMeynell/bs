@@ -9,6 +9,7 @@ import l.f.mappool.exception.PermissionException;
 import l.f.mappool.repository.MapPoolMark4UserRepository;
 import l.f.mappool.repository.MapPoolUserRepository;
 import l.f.mappool.vo.DataListVo;
+import l.f.mappool.vo.DataVo;
 import l.f.mappool.vo.FavoritesLiteVo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -45,13 +46,74 @@ public class MapPoolService {
         if (this.isMax(user)) {
             throw new RuntimeException("to many");
         }
-        var pool = mapPoolDao.createPool(user.getOsuId(), name, banner, info);
-        return pool;
+        return mapPoolDao.createPool(user.getOsuId(), name, banner, info);
     }
 
     public MapPool updateMapPool(long userId, int poolId, String name, String banner, String info) {
-        final MapPoolDao mapPoolDao1 = mapPoolDao;
-        return null;
+        if (!mapPoolDao.isAdminByPool(poolId, userId)) {
+            throw new PermissionException();
+        }
+
+        var poolOpt = mapPoolDao.getMapPoolById(poolId);
+        if (poolOpt.isEmpty()) {
+            throw new RuntimeException("pool not found");
+        }
+
+        var pool = poolOpt.get();
+        if (name != null && !name.isBlank()) {
+            pool.setName(name);
+        }
+        if (banner != null && !banner.isBlank()) {
+            pool.setBanner(banner);
+        }
+        if (info != null && !info.isBlank()) {
+            pool.setInfo(info);
+        }
+
+        return mapPoolDao.saveMapPool(pool);
+    }
+
+    /***
+     * 创建一个分类组,比如 NM,HD 这种
+     * @param uid
+     * @param poolId
+     * @param name
+     * @param info
+     * @param color
+     * @return
+     */
+    public MapCategoryGroup createCategoryGroup(long uid, int poolId, String name, String info, int color) {
+        if (!mapPoolDao.isAdminByPool(poolId, uid)) {
+            throw new PermissionException();
+        }
+        return mapPoolDao.createCategoryGroup(uid, poolId, name, info, color);
+    }
+
+    public MapCategoryGroup updateCategoryGroup(long uid, int groupId, String name, String info, Integer color, Integer sort) {
+        if (!mapPoolDao.isAdminByGroup(groupId, uid)) {
+            throw new PermissionException();
+        }
+
+        var groupOpt = mapPoolDao.getCategoryGroupById(groupId);
+        if (groupOpt.isEmpty()) {
+            throw new RuntimeException("group not found");
+        }
+
+        var group = groupOpt.get();
+        if (name != null && !name.isBlank()) {
+            group.setName(name);
+        }
+        if (info != null && !info.isBlank()) {
+            group.setInfo(info);
+        }
+        if (color != null) {
+            group.setColor(color);
+        }
+        if (sort != null) {
+            group.setSort(sort);
+        }
+
+        return mapPoolDao.saveMapCategoryGroup(group);
     }
 
     public MapCategoryItem createCategoryItem(long uid, int categoryId, long bid, String info) {
@@ -76,28 +138,12 @@ public class MapPoolService {
         return mapPoolDao.createCategory(uid, groupId, name);
     }
 
-    /***
-     * 创建一个分类组,比如 NM,HD 这种
-     * @param uid
-     * @param poolId
-     * @param name
-     * @param info
-     * @param color
-     * @return
-     */
-    public MapCategoryGroup createCategoryGroup(long uid, int poolId, String name, String info, int color) {
-        if (!mapPoolDao.isAdminByPool(poolId, uid)) {
-            throw new PermissionException();
-        }
-        return mapPoolDao.createCategoryGroup(uid, poolId, name, info, color);
-    }
-
     public Map<PoolPermission, List<MapPool>> getAllPool(long osuId) {
         return mapPoolDao.getAllPool(osuId);
     }
 
-    public List<MapCategoryGroup> getCategoryGroup(int id) {
-        return mapPoolDao.getAllCategotys(id);
+    public List<MapCategoryGroup> getCategoryGroup(int poolId) {
+        return mapPoolDao.getAllCategotys(poolId);
     }
 
     public List<MapPool> queryByNameAndId(QueryMapPoolDto query, long userId) {
@@ -145,5 +191,18 @@ public class MapPoolService {
     public DataListVo<FavoritesLiteVo> getMapInfo() {
         List<FavoritesLiteVo> list = null;
         return new DataListVo<FavoritesLiteVo>().setData(list).setPageSize(0);
+    }
+
+    public DataVo<MapPoolUser> addAdminUser(long userId, long addUserId, int poolId) {
+        var u = mapPoolDao.addAdminUser(userId, addUserId, poolId);
+        return new DataVo<>(u);
+    }
+    public DataVo<MapPoolUser> addChooserUser(long userId, long addUserId, int poolId) {
+        var u = mapPoolDao.addChooserUser(userId, addUserId, poolId);
+        return new DataVo<>(u);
+    }
+    public DataVo<MapPoolUser> addTesterUser(long userId, long addUserId, int poolId) {
+        var u = mapPoolDao.addTesterUser(userId, addUserId, poolId);
+        return new DataVo<>(u);
     }
 }

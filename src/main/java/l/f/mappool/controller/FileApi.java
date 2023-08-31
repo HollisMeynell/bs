@@ -82,6 +82,21 @@ public class FileApi {
     }
 
     /**
+     *
+     * @param key
+     * @return
+     */
+    @DeleteMapping(value = "/delete")
+    public DataVo<Boolean> deleteFile(@RequestParam("key") String key) {
+        try {
+            fileLogDao.deleteFile(key);
+        } catch (IOException e) {
+            return new DataVo<>(Boolean.FALSE).setMessage("删除失败: " + e.getMessage()).setCode(502);
+        }
+        return new DataVo<>(Boolean.TRUE);
+    }
+
+    /**
      * 下载文件
      * @param key 文件key
      */

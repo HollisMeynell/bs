@@ -8,5 +8,5 @@ import lombok.experimental.Accessors;
 public class LoginUserVo {
     String name;
     String token;
-    long uid;
+    Long uid;
 }

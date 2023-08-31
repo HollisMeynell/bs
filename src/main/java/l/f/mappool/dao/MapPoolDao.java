@@ -45,6 +45,8 @@ public class MapPoolDao {
         this.entityManager = entityManager;
     }
 
+    /************************************************** Pool *****************************************************************/
+
     /***
      * 创建
      * @return 新 MapPool
@@ -74,111 +76,6 @@ public class MapPoolDao {
 
     public Optional<MapPool> queryById(int id) {
         return poolRepository.getByIdNotDelete(id);
-    }
-
-    public int queryCountById(int id) {
-        return poolRepository.getCountById(id);
-    }
-
-    public MapPoolUser addAdminUser(long userId, long addUserId, int poolId) {
-        if (!isCreaterByPool(poolId, userId)) {
-            throw new PermissionException();
-        }
-        return addUser(addUserId, poolId, PoolPermission.ADMIN);
-    }
-
-
-    public MapPoolUser addChooserUser(long userId, long addUserId, int poolId) {
-        if (!isAdminByPool(poolId, userId)) {
-            throw new PermissionException();
-        }
-        return addUser(addUserId, poolId, PoolPermission.CHOOSER);
-    }
-
-    public MapPoolUser addTesterUser(long userId, long addUserId, int poolId) {
-        if (!isAdminByPool(poolId, userId)) {
-            throw new PermissionException();
-        }
-        return addUser(addUserId, poolId, PoolPermission.TESTER);
-    }
-
-    /***
-     *  创建分组 比如NM组
-     * @param userId
-     * @param poolId
-     * @param name
-     * @param info
-     * @param color
-     * @return
-     */
-    public MapCategoryGroup createCategoryGroup(long userId, int poolId, String name, String info, int color) {
-        if (!isAdminByPool(poolId, userId)) {
-            throw new PermissionException();
-        }
-
-        var mg = new MapCategoryGroup();
-        mg.setPoolId(poolId);
-        mg.setColor(color);
-        mg.setName(name);
-        mg.setInfo(info);
-        mg.setSort(0);
-        return categoryGroupRepository.save(mg);
-    }
-
-    /**
-     * 创建具体分类 比如NM1
-     *
-     * @param groupId      CategoryGroup.id
-     * @param categoryName
-     * @return
-     */
-    public MapCategory createCategory(long userId, int groupId, String categoryName) {
-        if (!isAdminByGroup(groupId, userId)) {
-            throw new PermissionException();
-        }
-
-        var category = new MapCategory();
-        category.setGroupId(groupId);
-        category.setName(categoryName);
-        return categoryRepository.save(category);
-    }
-
-    /***
-     * 加一张图
-     * @return 包含推荐人id, bid, 描述信息的结构
-     */
-    public MapCategoryItem createCategoryItem(long userId, int categoryId, long bid, String info) {
-        var categoryOpt = categoryRepository.findById(categoryId);
-        if (categoryOpt.isEmpty()) {
-            throw new RuntimeException("not found");
-        }
-        var category = categoryOpt.get();
-        if (!isChooserByGroup(category.getGroupId(), userId)) {
-            throw new PermissionException();
-        }
-        var categoryItem = new MapCategoryItem();
-        categoryItem.setSort(0);
-        categoryItem.setInfo(info);
-        categoryItem.setChous(bid);
-        categoryItem.setCategoryId(categoryId);
-        return categoryItemRepository.save(categoryItem);
-    }
-
-    public MapFeedback createFeedback(long userId, int categoryItemId, @Nullable Boolean agree, String msg) {
-        var categoryItem = categoryItemRepository.findById(categoryItemId);
-        if (categoryItem.isEmpty()) {
-            throw new RuntimeException("not found");
-        }
-        var category = categoryItem.get().getCategory();
-        if (!isUserByGroup(category.getGroupId(), userId)) {
-            throw new PermissionException();
-        }
-        var feedback = new MapFeedback();
-        feedback.setAgree(agree);
-        feedback.setFeedback(msg);
-        feedback.setCreaterId(userId);
-        feedback.setItemId(categoryItemId);
-        return feedbackRepository.save(feedback);
     }
 
     public List<MapPool> getPublicPool() {
@@ -215,18 +112,84 @@ public class MapPoolDao {
         return poolRepository.getAllOpenPool();
     }
 
-    public List<MapCategoryGroup> getAllCategotys(int poolId) {
-        var groups = categoryRepository.getAllCategory(poolId);
-        for (var g : groups) {
-            g.setCategories(categoryRepository.getAllByGroup(g));
-        }
-        return groups;
+    public List<MapPool> getAllMarkPool(long uid) {
+        return poolRepository.queryByUserMark(uid);
     }
 
-    public List<MapCategoryItem> getAllCategoryItems(int categoryId) {
-        var selectAttr = new MapCategory();
-        selectAttr.setId(categoryId);
-        return categoryItemRepository.findAllByCategory(selectAttr);
+    public Optional<MapPool> getMapPoolById(int id) {
+        return poolRepository.getByIdNotDelete(id);
+    }
+
+    public MapPool saveMapPool(MapPool pool) {
+        return poolRepository.saveAndFlush(pool);
+    }
+
+    /***
+     * 真删除
+     * @param uid uid
+     * @param pid pool id
+     */
+    public void removePool(long uid, int pid) {
+        if (!isAdminByPool(pid, uid)) {
+            throw new PermissionException();
+        }
+        var poolOpt = poolRepository.getById(pid);
+        if (poolOpt.isEmpty()) {
+            throw new RuntimeException("已被删除");
+        }
+        var pool = poolOpt.get();
+        if (pool.getStatus() != PoolStatus.DELETE) {
+            throw new RuntimeException("先执行delete");
+        }
+        poolUserRepository.deleteByPool(pool);
+        poolRepository.delete(pool);
+    }
+
+    public void deletePool(long uid, int pid) {
+        if (!isAdminByPool(pid, uid)) {
+            throw new PermissionException();
+        }
+        var poolOpt = poolRepository.getByIdNotDelete(pid);
+        if (poolOpt.isEmpty()) {
+            throw new RuntimeException("已被删除");
+        }
+        var pool = poolOpt.get();
+        if (!pool.getGroups().isEmpty()) {
+            throw new RuntimeException("图池不为空,请删掉全部内容.");
+        }
+        if (!pool.getUsers().isEmpty()) {
+            throw new RuntimeException("图池仍有成员,请删掉所有其他成员.");
+        }
+        pool.setStatus(PoolStatus.DELETE);
+        poolRepository.save(pool);
+    }
+
+    /************************************************** User *****************************************************************/
+
+    public int queryCountById(int id) {
+        return poolRepository.getCountById(id);
+    }
+
+    public MapPoolUser addAdminUser(long userId, long addUserId, int poolId) {
+        if (!isCreaterByPool(poolId, userId)) {
+            throw new PermissionException();
+        }
+        return addUser(addUserId, poolId, PoolPermission.ADMIN);
+    }
+
+
+    public MapPoolUser addChooserUser(long userId, long addUserId, int poolId) {
+        if (!isAdminByPool(poolId, userId)) {
+            throw new PermissionException();
+        }
+        return addUser(addUserId, poolId, PoolPermission.CHOOSER);
+    }
+
+    public MapPoolUser addTesterUser(long userId, long addUserId, int poolId) {
+        if (!isAdminByPool(poolId, userId)) {
+            throw new PermissionException();
+        }
+        return addUser(addUserId, poolId, PoolPermission.TESTER);
     }
 
     private boolean testBef(Optional<MapPoolUser> userOpt, PoolPermission... poolPermissions) {
@@ -314,47 +277,110 @@ public class MapPoolDao {
         return poolUserRepository.save(addUser);
     }
 
-    public List<MapPool> getAllMarkPool(long uid) {
-        return poolRepository.queryByUserMark(uid);
-    }
+    /************************************************** Group *****************************************************************/
 
     /***
-     * 真删除
-     * @param uid uid
-     * @param pid pool id
+     *  创建分组 比如NM组
+     * @param userId
+     * @param poolId
+     * @param name
+     * @param info
+     * @param color
+     * @return
      */
-    public void removePool(long uid, int pid) {
-        if (!isAdminByPool(pid, uid)) {
+    public MapCategoryGroup createCategoryGroup(long userId, int poolId, String name, String info, int color) {
+        if (!isAdminByPool(poolId, userId)) {
             throw new PermissionException();
         }
-        var poolOpt = poolRepository.getById(pid);
-        if (poolOpt.isEmpty()) {
-            throw new RuntimeException("已被删除");
-        }
-        var pool = poolOpt.get();
-        if (pool.getStatus() != PoolStatus.DELETE) {
-            throw new RuntimeException("先执行delete");
-        }
-        poolUserRepository.deleteByPool(pool);
-        poolRepository.delete(pool);
+
+        var mg = new MapCategoryGroup();
+        mg.setPoolId(poolId);
+        mg.setColor(color);
+        mg.setName(name);
+        mg.setInfo(info);
+        mg.setSort(0);
+        return categoryGroupRepository.save(mg);
     }
 
-    public void deletePool(long uid, int pid) {
-        if (!isAdminByPool(pid, uid)) {
+    public Optional<MapCategoryGroup> getCategoryGroupById(int groupId) {
+        return categoryGroupRepository.findById(groupId);
+    }
+
+    public MapCategoryGroup saveMapCategoryGroup(MapCategoryGroup group) {
+        return categoryGroupRepository.saveAndFlush(group);
+    }
+
+    /************************************************** Category *****************************************************************/
+
+    /**
+     * 创建具体分类 比如NM1
+     *
+     * @param groupId      CategoryGroup.id
+     * @param categoryName
+     * @return
+     */
+    public MapCategory createCategory(long userId, int groupId, String categoryName) {
+        if (!isAdminByGroup(groupId, userId)) {
             throw new PermissionException();
         }
-        var poolOpt = poolRepository.getByIdNotDelete(pid);
-        if (poolOpt.isEmpty()) {
-            throw new RuntimeException("已被删除");
+
+        var category = new MapCategory();
+        category.setGroupId(groupId);
+        category.setName(categoryName);
+        return categoryRepository.save(category);
+    }
+
+    /************************************************** Item *****************************************************************/
+
+    /***
+     * 加一张图
+     * @return 包含推荐人id, bid, 描述信息的结构
+     */
+    public MapCategoryItem createCategoryItem(long userId, int categoryId, long bid, String info) {
+        var categoryOpt = categoryRepository.findById(categoryId);
+        if (categoryOpt.isEmpty()) {
+            throw new RuntimeException("not found");
         }
-        var pool = poolOpt.get();
-        if (!pool.getGroups().isEmpty()) {
-            throw new RuntimeException("图池不为空,请删掉全部内容.");
+        var category = categoryOpt.get();
+        if (!isChooserByGroup(category.getGroupId(), userId)) {
+            throw new PermissionException();
         }
-        if (!pool.getUsers().isEmpty()) {
-            throw new RuntimeException("图池仍有成员,请删掉所有其他成员.");
+        var categoryItem = new MapCategoryItem();
+        categoryItem.setSort(0);
+        categoryItem.setInfo(info);
+        categoryItem.setChous(bid);
+        categoryItem.setCategoryId(categoryId);
+        return categoryItemRepository.save(categoryItem);
+    }
+
+    public MapFeedback createFeedback(long userId, int categoryItemId, @Nullable Boolean agree, String msg) {
+        var categoryItem = categoryItemRepository.findById(categoryItemId);
+        if (categoryItem.isEmpty()) {
+            throw new RuntimeException("not found");
         }
-        pool.setStatus(PoolStatus.DELETE);
-        poolRepository.save(pool);
+        var category = categoryItem.get().getCategory();
+        if (!isUserByGroup(category.getGroupId(), userId)) {
+            throw new PermissionException();
+        }
+        var feedback = new MapFeedback();
+        feedback.setAgree(agree);
+        feedback.setFeedback(msg);
+        feedback.setCreaterId(userId);
+        feedback.setItemId(categoryItemId);
+        return feedbackRepository.save(feedback);
+    }
+
+    public List<MapCategoryGroup> getAllCategotys(int poolId) {
+        var groups = categoryRepository.getAllCategory(poolId);
+        for (var g : groups) {
+            g.setCategories(categoryRepository.getAllByGroup(g));
+        }
+        return groups;
+    }
+
+    public List<MapCategoryItem> getAllCategoryItems(int categoryId) {
+        var selectAttr = new MapCategory();
+        selectAttr.setId(categoryId);
+        return categoryItemRepository.findAllByCategory(selectAttr);
     }
 }
