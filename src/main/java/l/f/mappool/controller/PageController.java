@@ -8,6 +8,7 @@ import java.util.regex.Pattern;
 
 @Open
 @Controller
+@SuppressWarnings("all")
 public class PageController {
     /**
      * 前端静态资源映射

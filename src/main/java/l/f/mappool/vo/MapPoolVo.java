@@ -5,6 +5,7 @@ import org.springframework.beans.BeanUtils;
 
 import java.util.List;
 
+@SuppressWarnings("unused")
 public class MapPoolVo extends MapPool {
     public MapPoolVo(){};
     public MapPoolVo(MapPool p){

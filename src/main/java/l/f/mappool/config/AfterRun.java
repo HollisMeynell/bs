@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 public class AfterRun implements CommandLineRunner {
     private static final Logger log = LoggerFactory.getLogger(AfterRun.class);
     @Override
-    public void run(String... args) throws Exception {
+    public void run(String... args) {
         log.info("ok!");
     }
 }

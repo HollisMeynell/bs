@@ -5,17 +5,18 @@ import jakarta.annotation.Resource;
 import l.f.mappool.config.interceptor.Open;
 import l.f.mappool.dao.MapPoolDao;
 import l.f.mappool.dto.ProxyDto;
+import l.f.mappool.entity.MapPool;
 import l.f.mappool.exception.HttpError;
-import l.f.mappool.service.OsuGetService;
+import l.f.mappool.service.OsuApiService;
 import l.f.mappool.vo.DataVo;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import java.util.List;
 
 @Open
 @Controller
@@ -24,31 +25,35 @@ import org.springframework.web.util.UriComponentsBuilder;
 @RequestMapping(value = "/api/public", produces = "application/json;charset=UTF-8")
 public class PublicApi {
     @Resource
-    OsuGetService osuService;
+    OsuApiService osuService;
     @Resource
-    MapPoolDao    mapPoolDao;
+    MapPoolDao mapPoolDao;
     @Resource
-    RestTemplate  restTemplate;
+    WebClient webClient;
+    @Resource
+    WebClient osuApiWebClient;
 
     /**
      * 获取公开图池
      */
     @GetMapping("getAllPool")
-    DataVo getAllPool() {
-        return new DataVo(mapPoolDao.getPublicPool());
+    DataVo<List<MapPool>> getAllPool() {
+        return new DataVo<>(mapPoolDao.getPublicPool());
     }
 
     /**
      * 获取绑定链接
+     *
      * @return 链接
      */
     @GetMapping("getOauthUrl")
-    DataVo<String> getOauthUrl() {
+    DataVo<String> getOauthUrl() throws HttpError {
         return new DataVo<>(osuService.getOauthUrl("test"));
     }
 
     /**
      * 前端代理, 只能支持 json 的接口
+     *
      * @param config 请求配置
      * @return 代理数据
      * @throws HttpError 请求异常
@@ -56,16 +61,6 @@ public class PublicApi {
     @PostMapping("proxy")
     Object proxy(@RequestBody @Validated ProxyDto config) throws HttpError {
         var method = HttpMethod.valueOf(config.getMethod().toUpperCase());
-        HttpHeaders headers = new HttpHeaders();
-        if (config.getHeaders() != null && config.getHeaders().size() > 0) {
-            headers.setAll(config.getHeaders());
-        }
-        HttpEntity<Object> httpEntity;
-        if (method == HttpMethod.GET || config.getBody() == null) {
-            httpEntity = new HttpEntity<>(headers);
-        } else {
-            httpEntity = new HttpEntity<>(config.getBody(), headers);
-        }
 
         UriComponentsBuilder uri = UriComponentsBuilder.fromHttpUrl(config.getUrl());
         if (config.getParameter() != null && config.getParameter().size() > 0) {
@@ -73,15 +68,43 @@ public class PublicApi {
                 uri.queryParam(i.getKey(), i.getValue());
             }
         }
-        var rep = restTemplate.exchange(
-                uri.toUriString(),
-                method,
-                httpEntity,
-                JsonNode.class
-        );
-        if (rep.getStatusCode().is2xxSuccessful()) {
-            return rep.getBody();
+
+        WebClient client;
+        if (config.getUrl().contains("ppy.sh")) {
+            client = osuApiWebClient;
+        } else {
+            client = webClient;
         }
-        throw new HttpError(rep.getStatusCode().value(), "请求失败");
+        var res = client.method(method)
+                .uri((r) -> uri.build().toUri())
+                .headers(headers -> {
+                    if (config.getHeaders() != null && config.getHeaders().size() > 0) {
+                        headers.setAll(config.getHeaders());
+                    }
+                });
+        if (method != HttpMethod.GET && config.getBody() != null) {
+            res.bodyValue(config.getBody());
+        }
+
+        try {
+            var rep = res
+                    .retrieve()
+                    .onStatus(statusCode -> !statusCode.is2xxSuccessful(),
+                            r -> {
+                                var code = r.statusCode().value();
+                                return r.bodyToMono(String.class).map(s -> new HttpError(code, s));
+                            })
+                    .toEntity(JsonNode.class)
+                    .block();
+            if (rep == null) {
+                return null;
+            }
+            return rep.getBody();
+        } catch (Exception e) {
+            if (e.getCause() instanceof HttpError httpError) {
+                throw httpError;
+            }
+            throw new HttpError(500, e.getMessage());
+        }
     }
 }

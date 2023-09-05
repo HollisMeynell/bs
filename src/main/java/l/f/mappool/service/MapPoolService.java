@@ -75,12 +75,6 @@ public class MapPoolService {
 
     /***
      * 创建一个分类组,比如 NM,HD 这种
-     * @param uid
-     * @param poolId
-     * @param name
-     * @param info
-     * @param color
-     * @return
      */
     public MapCategoryGroup createCategoryGroup(long uid, int poolId, String name, String info, int color) {
         if (!mapPoolDao.isAdminByPool(poolId, uid)) {
@@ -126,10 +120,6 @@ public class MapPoolService {
 
     /***
      * 具体分类 比如 NM1,NM2 这种
-     * @param uid
-     * @param groupId
-     * @param name
-     * @return
      */
     public MapCategory createCategory(long uid, int groupId, String name) {
         if (!mapPoolDao.isAdminByGroup(groupId, uid)) {
@@ -189,8 +179,8 @@ public class MapPoolService {
      */
 
     public DataListVo<FavoritesLiteVo> getMapInfo() {
-        List<FavoritesLiteVo> list = null;
-        return new DataListVo<FavoritesLiteVo>().setData(list).setPageSize(0);
+        // TODO
+        return new DataListVo<FavoritesLiteVo>().setData(null).setPageSize(0);
     }
 
     public DataVo<MapPoolUser> addAdminUser(long userId, long addUserId, int poolId) {

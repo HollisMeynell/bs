@@ -1,5 +1,8 @@
 package l.f.mappool.dto;
 
+import lombok.Data;
+
+@Data
 public class BasePageReqListDto {
     protected final static int SIZE=20;
     protected final static int NO=1;

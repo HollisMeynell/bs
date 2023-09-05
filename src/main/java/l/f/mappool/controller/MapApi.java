@@ -4,7 +4,7 @@ import jakarta.annotation.Resource;
 import l.f.mappool.dto.map.QueryMapPoolDto;
 import l.f.mappool.entity.BeatMap;
 import l.f.mappool.service.MapPoolService;
-import l.f.mappool.service.OsuGetService;
+import l.f.mappool.service.OsuApiService;
 import l.f.mappool.util.ContextUtil;
 import l.f.mappool.vo.DataListVo;
 import l.f.mappool.vo.DataVo;
@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping(value = "/api/map", produces = "application/json;charset=UTF-8")
 public class MapApi {
     @Resource
-    protected OsuGetService osuService;
+    protected OsuApiService osuService;
     @Resource
     protected MapPoolService mapPoolService;
 

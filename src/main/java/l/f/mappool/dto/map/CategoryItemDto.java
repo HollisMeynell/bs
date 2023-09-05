@@ -1,9 +1,10 @@
 package l.f.mappool.dto.map;
 
 import lombok.Data;
-import org.hibernate.validator.constraints.Range;
 
-import javax.validation.constraints.*;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 
 @Data
 public class CategoryItemDto {

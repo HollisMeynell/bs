@@ -82,9 +82,7 @@ public class FileApi {
     }
 
     /**
-     *
-     * @param key
-     * @return
+     * 删除文件
      */
     @DeleteMapping(value = "/delete")
     public DataVo<Boolean> deleteFile(@RequestParam("key") String key) {
@@ -113,10 +111,10 @@ public class FileApi {
         }
     }
 
-    private FileLogDao fileLogDao;
+    private final FileLogDao fileLogDao;
 
     @Autowired
-    public FileApi(FileLogDao fileLogDao) throws IOException {
+    public FileApi(FileLogDao fileLogDao) {
         this.fileLogDao = fileLogDao;
     }
 }

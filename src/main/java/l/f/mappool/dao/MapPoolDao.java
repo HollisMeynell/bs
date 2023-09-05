@@ -17,14 +17,16 @@ import java.util.Map;
 import java.util.Optional;
 
 @Component
+@SuppressWarnings("unused")
 public class MapPoolDao {
-    private final MapPoolRepository          poolRepository;
-    private final MapFeedbackRepository      feedbackRepository;
-    private final MapPoolUserRepository      poolUserRepository;
-    private final MapCategoryRepository      categoryRepository;
-    private final MapCategoryItemRepository  categoryItemRepository;
+    private final MapPoolRepository poolRepository;
+    private final MapFeedbackRepository feedbackRepository;
+    private final MapPoolUserRepository poolUserRepository;
+    private final MapCategoryRepository categoryRepository;
+    private final MapCategoryItemRepository categoryItemRepository;
     private final MapCategoryGroupRepository categoryGroupRepository;
 
+    @SuppressWarnings("all")
     private final EntityManager entityManager;
 
     @Autowired
@@ -45,7 +47,7 @@ public class MapPoolDao {
         this.entityManager = entityManager;
     }
 
-    /************************************************** Pool *****************************************************************/
+    /* ************************************************* Pool **************************************************************** */
 
     /***
      * 创建
@@ -141,8 +143,9 @@ public class MapPoolDao {
         if (pool.getStatus() != PoolStatus.DELETE) {
             throw new RuntimeException("先执行delete");
         }
-        poolUserRepository.deleteByPool(pool);
-        poolRepository.delete(pool);
+        if (poolUserRepository.deleteByPool(pool) != -1) {
+            poolRepository.delete(pool);
+        }
     }
 
     public void deletePool(long uid, int pid) {
@@ -212,7 +215,7 @@ public class MapPoolDao {
      * 查询权限 pool
      *
      * @param poolPermissions 包含
-     * @return
+     * @return yes or no
      */
     public boolean testPermissionByPool(int poolId, long userId, PoolPermission... poolPermissions) {
         var userOpt = poolUserRepository.getMapPoolUserByPoolIdAndUserId(poolId, userId);
@@ -277,16 +280,10 @@ public class MapPoolDao {
         return poolUserRepository.save(addUser);
     }
 
-    /************************************************** Group *****************************************************************/
+    /* ************************************************* Group **************************************************************** */
 
     /***
      *  创建分组 比如NM组
-     * @param userId
-     * @param poolId
-     * @param name
-     * @param info
-     * @param color
-     * @return
      */
     public MapCategoryGroup createCategoryGroup(long userId, int poolId, String name, String info, int color) {
         if (!isAdminByPool(poolId, userId)) {
@@ -310,14 +307,12 @@ public class MapPoolDao {
         return categoryGroupRepository.saveAndFlush(group);
     }
 
-    /************************************************** Category *****************************************************************/
+    /* ************************************************* Category **************************************************************** */
 
     /**
      * 创建具体分类 比如NM1
      *
      * @param groupId      CategoryGroup.id
-     * @param categoryName
-     * @return
      */
     public MapCategory createCategory(long userId, int groupId, String categoryName) {
         if (!isAdminByGroup(groupId, userId)) {
@@ -330,7 +325,7 @@ public class MapPoolDao {
         return categoryRepository.save(category);
     }
 
-    /************************************************** Item *****************************************************************/
+    /* ************************************************* Item **************************************************************** */
 
     /***
      * 加一张图

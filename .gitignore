@@ -34,3 +34,5 @@ build/
 
 .mvn
 **tmp**
+start.ps1
+**/static/**

@@ -8,20 +8,19 @@ import l.f.mappool.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class UserService {
     @Resource
-    OsuGetService osuGetService;
+    OsuApiService osuApiService;
     @Resource
     OsuUserRepository osuUserRepository;
     @Resource
     UserRepository userRepository;
 
     public OsuUser doLogin(String code) {
-        var user = osuGetService.getToken(code);
-        user = osuGetService.getMeInfo(user);
+        var user = osuApiService.getToken(code);
+        user = osuApiService.getMeInfo(user);
         osuUserRepository.saveAndFlush(user);
         return user;
     }
@@ -36,6 +35,7 @@ public class UserService {
         return uOpt.get();
     }
 
+    @SuppressWarnings("unused")
     public List<User> getAllLoginUser(long osuId) {
         return userRepository.findByOsuId(osuId);
     }

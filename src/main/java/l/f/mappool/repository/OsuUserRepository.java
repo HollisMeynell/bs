@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 public interface OsuUserRepository extends JpaRepository<OsuUser, Long> {
     @Modifying
     @Transactional
+    @SuppressWarnings("unused")
     @Query("update OsuUser o set o.accessToken = :accessToken,o.refreshToken = :refreshToken, o.time = :time where o.osuId=:uid")
     void updateToken(Long uid, String accessToken, String refreshToken, Long time);
     @Modifying

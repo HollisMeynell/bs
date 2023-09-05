@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import java.util.Optional;
 
 @Component
+@SuppressWarnings("unused")
 public class MapDao {
     BeatMapRepository beatMapRepository;
     BeatMapSetRepository beatMapSetRepository;

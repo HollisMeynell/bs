@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Component
+@SuppressWarnings("unused")
 public interface MapPoolRepository extends JpaRepository<MapPool, Integer> {
 
     @Transactional

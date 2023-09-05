@@ -1,22 +1,25 @@
 package l.f.mappool.controller.pool;
 
 import l.f.mappool.controller.PoolApi;
-import l.f.mappool.dto.map.*;
+import l.f.mappool.dto.map.MapPoolDto;
+import l.f.mappool.dto.map.MarkPoolDto;
+import l.f.mappool.dto.map.PoolUserDto;
+import l.f.mappool.dto.map.QueryMapPoolDto;
 import l.f.mappool.dto.validator.AddUser;
-import l.f.mappool.dto.validator.mapPool.CreateCategory;
-import l.f.mappool.dto.validator.mapPool.CreateCategoryGroup;
 import l.f.mappool.dto.validator.mapPool.CreatePool;
 import l.f.mappool.dto.validator.mapPool.SetPool;
-import l.f.mappool.entity.*;
+import l.f.mappool.entity.MapPool;
+import l.f.mappool.entity.MapPoolUser;
 import l.f.mappool.enums.PoolPermission;
 import l.f.mappool.util.ContextUtil;
 import l.f.mappool.vo.DataListVo;
 import l.f.mappool.vo.DataVo;
-import l.f.mappool.vo.FavoritesLiteVo;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
 import java.util.Map;
@@ -70,7 +73,6 @@ public class MapPoolApi extends PoolApi {
     /**
      * 设置图池
      * @param poolDto 要修改的信息
-     * @return
      */
     @PutMapping("setPoolInfo")
     DataVo<MapPool> setPoolInfo(@RequestBody @Validated(SetPool.class) MapPoolDto poolDto) {

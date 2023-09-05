@@ -9,18 +9,15 @@ import l.f.mappool.repository.BeatMapRepository;
 import l.f.mappool.repository.OsuUserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
-
-import java.util.Collections;
 
 @Service
 @Slf4j
-public class OsuGetService {
+public class OsuApiService {
     /*
      * https://osu.ppy.sh/users/[uid]/card
      * https://osu.ppy.sh/users/[uid]/extra-pages/historical?mode=osu
@@ -30,7 +27,7 @@ public class OsuGetService {
      */
     long time = System.currentTimeMillis();
     String accessToken;
-    RestTemplate template;
+    WebClient webClient;
     OsuUserRepository osuUserRepository;
     BeatMapRepository beatMapRepository;
     private final String redirectUrl;
@@ -38,8 +35,8 @@ public class OsuGetService {
     private final String oauthToken;
 
     @Autowired
-    public OsuGetService(
-            RestTemplate template,
+    public OsuApiService(
+            WebClient osuApiWebClient,
             OsuUserRepository osuUserRepository,
             BeatmapSelectionProperties properties,
             OsuProperties osuProperties,
@@ -50,7 +47,7 @@ public class OsuGetService {
                 properties.getLocalUrl(),
                 osuProperties.getCallbackUrl()
         );
-        this.template = template;
+        this.webClient = osuApiWebClient;
         this.osuUserRepository = osuUserRepository;
         this.oauthId = osuProperties.getOauth().getId();
         this.oauthToken = osuProperties.getOauth().getToken();
@@ -70,18 +67,18 @@ public class OsuGetService {
         if (!isPassed()) {
             return accessToken;
         }
-        String url = "https://osu.ppy.sh/oauth/token";
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        headers.setAccept(Collections.singletonList(MediaType.APPLICATION_FORM_URLENCODED));
-        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("client_id", oauthId);
+        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+        body.add("client_id", String.valueOf(oauthId));
         body.add("client_secret", oauthToken);
         body.add("grant_type", "client_credentials");
         body.add("scope", "public");
 
-        HttpEntity<?> httpEntity = new HttpEntity<>(body, headers);
-        var s = template.postForObject(url, httpEntity, JsonNode.class);
+        var s = webClient.post()
+                .uri("https://osu.ppy.sh/oauth/token")
+                .bodyValue(body)
+                .retrieve()
+                .bodyToMono(JsonNode.class)
+                .block();
         if (s != null) {
             accessToken = s.get("access_token").asText();
             time = System.currentTimeMillis() + s.get("expires_in").asLong() * 1000;
@@ -90,19 +87,19 @@ public class OsuGetService {
     }
 
     public OsuUser getToken(String code) {
-        String url = "https://osu.ppy.sh/oauth/token";
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        headers.setAccept(Collections.singletonList(MediaType.APPLICATION_FORM_URLENCODED));
-        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("client_id", oauthId);
+        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+        body.add("client_id", String.valueOf(oauthId));
         body.add("client_secret", oauthToken);
         body.add("code", code);
         body.add("grant_type", "authorization_code");
         body.add("redirect_uri", redirectUrl);
 
-        HttpEntity<?> httpEntity = new HttpEntity<>(body, headers);
-        var s = template.postForObject(url, httpEntity, JsonNode.class);
+        var s = webClient.post()
+                .uri("https://osu.ppy.sh/oauth/token")
+                .bodyValue(body)
+                .retrieve()
+                .bodyToMono(JsonNode.class)
+                .block();
         if (s == null) {
             throw new RuntimeException("");
         }
@@ -122,19 +119,20 @@ public class OsuGetService {
      * @return 令牌请求的原始类型
      */
     public JsonNode refreshToken(OsuUser osuUser) {
-        String url = "https://osu.ppy.sh/oauth/token";
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        headers.setAccept(Collections.singletonList(MediaType.APPLICATION_FORM_URLENCODED));
-        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("client_id", oauthId);
+        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+        body.add("client_id", String.valueOf(oauthId));
         body.add("client_secret", oauthToken);
         body.add("refresh_token", osuUser.getRefreshToken());
         body.add("grant_type", "refresh_token");
         body.add("redirect_uri", redirectUrl);
 
-        HttpEntity<?> httpEntity = new HttpEntity<>(body, headers);
-        JsonNode s = template.postForObject(url, httpEntity, JsonNode.class);
+        JsonNode s = webClient.post()
+                .uri("https://osu.ppy.sh/oauth/token")
+                .bodyValue(body)
+                .retrieve()
+                .bodyToMono(JsonNode.class)
+                .block();
+
         if (s == null) throw new RuntimeException("refresh token error");
         osuUser.setRefreshToken(s.get("access_token").asText());
         osuUser.setAccessToken(s.get("access_token").asText());
@@ -144,14 +142,12 @@ public class OsuGetService {
     }
 
     public OsuUser getMeInfo(OsuUser user) {
-        String url = "https://osu.ppy.sh/api/v2/me";
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-        headers.set("Authorization", "Bearer " + user.getAccessToken(this));
-        HttpEntity<String> httpEntity = new HttpEntity<>(headers);
-        ResponseEntity<JsonNode> c = template.exchange(url, HttpMethod.GET, httpEntity, JsonNode.class);
-        var data = c.getBody();
+        var data = webClient.get()
+                .uri("/me")
+                .header("Authorization", "Bearer " + user.getAccessToken(this))
+                .retrieve()
+                .bodyToMono(JsonNode.class)
+                .block();
         if (data != null) {
             user.setName(data.get("username").asText("unknown"));
             user.setOsuId(data.get("id").asLong(0));
@@ -160,18 +156,13 @@ public class OsuGetService {
         return user;
     }
 
-    private BeatMap getMapInfo(long bid) {
-        String url = "https://osu.ppy.sh/api/v2/beatmaps/" + bid;
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-        headers.set("Authorization", "Bearer " + getToken());
-        HttpEntity<String> httpEntity = new HttpEntity<>(headers);
-//        ResponseEntity<JsonNode> c = template.exchange(url, HttpMethod.GET, httpEntity, JsonNode.class);
-//        log.error("{}", c.getBody().toPrettyString());
-//        throw new RuntimeException("err");
-        ResponseEntity<BeatMap> c = template.exchange(url, HttpMethod.GET, httpEntity, BeatMap.class);
-        return c.getBody();
+    public BeatMap getMapInfo(long bid) {
+        return webClient.get()
+                .uri("/beatmaps/{bid}", bid)
+                .header("Authorization", "Bearer " + getToken())
+                .retrieve()
+                .bodyToMono(BeatMap.class)
+                .block();
     }
 
     public BeatMap getMapInfoByDB(long bid) {
