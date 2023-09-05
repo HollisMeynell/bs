@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @Accessors(chain = true)
 @AllArgsConstructor
 @NoArgsConstructor
-public class FileLog {
+public class FileRecord {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Integer id;

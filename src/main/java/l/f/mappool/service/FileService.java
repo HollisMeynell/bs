@@ -1,20 +1,18 @@
-package l.f.mappool.dao;
+package l.f.mappool.service;
 
-import l.f.mappool.entity.FileLog;
-import l.f.mappool.entity.OsuFileLog;
+import l.f.mappool.entity.FileRecord;
+import l.f.mappool.entity.OsuFileRecord;
 import l.f.mappool.exception.LogException;
 import l.f.mappool.properties.BeatmapSelectionProperties;
 import l.f.mappool.repository.FileLogRepository;
 import l.f.mappool.repository.OsuFileLogRepository;
-import l.f.mappool.service.BeatmapFileService;
-import l.f.mappool.service.OsuApiService;
+import org.postgresql.copy.CopyOperation;
+import org.postgresql.core.v3.CopyOperationImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.*;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -22,19 +20,29 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+/**
+ * 所有文件操作的工具集合类
+ */
 @Component
-public class FileLogDao {
+public class FileService {
     private final OsuApiService osuApiService;
     private final FileLogRepository fileLogRepository;
     private final OsuFileLogRepository osuFileLogRepository;
     private final BeatmapFileService beatmapFileService;
 
+    /**
+     * 文件上传时的保存路径
+     */
     private final String UPLOAD_PATH;
+
+    /**
+     * 下载 .osz 的缓存路径, 最终保存格式为 OSU_FILE_PATH/sid/*
+     */
     private final String OSU_FILE_PATH;
 
 
     @Autowired
-    public FileLogDao(
+    public FileService(
             OsuApiService osuApiService,
             BeatmapSelectionProperties properties,
             FileLogRepository fileLogRepository,
@@ -58,6 +66,10 @@ public class FileLogDao {
         this.fileLogRepository = fileLogRepository;
     }
 
+    /**
+     * 通过文件记录 key 来获得上传时提供的文件名
+     * @return 记录中的文件名
+     */
     public String getFileName(String key) {
         var fileLog = fileLogRepository.getFileLogByLocalName(key);
         if (fileLog.isPresent()) {
@@ -67,20 +79,27 @@ public class FileLogDao {
         }
     }
 
-    public Optional<FileLog> getFileLog(String key) {
+    /**
+     * 通过文件记录 key 来获得上传时的记录信息
+     * @return 记录信息
+     */
+    public Optional<FileRecord> getFileRecord(String key) {
         return fileLogRepository.getFileLogByLocalName(key);
     }
 
-    public byte[] getData(FileLog fileLog) throws IOException {
-        var path = Path.of(UPLOAD_PATH, fileLog.getLocalName());
+    /**
+     * 获取文件 二进制数据
+     */
+    public byte[] getData(FileRecord fileRecord) throws IOException {
+        var path = Path.of(UPLOAD_PATH, fileRecord.getLocalName());
 
         if (Files.isRegularFile(path) && Files.isReadable(path)) {
             var fileData = Files.readAllBytes(path);
-            fileLog.update();
-            fileLogRepository.save(fileLog);
+            fileRecord.update();
+            fileLogRepository.save(fileRecord);
             return fileData;
         } else {
-            fileLogRepository.delete(fileLog);
+            fileLogRepository.delete(fileRecord);
         }
         throw new IOException("file not in local");
     }
@@ -88,8 +107,7 @@ public class FileLogDao {
     public String writeFile(String name, InputStream in) throws IOException {
         var key = UUID.randomUUID().toString();
         Path path = Path.of(UPLOAD_PATH, key);
-        var data = in.readAllBytes();
-        Files.write(path, data, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+        Files.copy(in, path,  StandardCopyOption.REPLACE_EXISTING);
         fileLogRepository.save(name, key);
         return key;
     }
@@ -110,7 +128,10 @@ public class FileLogDao {
         }
     }
 
-
+    /**
+     * 删除超过30天未被访问的文件, 防止硬盘空间被无限占用
+     * @return 被删除文件的数量
+     */
     public int deleteAllOldFile() {
         // when a file not visited for 30 days, delete it
         LocalDateTime before = LocalDateTime.now().minusDays(31);
@@ -131,6 +152,10 @@ public class FileLogDao {
         return deleteCount.get();
     }
 
+    /**
+     * 获得谱面文件, 支持获取 音频/背景图片/谱面.osu文件
+     * @param type 类型
+     */
     @SuppressWarnings("unused")
     public byte[] getOsuFile(long bid, BeatmapFileService.Type type) throws IOException {
         long sid = osuApiService.getMapInfoByDB(bid).getMapsetId();
@@ -138,6 +163,10 @@ public class FileLogDao {
         return Files.readAllBytes(Path.of(OSU_FILE_PATH, Long.toString(sid), file));
     }
 
+    /**
+     * 获得谱面文件, 支持获取 音频/背景图片/谱面.osu文件, 直接写入到输出流
+     * @param type 类型
+     */
     @SuppressWarnings("unused")
     public void outOsuFile(long bid, BeatmapFileService.Type type, OutputStream out) throws IOException {
         long sid = osuApiService.getMapInfoByDB(bid).getMapsetId();
@@ -151,6 +180,9 @@ public class FileLogDao {
         }
     }
 
+    /**
+     * 获得谱面文件在本地缓存中的文件名, 支持获取 音频/背景图片/谱面.osu文件
+     */
     public String getPath(long sid, long bid, BeatmapFileService.Type type) throws IOException {
         var fOpt = osuFileLogRepository.findById(bid);
         if (fOpt.isEmpty()) {
@@ -174,6 +206,9 @@ public class FileLogDao {
         return out.toByteArray();
     }
 
+    /**
+     * 将 .osz 文件写入到输出流, 优先从本地缓存中读取
+     */
     public void outOsuZipFile(long sid, OutputStream out) throws IOException {
         Path dir = Path.of(OSU_FILE_PATH, String.valueOf(sid));
         if (!Files.isDirectory(dir)) {
@@ -194,6 +229,11 @@ public class FileLogDao {
         }
     }
 
+    /**
+     * 将多个 .osz 文件打包为一个 .zip 文件 并写入到输出流
+     * @param sids sid, 用于打包
+     * @throws IOException 当下载出错/并不存在该谱面时报错
+     */
     public void zipOsuFiles(OutputStream out, long... sids) throws IOException {
         var zipOut = new ZipOutputStream(out);
         try {
@@ -210,7 +250,10 @@ public class FileLogDao {
 
     }
 
-    private Optional<OsuFileLog> downloadOsuFile(long sid, long bid) throws IOException {
+    /**
+     * 下载单个 .osz 并解包写入到缓存目录中, 并将相关文件信息记录到数据库里.
+     */
+    private Optional<OsuFileRecord> downloadOsuFile(long sid, long bid) throws IOException {
         Path tmp = Path.of(OSU_FILE_PATH, String.valueOf(sid));
         Files.createDirectories(tmp);
         HashMap<String, Path> fileMap = new HashMap<>();
@@ -235,7 +278,7 @@ public class FileLogDao {
                 .map(e -> {
                     var path = e.getValue();
                     try (var read = Files.newBufferedReader(path);) {
-                        var log = OsuFileLog.parse(read);
+                        var log = OsuFileRecord.parse(read);
                         log.setFile(path.getFileName().toString());
                         log = osuFileLogRepository.saveAndFlush(log);
                         return log;

@@ -21,7 +21,7 @@ import java.io.IOException;
 @Accessors(chain = true)
 @AllArgsConstructor
 @NoArgsConstructor
-public class OsuFileLog {
+public class OsuFileRecord {
     @Id
     Long bid;
     Long sid;
@@ -31,8 +31,8 @@ public class OsuFileLog {
     String audio;
     Integer mode;
 
-    public static OsuFileLog parse(BufferedReader read) throws IOException {
-        OsuFileLog obj = new OsuFileLog();
+    public static OsuFileRecord parse(BufferedReader read) throws IOException {
+        OsuFileRecord obj = new OsuFileRecord();
         try (read) {
             var versionStr = read.readLine();
             if (versionStr == null || !versionStr.startsWith("osu file format v")) {

@@ -23,6 +23,9 @@ import java.time.Duration;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Pattern;
 
+/**
+ * 用于下载 .osz 文件的工具类, 文件来源于 ppy
+ */
 @Slf4j
 @Service
 @SuppressWarnings("unused")
@@ -83,6 +86,10 @@ public class BeatmapFileService {
         return inputStream;
     }
 
+    /**
+     * 流式下载 输出到 OutputStream
+     * @param out 输出流
+     */
     public void downloadOut(Long sid, OsuAccountUser account, OutputStream out) {
         if (account.getSession() == null) initAccount(account);
 

@@ -1,6 +1,6 @@
 package l.f.mappool.repository;
 
-import l.f.mappool.entity.FileLog;
+import l.f.mappool.entity.FileRecord;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -12,26 +12,26 @@ import java.util.List;
 import java.util.Optional;
 
 @Component
-public interface FileLogRepository extends JpaRepository<FileLog, Integer> {
+public interface FileLogRepository extends JpaRepository<FileRecord, Integer> {
 
-    Optional<FileLog> getFileLogByLocalName(String localName);
-    default FileLog save(String name, String local) {
-        var f = new FileLog();
+    Optional<FileRecord> getFileLogByLocalName(String localName);
+    default FileRecord save(String name, String local) {
+        var f = new FileRecord();
         f.setFileName(name);
         f.setLocalName(local);
         return save(f);
     }
 
-    @Query("select f.localName from FileLog f where f.updateTime<:time")
+    @Query("select f.localName from FileRecord f where f.updateTime<:time")
     List<String> getLocalNamesByUpdateTimeBefore(LocalDateTime time);
 
     @Modifying
     @Transactional
-    @Query("delete from FileLog f where f.localName in (:localNames)")
+    @Query("delete from FileRecord f where f.localName in (:localNames)")
     void deleteByLocalName(List<String> localNames);
 
     @Modifying
     @Transactional
-    @Query("delete from FileLog f where f.localName=:localNames")
+    @Query("delete from FileRecord f where f.localName=:localNames")
     void deleteByLocalName(String localNames);
 }

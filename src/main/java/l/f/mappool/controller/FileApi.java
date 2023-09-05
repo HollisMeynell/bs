@@ -3,8 +3,8 @@ package l.f.mappool.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import l.f.mappool.config.interceptor.Open;
-import l.f.mappool.dao.FileLogDao;
-import l.f.mappool.entity.FileLog;
+import l.f.mappool.service.FileService;
+import l.f.mappool.entity.FileRecord;
 import l.f.mappool.exception.LogException;
 import l.f.mappool.vo.DataVo;
 import lombok.extern.slf4j.Slf4j;
@@ -40,7 +40,7 @@ public class FileApi {
         final Map<String, String> files = new HashMap<>();
         file.getFileMap().forEach((key, value) -> {
             try {
-                String fileKey = fileLogDao.writeFile(value.getName(), value.getBytes());
+                String fileKey = fileService.writeFile(value.getName(), value.getBytes());
                 files.put(value.getName(), fileKey);
             } catch (IOException ex) {
                 log.error("文件写入错误", ex);
@@ -58,7 +58,7 @@ public class FileApi {
     @PostMapping(value = "/stream/{name}", consumes = {MediaType.APPLICATION_OCTET_STREAM_VALUE, MediaType.IMAGE_PNG_VALUE, MediaType.IMAGE_JPEG_VALUE})
     public DataVo<String> upload(@PathVariable("name") String name, HttpServletRequest request) throws IOException {
         String fileName = URLDecoder.decode(name, StandardCharsets.UTF_8);
-        String fileKey = fileLogDao.writeFile(fileName, request.getInputStream());
+        String fileKey = fileService.writeFile(fileName, request.getInputStream());
         return new DataVo<>("ok", fileKey);
     }
 
@@ -69,14 +69,14 @@ public class FileApi {
     @GetMapping(value = "/image/{key}", produces = MediaType.IMAGE_PNG_VALUE)
     public ResponseEntity<byte[]> getImage(@PathVariable("key")String key) {
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentDisposition(ContentDisposition.inline().filename(fileLogDao.getFileName(key)).build());
+        headers.setContentDisposition(ContentDisposition.inline().filename(fileService.getFileName(key)).build());
         headers.setContentType(MediaType.IMAGE_PNG);
         try {
-            Optional<FileLog> fileLog = fileLogDao.getFileLog(key);
+            Optional<FileRecord> fileLog = fileService.getFileRecord(key);
             if (fileLog.isEmpty()){
                 throw new IOException();
             }
-            byte[] data = fileLogDao.getData(fileLog.get());
+            byte[] data = fileService.getData(fileLog.get());
             headers.setContentLength(data.length);
             return new ResponseEntity<>(data, headers, HttpStatus.OK);
         } catch (IOException e) {
@@ -90,7 +90,7 @@ public class FileApi {
     @DeleteMapping(value = "/delete")
     public DataVo<Boolean> deleteFile(@RequestParam("key") String key) {
         try {
-            fileLogDao.deleteFile(key);
+            fileService.deleteFile(key);
         } catch (IOException e) {
             return new DataVo<>(Boolean.FALSE).setMessage("删除失败: " + e.getMessage()).setCode(502);
         }
@@ -104,11 +104,11 @@ public class FileApi {
     @GetMapping(value = "/download/{key}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public byte[] getFile(@PathVariable("key")String key) {
         try {
-            Optional<FileLog> fileLog = fileLogDao.getFileLog(key);
+            Optional<FileRecord> fileLog = fileService.getFileRecord(key);
             if (fileLog.isEmpty()){
                 throw new IOException();
             }
-            return fileLogDao.getData(fileLog.get());
+            return fileService.getData(fileLog.get());
         } catch (IOException e) {
             throw new LogException("文件已失效...", 404);
         }
@@ -118,7 +118,7 @@ public class FileApi {
     @GetMapping("/map/{sid}")
     public void downloadMapFile(@PathVariable Long sid, HttpServletResponse response) {
         try (var out = getResponseOut(response, sid + ".osz", null)){
-            fileLogDao.outOsuZipFile(sid, out);
+            fileService.outOsuZipFile(sid, out);
         } catch (IOException e) {
             throw new LogException("文件读取异常");
         }
@@ -134,7 +134,7 @@ public class FileApi {
         }
 
         try (var out = getResponseOut(response, "package.zip", null)){
-            fileLogDao.zipOsuFiles(out, ids);
+            fileService.zipOsuFiles(out, ids);
         } catch (IOException e) {
             throw new LogException("文件读取异常");
         }
@@ -155,10 +155,10 @@ public class FileApi {
         return response.getOutputStream();
     }
 
-    private final FileLogDao fileLogDao;
+    private final FileService fileService;
 
     @Autowired
-    public FileApi(FileLogDao fileLogDao) {
-        this.fileLogDao = fileLogDao;
+    public FileApi(FileService fileService) {
+        this.fileService = fileService;
     }
 }

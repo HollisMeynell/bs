@@ -1,12 +1,9 @@
 package l.f.mappool.controller;
 
 import jakarta.annotation.Resource;
-import jakarta.servlet.http.HttpServletResponse;
-import l.f.mappool.config.interceptor.Open;
-import l.f.mappool.dao.FileLogDao;
+import l.f.mappool.service.FileService;
 import l.f.mappool.dto.map.QueryMapPoolDto;
 import l.f.mappool.entity.BeatMap;
-import l.f.mappool.exception.LogException;
 import l.f.mappool.service.MapPoolService;
 import l.f.mappool.service.OsuApiService;
 import l.f.mappool.util.ContextUtil;
@@ -18,8 +15,6 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
-import java.io.IOException;
 
 @Slf4j
 @Controller
@@ -33,7 +28,7 @@ public class MapApi {
     @Resource
     protected MapPoolService mapPoolService;
     @Resource
-    protected FileLogDao fileLogDao;
+    protected FileService fileService;
 
 
     @GetMapping("/getMapInfo")

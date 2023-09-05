@@ -54,15 +54,23 @@ public class OsuApiService {
         this.beatMapRepository = beatMapRepository;
     }
 
+    /**
+     * 获取用于用户绑定的 Oauth 授权链接
+     */
     public String getOauthUrl(String state) {
         return UriComponentsBuilder.fromHttpUrl("https://osu.ppy.sh/oauth/authorize").queryParam("client_id", oauthId).queryParam("redirect_uri", redirectUrl).queryParam("response_type", "code").queryParam("scope", "friends.read identify public").queryParam("state", state).build().encode().toUriString();
     }
 
-
+    /**
+     * bot 的 Oauth2 token 是否超时
+     */
     private boolean isPassed() {
         return System.currentTimeMillis() > time;
     }
 
+    /**
+     * 获取 bot 的 Oauth2 token
+     */
     public String getToken() {
         if (!isPassed()) {
             return accessToken;
@@ -86,6 +94,9 @@ public class OsuApiService {
         return accessToken;
     }
 
+    /**
+     * 获取用户的 Oauth2 token
+     */
     public OsuUser getToken(String code) {
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
         body.add("client_id", String.valueOf(oauthId));
@@ -105,6 +116,7 @@ public class OsuApiService {
         }
         String accessToken = s.get("access_token").asText();
         String refreshToken = s.get("refresh_token").asText();
+        // 计算过期时间毫秒数
         time = System.currentTimeMillis() + s.get("expires_in").asLong() * 1000;
         var user = new OsuUser();
         user.setAccessToken(accessToken);

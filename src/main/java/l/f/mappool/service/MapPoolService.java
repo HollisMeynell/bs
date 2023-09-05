@@ -34,7 +34,7 @@ public class MapPoolService {
     /***
      * 用户创建的图池数量到了最大值
      * @param user 用户
-     * @return true: 超过了
+     * @return 当超过数量限制, 即严格大于时返回 true
      */
     public boolean isMax(OsuUser user) {
         int count = mapPoolUserRepository.getUserCreatedSize(user.getOsuId());
@@ -143,7 +143,6 @@ public class MapPoolService {
             return data.map(List::of).orElseGet(() -> new ArrayList<>(0));
         } else {
             // 查询的页码从0开始
-
             return mapPoolDao.queryByName(query.getPoolName(), userId, query.getPageNum() - 1, query.getPageSize());
         }
     }
