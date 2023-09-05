@@ -47,7 +47,6 @@ public class OsuFileLog {
 
                     int start = line.indexOf('"');
                     int end = line.lastIndexOf('"');
-                    System.out.println(line);
                     obj.background = line.substring(start + 1, end);
                     break;
                 }

@@ -83,7 +83,6 @@ public class BeatmapFileService {
         return inputStream;
     }
 
-    @SuppressWarnings("unused")
     public void downloadOut(Long sid, OsuAccountUser account, OutputStream out) {
         if (account.getSession() == null) initAccount(account);
 
@@ -111,14 +110,15 @@ public class BeatmapFileService {
                     parseCookie(clientResponse.headers().asHttpHeaders(), account);
                     return clientResponse.body((e,r) -> e.getBody());
                 })
-                .doFinally(s -> {
+                .doOnCancel(() -> log.error("download cancelled"))
+                .doFinally((s) -> {
                     try {
+                        out.flush();
                         out.close();
-                    } catch (IOException err) {
-                        throw new RuntimeException(err);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
                     }
-                })
-                .doOnCancel(() -> log.error("download cancelled"));
+                });
     }
 
 

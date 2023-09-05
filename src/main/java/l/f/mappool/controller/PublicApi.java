@@ -47,7 +47,7 @@ public class PublicApi {
      * @return 链接
      */
     @GetMapping("getOauthUrl")
-    DataVo<String> getOauthUrl() throws HttpError {
+    DataVo<String> getOauthUrl() {
         return new DataVo<>(osuService.getOauthUrl("test"));
     }
 

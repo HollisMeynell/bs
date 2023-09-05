@@ -1,6 +1,7 @@
 package l.f.mappool.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import l.f.mappool.config.interceptor.Open;
 import l.f.mappool.dao.FileLogDao;
 import l.f.mappool.entity.FileLog;
@@ -13,7 +14,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
+import javax.validation.constraints.NotNull;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -109,6 +112,47 @@ public class FileApi {
         } catch (IOException e) {
             throw new LogException("文件已失效...", 404);
         }
+    }
+
+    @Open
+    @GetMapping("/map/{sid}")
+    public void downloadMapFile(@PathVariable Long sid, HttpServletResponse response) {
+        try (var out = getResponseOut(response, sid + ".osz", null)){
+            fileLogDao.outOsuZipFile(sid, out);
+        } catch (IOException e) {
+            throw new LogException("文件读取异常");
+        }
+    }
+
+    @Open
+    @GetMapping("/maps/{sidStr}")
+    public void downloadMapPackage(@PathVariable String sidStr, HttpServletResponse response) {
+        var s = sidStr.split("-");
+        var ids = new long[s.length];
+        for (int i = 0; i < s.length; i++) {
+            ids[i] = Long.parseLong(s[i]);
+        }
+
+        try (var out = getResponseOut(response, "package.zip", null)){
+            fileLogDao.zipOsuFiles(out, ids);
+        } catch (IOException e) {
+            throw new LogException("文件读取异常");
+        }
+    }
+
+    private OutputStream getResponseOut(@NotNull HttpServletResponse response, String name, Integer size) throws IOException {
+        response.reset();
+        response.setContentType("application/octet-stream");
+        response.setCharacterEncoding("utf-8");
+        if (size != null && size > 0) {
+            response.setContentLengthLong(size);
+        }
+        if (name != null && !name.isBlank()) {
+            response.setHeader("Content-Disposition", "attachment;filename=" + name);
+        } else {
+            response.setHeader("Content-Disposition", "attachment;filename=file");
+        }
+        return response.getOutputStream();
     }
 
     private final FileLogDao fileLogDao;
