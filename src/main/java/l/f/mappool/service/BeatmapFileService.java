@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
 
 @Slf4j
 @Service
+@SuppressWarnings("unused")
 public class BeatmapFileService {
     public static enum Type {
         BACKGROUND, AUDIO, FILE,
@@ -42,9 +43,7 @@ public class BeatmapFileService {
     private static final ReactorClientHttpConnector connector = new ReactorClientHttpConnector(httpClient);
     private static final WebClient webClient = WebClient.builder()
             .clientConnector(connector)
-            .defaultHeaders(headers -> {
-                headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-            })
+            .defaultHeaders(headers -> headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED))
             .build();
     private static final String HOME_PAGE_URL = "/home";
     private static final String LOGIN_URL = "/session";
@@ -85,7 +84,7 @@ public class BeatmapFileService {
     }
 
     @SuppressWarnings("unused")
-    public void downloadOut(Long sid, OsuAccountUser account, OutputStream out) throws IOException {
+    public void downloadOut(Long sid, OsuAccountUser account, OutputStream out) {
         if (account.getSession() == null) initAccount(account);
 
         Flux<DataBuffer> body;

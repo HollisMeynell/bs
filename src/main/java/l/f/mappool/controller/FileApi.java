@@ -64,7 +64,7 @@ public class FileApi {
      * @param key 文件key
      */
     @GetMapping(value = "/image/{key}", produces = MediaType.IMAGE_PNG_VALUE)
-    public ResponseEntity<byte[]> getImage(@PathVariable("key")String key) throws IOException {
+    public ResponseEntity<byte[]> getImage(@PathVariable("key")String key) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentDisposition(ContentDisposition.inline().filename(fileLogDao.getFileName(key)).build());
         headers.setContentType(MediaType.IMAGE_PNG);
@@ -99,7 +99,7 @@ public class FileApi {
      * @param key 文件key
      */
     @GetMapping(value = "/download/{key}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    public byte[] getFile(@PathVariable("key")String key) throws IOException {
+    public byte[] getFile(@PathVariable("key")String key) {
         try {
             Optional<FileLog> fileLog = fileLogDao.getFileLog(key);
             if (fileLog.isEmpty()){

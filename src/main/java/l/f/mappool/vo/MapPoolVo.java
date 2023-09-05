@@ -7,10 +7,10 @@ import java.util.List;
 
 @SuppressWarnings("unused")
 public class MapPoolVo extends MapPool {
-    public MapPoolVo(){};
+    public MapPoolVo(){}
     public MapPoolVo(MapPool p){
         BeanUtils.copyProperties(p, this, "users", "groups");
-    };
+    }
     List<MapCategoryVo> categoryList;
 
 }

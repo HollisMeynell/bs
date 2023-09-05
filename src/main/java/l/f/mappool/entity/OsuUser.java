@@ -36,21 +36,6 @@ public class OsuUser {
 
     private Long time;
 
-    public Long getOsuId() {
-        return osuId;
-    }
-
-    public void setOsuId(Long osuId) {
-        this.osuId = osuId;
-    }
-
-    public String getAccessToken() {
-        return accessToken;
-    }
-
-    public void setAccessToken(String accessToken) {
-        this.accessToken = accessToken;
-    }
     public String getAccessToken(OsuApiService service) {
         if (accessToken == null) {
             return service.getToken();

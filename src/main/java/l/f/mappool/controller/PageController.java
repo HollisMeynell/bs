@@ -4,8 +4,6 @@ import l.f.mappool.config.interceptor.Open;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
-import java.util.regex.Pattern;
-
 @Open
 @Controller
 @SuppressWarnings("all")

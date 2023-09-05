@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 @Controller
 @CrossOrigin
 @ResponseBody
+@SuppressWarnings("unused")
 @RequestMapping(value = "/api/map", produces = "application/json;charset=UTF-8")
 public class MapApi {
     @Resource
@@ -30,11 +31,13 @@ public class MapApi {
     @GetMapping("/getMapInfo")
     DataListVo<FavoritesLiteVo> getMapInfo(@Validated @Nullable QueryMapPoolDto m) {
         var user = ContextUtil.getContextUser();
+        // TODO
         return mapPoolService.getMapInfo();
     }
     @GetMapping("/favorite")
     DataListVo<FavoritesLiteVo> getFavorite() {
         var user = ContextUtil.getContextUser();
+        // TODO
         return mapPoolService.getMapInfo();
     }
 

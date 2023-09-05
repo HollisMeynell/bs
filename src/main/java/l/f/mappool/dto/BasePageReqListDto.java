@@ -3,6 +3,7 @@ package l.f.mappool.dto;
 import lombok.Data;
 
 @Data
+@SuppressWarnings("unused")
 public class BasePageReqListDto {
     protected final static int SIZE=20;
     protected final static int NO=1;
@@ -11,23 +12,6 @@ public class BasePageReqListDto {
 
     protected int pageNum=NO;
     protected int pageSize = SIZE;
-
-    public void setPageNum(int pageNum) {
-        this.pageNum = pageNum;
-    }
-
-    public void setPageSize(int pageSize) {
-        this.pageSize = pageSize;
-    }
-
-    public int getPageNum() {
-        return pageNum;
-    }
-
-    public int getPageSize() {
-        return pageSize;
-    }
-
     public int getStartIndex() {
         return (getPageNum() - 1) * this.getPageSize();
     }
