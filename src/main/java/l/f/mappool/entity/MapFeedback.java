@@ -2,7 +2,6 @@ package l.f.mappool.entity;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -39,7 +38,7 @@ public class MapFeedback {
 
     Boolean agree;
 
-
+    @SuppressWarnings("unused")
     public int getItemId() {
         return item.id;
     }

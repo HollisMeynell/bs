@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.util.List;
 
 @Slf4j
+@SuppressWarnings("unused")
 public class JsonUtil {
     private static final ObjectMapper mapper = JsonMapper.builder().build().registerModules(new JavaTimeModule());
 

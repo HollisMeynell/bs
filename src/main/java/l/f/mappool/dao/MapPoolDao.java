@@ -290,8 +290,7 @@ public class MapPoolDao {
     }
 
     public List<MapCategoryGroup> getAllCategotys(int poolId) {
-        var groups = categoryRepository.getAllCategory(poolId);
-        return groups;
+        return categoryRepository.getAllCategory(poolId);
     }
 
     public void deleteMapCategoryGroup(MapCategoryGroup group) {

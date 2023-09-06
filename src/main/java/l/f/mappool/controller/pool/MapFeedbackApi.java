@@ -1,7 +1,6 @@
 package l.f.mappool.controller.pool;
 
 import jakarta.annotation.Resource;
-import l.f.mappool.controller.MapApi;
 import l.f.mappool.controller.PoolApi;
 import l.f.mappool.dao.MapPoolDao;
 import l.f.mappool.dto.map.FeedbackDto;
