@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * 用户标记常用
+ */
 @Getter
 @Setter
 @Entity

@@ -3,11 +3,12 @@ package l.f.mappool.dto.map;
 import lombok.Data;
 import org.hibernate.validator.constraints.Range;
 
-/***
- * 传递计入左侧抽屉的
- */
+import javax.validation.constraints.NotNull;
+
 @Data
-public class MarkPoolDto {
+public class ChoseCategory {
+    @NotNull(message = "categoryId 不能为空")
     @Range(min = 0, max = Integer.MAX_VALUE, message = "范围异常")
-    int poolId;
+    Integer categoryId;
+    Long bid;
 }

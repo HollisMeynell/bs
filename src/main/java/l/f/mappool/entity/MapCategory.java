@@ -25,6 +25,7 @@ public class MapCategory {
 
     @ManyToOne()
     @JoinColumn(name = "group_id")
+    @JsonIgnoreProperties({"categories"})
     MapCategoryGroup group;
 
     @Column(name = "name", columnDefinition = "text")
@@ -35,11 +36,15 @@ public class MapCategory {
      */
     Long chosed;
 
-    @JsonIgnoreProperties({"category"})
+    /**
+     * 防止加载到评论, 评论需要单独加载, 用于排除隐藏评论
+     */
+    @JsonIgnoreProperties({"category", "feedbacks"})
     @OneToMany(mappedBy = "category", fetch = FetchType.EAGER)
     List<MapCategoryItem> items;
 
     public Integer getGroupId() {
+        if (group == null) return null;
         return group.getId();
     }
 

@@ -4,6 +4,7 @@ import jakarta.persistence.EntityManager;
 import l.f.mappool.entity.*;
 import l.f.mappool.enums.PoolPermission;
 import l.f.mappool.enums.PoolStatus;
+import l.f.mappool.exception.NotFoundException;
 import l.f.mappool.exception.PermissionException;
 import l.f.mappool.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -132,9 +133,6 @@ public class MapPoolDao {
      * @param pid pool id
      */
     public void removePool(long uid, int pid) {
-        if (!isAdminByPool(pid, uid)) {
-            throw new PermissionException();
-        }
         var poolOpt = poolRepository.getById(pid);
         if (poolOpt.isEmpty()) {
             throw new RuntimeException("已被删除");
@@ -149,9 +147,6 @@ public class MapPoolDao {
     }
 
     public void deletePool(long uid, int pid) {
-        if (!isAdminByPool(pid, uid)) {
-            throw new PermissionException();
-        }
         var poolOpt = poolRepository.getByIdNotDelete(pid);
         if (poolOpt.isEmpty()) {
             throw new RuntimeException("已被删除");
@@ -174,24 +169,15 @@ public class MapPoolDao {
     }
 
     public MapPoolUser addAdminUser(long userId, long addUserId, int poolId) {
-        if (!isCreaterByPool(poolId, userId)) {
-            throw new PermissionException();
-        }
         return addUser(addUserId, poolId, PoolPermission.ADMIN);
     }
 
 
     public MapPoolUser addChooserUser(long userId, long addUserId, int poolId) {
-        if (!isAdminByPool(poolId, userId)) {
-            throw new PermissionException();
-        }
         return addUser(addUserId, poolId, PoolPermission.CHOOSER);
     }
 
     public MapPoolUser addTesterUser(long userId, long addUserId, int poolId) {
-        if (!isAdminByPool(poolId, userId)) {
-            throw new PermissionException();
-        }
         return addUser(addUserId, poolId, PoolPermission.TESTER);
     }
 
@@ -286,10 +272,6 @@ public class MapPoolDao {
      *  创建分组 比如NM组
      */
     public MapCategoryGroup createCategoryGroup(long userId, int poolId, String name, String info, int color) {
-        if (!isAdminByPool(poolId, userId)) {
-            throw new PermissionException();
-        }
-
         var mg = new MapCategoryGroup();
         mg.setPoolId(poolId);
         mg.setColor(color);
@@ -307,22 +289,42 @@ public class MapPoolDao {
         return categoryGroupRepository.saveAndFlush(group);
     }
 
+    public List<MapCategoryGroup> getAllCategotys(int poolId) {
+        var groups = categoryRepository.getAllCategory(poolId);
+        return groups;
+    }
+
+    public void deleteMapCategoryGroup(MapCategoryGroup group) {
+        categoryGroupRepository.delete(group);
+    }
+
     /* ************************************************* Category **************************************************************** */
 
     /**
      * 创建具体分类 比如NM1
      *
-     * @param groupId      CategoryGroup.id
+     * @param groupId CategoryGroup.id
      */
     public MapCategory createCategory(long userId, int groupId, String categoryName) {
-        if (!isAdminByGroup(groupId, userId)) {
-            throw new PermissionException();
-        }
-
         var category = new MapCategory();
         category.setGroupId(groupId);
         category.setName(categoryName);
         return categoryRepository.save(category);
+    }
+
+    public MapCategory saveCategory(MapCategory category) {
+        return categoryRepository.saveAndFlush(category);
+    }
+
+    public void deleteCategory(MapCategory category) {
+        for (var item : category.getItems()) {
+            deleteCategoryItem(item);
+        }
+        categoryRepository.delete(category);
+    }
+
+    public Optional<MapCategory> getMapCategoryById(int categoryId) {
+        return categoryRepository.findById(categoryId);
     }
 
     /* ************************************************* Item **************************************************************** */
@@ -331,27 +333,71 @@ public class MapPoolDao {
      * 加一张图
      * @return 包含推荐人id, bid, 描述信息的结构
      */
-    public MapCategoryItem createCategoryItem(long userId, int categoryId, long bid, String info) {
-        var categoryOpt = categoryRepository.findById(categoryId);
+    public MapCategoryItem createCategoryItem(long userId, int itemId, long bid, String info) {
+        var categoryOpt = categoryRepository.findById(itemId);
         if (categoryOpt.isEmpty()) {
-            throw new RuntimeException("not found");
+            throw new NotFoundException();
         }
         var category = categoryOpt.get();
-        if (!isChooserByGroup(category.getGroupId(), userId)) {
-            throw new PermissionException();
-        }
         var categoryItem = new MapCategoryItem();
         categoryItem.setSort(0);
         categoryItem.setInfo(info);
         categoryItem.setChous(bid);
-        categoryItem.setCategoryId(categoryId);
+        categoryItem.setCreaterId(userId);
+        categoryItem.setCategoryId(itemId);
         return categoryItemRepository.save(categoryItem);
     }
+
+    public MapCategoryItem updateCategoryItem(long userId, int itemId, long bid, String info, int sort) {
+        var item = checkItem(userId, itemId);
+
+        item.setChous(bid);
+        item.setSort(sort);
+        item.setInfo(info);
+
+        return categoryItemRepository.save(item);
+    }
+
+    public void deleteCategoryItem(long userId, int itemId) {
+        var item = checkItem(userId, itemId);
+        deleteCategoryItem(item);
+    }
+
+    private void deleteCategoryItem(MapCategoryItem item) {
+        if (item.getFeedbacks().size() != 0) {
+            feedbackRepository.deleteAll(item.getFeedbacks());
+        }
+        categoryItemRepository.delete(item);
+    }
+
+    private MapCategoryItem checkItem(long userId, int itemId) {
+        var categoryItemOpt = categoryItemRepository.findById(itemId);
+        if (categoryItemOpt.isEmpty()) throw new NotFoundException();
+        var item = categoryItemOpt.get();
+
+        if (!isAdminByGroup(item.getCategory().getGroupId(), userId) && !item.getCreaterId().equals(userId)) {
+            throw new PermissionException("非创建者无法操作");
+        }
+
+        return item;
+    }
+
+    public Optional<MapCategoryItem> getMapCategoryItemById(int itemId) {
+        return categoryItemRepository.findById(itemId);
+    }
+
+    public List<MapCategoryItem> getAllCategoryItems(int categoryId) {
+        var selectAttr = new MapCategory();
+        selectAttr.setId(categoryId);
+        return categoryItemRepository.findAllByCategory(selectAttr);
+    }
+
+    /* ************************************************* Other **************************************************************** */
 
     public MapFeedback createFeedback(long userId, int categoryItemId, @Nullable Boolean agree, String msg) {
         var categoryItem = categoryItemRepository.findById(categoryItemId);
         if (categoryItem.isEmpty()) {
-            throw new RuntimeException("not found");
+            throw new NotFoundException();
         }
         var category = categoryItem.get().getCategory();
         if (!isUserByGroup(category.getGroupId(), userId)) {
@@ -365,17 +411,33 @@ public class MapPoolDao {
         return feedbackRepository.save(feedback);
     }
 
-    public List<MapCategoryGroup> getAllCategotys(int poolId) {
-        var groups = categoryRepository.getAllCategory(poolId);
-        for (var g : groups) {
-            g.setCategories(categoryRepository.getAllByGroup(g));
-        }
-        return groups;
+    public MapFeedback updateFeedback(long userId, int FeedbackId, @Nullable Boolean agree, String msg) {
+        var feedback = checkFeedback(userId, FeedbackId);
+        feedback.setAgree(agree);
+        feedback.setFeedback(msg);
+        return feedbackRepository.save(feedback);
     }
 
-    public List<MapCategoryItem> getAllCategoryItems(int categoryId) {
-        var selectAttr = new MapCategory();
-        selectAttr.setId(categoryId);
-        return categoryItemRepository.findAllByCategory(selectAttr);
+    public void deleteFeedback(long userId, int FeedbackId) {
+        feedbackRepository.delete(checkFeedback(userId, FeedbackId));
+    }
+
+    public boolean handleFeedback(long userId, int FeedbackId, boolean handle) {
+        var feedback = checkFeedback(userId, FeedbackId);
+        feedback.setHandle(handle);
+        return feedbackRepository.save(feedback).isHandle();
+    }
+
+    private MapFeedback checkFeedback(long userId, int FeedbackId) {
+        var feedbackOptional = feedbackRepository.findById(FeedbackId);
+        if (feedbackOptional.isEmpty()) {
+            throw new NotFoundException();
+        }
+        var feedback = feedbackOptional.get();
+
+        if (!isAdminByPool(feedback.getItem().getCategory().getGroupId(), userId) && !feedback.getCreaterId().equals(userId)) {
+            throw new PermissionException("非本人禁止修改/删除");
+        }
+        return feedback;
     }
 }

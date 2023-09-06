@@ -7,6 +7,9 @@ import lombok.Setter;
 
 import java.util.List;
 
+/**
+ * 组别
+ */
 @Getter
 @Setter
 @Entity
@@ -19,6 +22,7 @@ public class MapCategoryGroup {
 
     @ManyToOne()
     @JoinColumn(name = "pool_id")
+    @JsonIgnoreProperties({"groups", "users"})
     MapPool pool;
     @Column(name = "name", columnDefinition = "text")
     String name;
@@ -32,6 +36,7 @@ public class MapCategoryGroup {
     int sort = 0;
 
     public Integer getPoolId() {
+        if (pool == null) return null;
         return pool.getId();
     }
 

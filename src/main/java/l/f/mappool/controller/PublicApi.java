@@ -5,9 +5,12 @@ import jakarta.annotation.Resource;
 import l.f.mappool.config.interceptor.Open;
 import l.f.mappool.dao.MapPoolDao;
 import l.f.mappool.dto.ProxyDto;
+import l.f.mappool.entity.MapFeedback;
 import l.f.mappool.entity.MapPool;
 import l.f.mappool.exception.HttpError;
+import l.f.mappool.service.MapPoolService;
 import l.f.mappool.service.OsuApiService;
+import l.f.mappool.vo.DataListVo;
 import l.f.mappool.vo.DataVo;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Controller;
@@ -16,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import javax.validation.constraints.NotNull;
 import java.util.List;
 
 @Open
@@ -28,6 +32,8 @@ public class PublicApi {
     OsuApiService osuService;
     @Resource
     MapPoolDao mapPoolDao;
+    @Resource
+    MapPoolService mapPoolService;
     @Resource
     WebClient webClient;
     @Resource
@@ -106,5 +112,13 @@ public class PublicApi {
             }
             throw new HttpError(500, e.getMessage());
         }
+    }
+    @GetMapping("feedback")
+    DataListVo<MapFeedback> getFeedback(@NotNull(message = "id 不能为空") @RequestParam("id") int itemId){
+        var feedbacks = mapPoolService.getPublicFeedbackFromItem(itemId);
+        return new DataListVo<MapFeedback>()
+                .setTotalItems(feedbacks.size())
+                .setPageSize(feedbacks.size())
+                .setData(feedbacks);
     }
 }

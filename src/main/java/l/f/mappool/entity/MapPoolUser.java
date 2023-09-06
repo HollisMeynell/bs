@@ -1,6 +1,7 @@
 package l.f.mappool.entity;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import l.f.mappool.enums.PoolPermission;
@@ -23,7 +24,7 @@ public class MapPoolUser {
 
     @ManyToOne
     @JoinColumn(name = "pool_id")
-    @JsonManagedReference
+    @JsonIgnoreProperties("users")
     MapPool pool;
 
     /**

@@ -10,6 +10,9 @@ import org.hibernate.annotations.Type;
 
 import java.time.LocalDateTime;
 
+/**
+ * 收藏谱面
+ */
 @Entity
 @Getter
 @Setter

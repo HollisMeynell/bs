@@ -1,12 +1,16 @@
 package l.f.mappool.entity;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.DynamicUpdate;
 
-
+/**
+ * 评论表
+ */
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 @Entity
 @Getter
@@ -23,16 +27,18 @@ public class MapFeedback {
     Long createrId;
 
     @ManyToOne()
+    @JsonIgnore
     @JoinColumn(name = "category_item_id")
     MapCategoryItem item;
 
     @Column(name = "deleted", columnDefinition = "boolean default false")
-    boolean deleted;
+    boolean handle;
 
     @Column(name = "feedback", columnDefinition = "text")
     String feedback;
 
     Boolean agree;
+
 
     public int getItemId() {
         return item.id;

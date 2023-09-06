@@ -5,6 +5,7 @@ import l.f.mappool.dao.MapPoolDao;
 import l.f.mappool.dto.map.QueryMapPoolDto;
 import l.f.mappool.entity.*;
 import l.f.mappool.enums.PoolPermission;
+import l.f.mappool.exception.NotFoundException;
 import l.f.mappool.exception.PermissionException;
 import l.f.mappool.repository.MapPoolMark4UserRepository;
 import l.f.mappool.repository.MapPoolUserRepository;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -56,7 +58,7 @@ public class MapPoolService {
 
         var poolOpt = mapPoolDao.getMapPoolById(poolId);
         if (poolOpt.isEmpty()) {
-            throw new RuntimeException("pool not found");
+            throw new NotFoundException();
         }
 
         var pool = poolOpt.get();
@@ -71,6 +73,19 @@ public class MapPoolService {
         }
 
         return mapPoolDao.saveMapPool(pool);
+    }
+
+    public void deleteMapPool(long userId, int poolId) {
+        if (!mapPoolDao.isAdminByPool(poolId, userId)) {
+            throw new PermissionException();
+        }
+        mapPoolDao.deletePool(userId, poolId);
+    }
+    public void removePool(long userId, int poolId) {
+        if (!mapPoolDao.isAdminByPool(poolId, userId)) {
+            throw new PermissionException();
+        }
+        mapPoolDao.removePool(userId, poolId);
     }
 
     /***
@@ -90,7 +105,7 @@ public class MapPoolService {
 
         var groupOpt = mapPoolDao.getCategoryGroupById(groupId);
         if (groupOpt.isEmpty()) {
-            throw new RuntimeException("group not found");
+            throw new NotFoundException();
         }
 
         var group = groupOpt.get();
@@ -110,12 +125,22 @@ public class MapPoolService {
         return mapPoolDao.saveMapCategoryGroup(group);
     }
 
-    public MapCategoryItem createCategoryItem(long uid, int categoryId, long bid, String info) {
-
-        if (!mapPoolDao.isChooserByCategory(categoryId, uid)) {
+    public void deleteCategoryGroup(long uid, int groupId) {
+        if (!mapPoolDao.isAdminByGroup(groupId, uid)) {
             throw new PermissionException();
         }
-        return mapPoolDao.createCategoryItem(uid, categoryId, bid, info);
+
+        var groupOpt = mapPoolDao.getCategoryGroupById(groupId);
+        if (groupOpt.isEmpty()) {
+            throw new NotFoundException();
+        }
+
+        var group = groupOpt.get();
+        if (group.getCategories().size() > 0) {
+            throw new RuntimeException("类别不为空,请删掉全部内容.");
+        }
+
+        mapPoolDao.deleteMapCategoryGroup(group);
     }
 
     /***
@@ -126,6 +151,91 @@ public class MapPoolService {
             throw new PermissionException();
         }
         return mapPoolDao.createCategory(uid, groupId, name);
+    }
+
+    public MapCategory updateCategory(long uid, int categoryId, String name) {
+        var categoryOpt = mapPoolDao.getMapCategoryById(categoryId);
+        if (categoryOpt.isEmpty()) {
+            throw new NotFoundException();
+        }
+
+        var category = categoryOpt.get();
+        if (!mapPoolDao.isAdminByGroup(category.getGroupId(), uid)) {
+            throw new PermissionException();
+        }
+
+        if (name != null && !name.isBlank()) {
+            category.setName(name);
+        }
+
+        return mapPoolDao.saveCategory(category);
+    }
+
+    public void deleteCategory(long uid, int categoryId) {
+        var categoryOpt = mapPoolDao.getMapCategoryById(categoryId);
+        if (categoryOpt.isEmpty()) {
+            throw new NotFoundException();
+        }
+
+        var category = categoryOpt.get();
+        if (!mapPoolDao.isAdminByGroup(category.getGroupId(), uid)) {
+            throw new PermissionException();
+        }
+        mapPoolDao.deleteCategory(category);
+    }
+
+    public MapCategory choseCategory(long uid, int categoryId, Long bid) {
+        var categoryOpt = mapPoolDao.getMapCategoryById(categoryId);
+        if (categoryOpt.isEmpty()) {
+            throw new NotFoundException();
+        }
+
+        var category = categoryOpt.get();
+        if (!mapPoolDao.isAdminByGroup(category.getGroupId(), uid)) {
+            throw new PermissionException();
+        }
+
+        category.setChosed(bid);
+
+        return mapPoolDao.saveCategory(category);
+    }
+
+    public MapCategoryItem createCategoryItem(long uid, int categoryId, long bid, String info) {
+        if (!mapPoolDao.isChooserByCategory(categoryId, uid)) {
+            throw new PermissionException();
+        }
+        return mapPoolDao.createCategoryItem(uid, categoryId, bid, info);
+    }
+
+    public MapCategoryItem updateCategoryItem(long uid, int itemId, long bid, String info, int sort) {
+        return mapPoolDao.updateCategoryItem(uid, itemId, bid, info, sort);
+    }
+
+    public List<MapFeedback> getFeedbackFromItem(long uid, int itemId){
+        var itemOpt = mapPoolDao.getMapCategoryItemById(itemId);
+        return itemOpt
+                .map(MapCategoryItem::getFeedbacks)
+                .map(e -> {
+                    e.removeIf(i -> (i.getCreaterId() != uid && i.isHandle()));
+                    return e;
+                })
+                .orElseGet(List::of);
+    }
+
+    public List<MapFeedback> getPublicFeedbackFromItem(int itemId){
+        var itemOpt = mapPoolDao.getMapCategoryItemById(itemId);
+        return itemOpt
+                .map(MapCategoryItem::getFeedbacks)
+                .map(e -> {
+                    e.removeIf(MapFeedback::isHandle);
+                    return e;
+                })
+                .orElseGet(List::of);
+    }
+
+
+    public void deleteCategoryItem(long uid, int itemId) {
+        mapPoolDao.deleteCategoryItem(uid, itemId);
     }
 
     public Map<PoolPermission, List<MapPool>> getAllPool(long osuId) {
@@ -169,6 +279,7 @@ public class MapPoolService {
         var list = mapPoolDao.getAllMarkPool(uid);
         return new DataListVo<MapPool>()
                 .setTotalItems(list.size())
+                .setPageSize(list.size())
                 .setData(list);
     }
 
@@ -183,14 +294,23 @@ public class MapPoolService {
     }
 
     public DataVo<MapPoolUser> addAdminUser(long userId, long addUserId, int poolId) {
+        if (!mapPoolDao.isCreaterByPool(poolId, userId)) {
+            throw new PermissionException();
+        }
         var u = mapPoolDao.addAdminUser(userId, addUserId, poolId);
         return new DataVo<>(u);
     }
     public DataVo<MapPoolUser> addChooserUser(long userId, long addUserId, int poolId) {
+        if (!mapPoolDao.isAdminByPool(poolId, userId)) {
+            throw new PermissionException();
+        }
         var u = mapPoolDao.addChooserUser(userId, addUserId, poolId);
         return new DataVo<>(u);
     }
     public DataVo<MapPoolUser> addTesterUser(long userId, long addUserId, int poolId) {
+        if (!mapPoolDao.isAdminByPool(poolId, userId)) {
+            throw new PermissionException();
+        }
         var u = mapPoolDao.addTesterUser(userId, addUserId, poolId);
         return new DataVo<>(u);
     }

@@ -21,6 +21,7 @@ public class MapCategoryItem {
     Integer id;
 
     @ManyToOne()
+    @JsonIgnoreProperties({"items"})
     @JoinColumn(name = "category_id")
     MapCategory category;
 
@@ -28,7 +29,7 @@ public class MapCategoryItem {
      * 推荐者 id
      */
     @Column(name = "creater_id")
-    Integer createrId;
+    Long createrId;
 
     @Column(name = "info", columnDefinition = "text")
     String info;
