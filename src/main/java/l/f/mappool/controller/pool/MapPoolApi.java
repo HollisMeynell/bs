@@ -98,14 +98,14 @@ public class MapPoolApi extends PoolApi {
      * 标记为常用图池
      * @param mark 参数 poolId
      */
-    @PutMapping("addMark")
+    @PutMapping("mark")
     DataVo<Boolean> addPoolMark(@RequestBody @Validated MarkPoolDto mark) {
         var u = ContextUtil.getContextUser();
         mapPoolService.addMarkPool(u.getOsuId(), mark.getPoolId());
         return new DataVo<>(Boolean.TRUE).setMessage("创建成功");
     }
 
-    @DeleteMapping("deleteMark")
+    @DeleteMapping("mark")
     DataVo<Boolean> deletePoolMark(@Validated MarkPoolDto mark) {
         var u = ContextUtil.getContextUser();
         int sum = mapPoolService.deleteMarkPool(u.getOsuId(), mark.getPoolId());
@@ -120,7 +120,7 @@ public class MapPoolApi extends PoolApi {
     /**
      * 查询标记的表
      */
-    @GetMapping("getMark")
+    @GetMapping("mark")
     DataListVo<MapPool> getUserMarkPool() {
         var u = ContextUtil.getContextUser();
         return mapPoolService.getAllMarkPool(u.getOsuId());
@@ -140,5 +140,11 @@ public class MapPoolApi extends PoolApi {
     DataVo<MapPoolUser> addTesterUser(@RequestBody @Validated(AddUser.class) PoolUserDto user) {
         var u = ContextUtil.getContextUser();
         return mapPoolService.addTesterUser(u.getOsuId(), user.getUserId(), user.getPoolId());
+    }
+
+    @PutMapping("deleteUser")
+    DataVo<MapPoolUser> deleteUser(@RequestBody @Validated(AddUser.class) PoolUserDto user) {
+        var u = ContextUtil.getContextUser();
+        return mapPoolService.deleteUser(u.getOsuId(), user.getUserId(), user.getPoolId());
     }
 }

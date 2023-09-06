@@ -313,4 +313,11 @@ public class MapPoolService {
         var u = mapPoolDao.addTesterUser(userId, addUserId, poolId);
         return new DataVo<>(u);
     }
+
+    public void deleteAdminUser(long userId, long deleteUserId, int poolId) {
+        if (!mapPoolDao.isCreaterByPool(poolId, userId)) {
+            throw new PermissionException();
+        }
+        mapPoolDao.deleteUser(userId, deleteUserId, poolId);
+    }
 }
