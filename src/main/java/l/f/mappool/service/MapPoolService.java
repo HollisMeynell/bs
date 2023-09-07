@@ -314,7 +314,7 @@ public class MapPoolService {
         return new DataVo<>(u);
     }
 
-    public void deleteAdminUser(long userId, long deleteUserId, int poolId) {
+    public void deleteUser(long userId, long deleteUserId, int poolId) {
         if (!mapPoolDao.isCreaterByPool(poolId, userId)) {
             throw new PermissionException();
         }

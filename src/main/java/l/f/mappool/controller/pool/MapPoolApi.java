@@ -143,8 +143,9 @@ public class MapPoolApi extends PoolApi {
     }
 
     @PutMapping("deleteUser")
-    DataVo<MapPoolUser> deleteUser(@RequestBody @Validated(AddUser.class) PoolUserDto user) {
+    DataVo<String> deleteUser(@RequestBody @Validated(AddUser.class) PoolUserDto user) {
         var u = ContextUtil.getContextUser();
-        return mapPoolService.deleteUser(u.getOsuId(), user.getUserId(), user.getPoolId());
+        mapPoolService.deleteUser(u.getOsuId(), user.getUserId(), user.getPoolId());
+        return new DataVo<>("ok");
     }
 }

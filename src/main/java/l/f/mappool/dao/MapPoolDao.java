@@ -182,18 +182,11 @@ public class MapPoolDao {
     }
 
     public void deleteUser(long userId, long deleteUserId, int poolId) {
-        var u = poolUserRepository.findById(poolId, deleteUserId);
-        MapPoolUser addUser;
-        if (u.isPresent()) {
-            addUser = u.get();
-            addUser.setPermission(permission);
-        } else {
-            addUser = new MapPoolUser();
-            addUser.setUserId(addUserId);
-            addUser.setPoolId(poolId);
-            addUser.setPermission(permission);
+        var u = poolUserRepository.getMapPoolUserByPoolIdAndUserId(poolId, deleteUserId);
+        if (u.isEmpty()) {
+            throw new NotFoundException();
         }
-        return poolUserRepository.save(addUser);
+        poolUserRepository.delete(u.get());
     }
 
     private boolean testBef(Optional<MapPoolUser> userOpt, PoolPermission... poolPermissions) {
