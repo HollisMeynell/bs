@@ -1,20 +1,20 @@
 package l.f.mappool.service;
 
+import jakarta.annotation.Nullable;
 import jakarta.annotation.Resource;
 import l.f.mappool.entity.OsuAccountUser;
 import l.f.mappool.exception.LogException;
 import l.f.mappool.repository.OsuAccountUserRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Flux;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.transport.ProxyProvider;
 
@@ -49,8 +49,9 @@ public class BeatmapFileService {
             .defaultHeaders(headers -> headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED))
             .build();
     private static final String HOME_PAGE_URL = "/home";
-    private static final String LOGIN_URL = "/session";
-    private static final String DOWNLOAD_URL = "/beatmapsets/{bid}/download";
+    private static final String LOGIN_URL        = "/session";
+    private static final String DOWNLOAD_OSZ_URL = "/beatmapsets/{bid}/download";
+    private static final String DOWNLOAD_OSR_URL = "/scores/{mode}/{bid}/download";
 
     @Resource
     OsuAccountUserRepository accountUserRepository;
@@ -66,52 +67,42 @@ public class BeatmapFileService {
         login(accountUser);
     }
 
-    public InputStream download(Long sid, OsuAccountUser account) throws IOException {
+    public InputStream downloadOsz(long sid, OsuAccountUser account) throws IOException {
+        return doDownload(sid, account, null);
+    }
+
+    public InputStream downloadOsr(long scoreId, String mode,  OsuAccountUser account) throws IOException {
+        return doDownload(scoreId, account, mode);
+    }
+
+    private InputStream doDownload(long sid,  OsuAccountUser account,@Nullable String mode) throws IOException {
         if (account.getSession() == null) initAccount(account);
 
-        Flux<DataBuffer> body;
         PipedOutputStream outputStream = new PipedOutputStream();
         PipedInputStream inputStream = new PipedInputStream(1024 * 10);
         inputStream.connect(outputStream);
+        java.util.function.Consumer<Void> consumer;
+        if (mode == null) {
+            consumer = i -> downloadBody(account, outputStream, DOWNLOAD_OSZ_URL, sid);
+        } else {
+            consumer = i -> downloadBody(account, outputStream, DOWNLOAD_OSR_URL,  mode, sid);
+        }
         try {
-            body = downloadBody(sid, account, outputStream);
+            consumer.accept(null);
         } catch (Exception e) {
             log.error("下载文件失败, 重试中", e);
             initAccount(account);
-            body = downloadBody(sid, account, outputStream);
+            consumer.accept(null);
         }
-        DataBufferUtils.write(body, outputStream)
-                .subscribe();
-
         return inputStream;
     }
-
-    /**
-     * 流式下载 输出到 OutputStream
-     * @param out 输出流
-     */
-    public void downloadOut(Long sid, OsuAccountUser account, OutputStream out) {
-        if (account.getSession() == null) initAccount(account);
-
-        Flux<DataBuffer> body;
-        try {
-            body = downloadBody(sid, account, out);
-        } catch (Exception e) {
-            log.error("下载文件失败, 重试中", e);
-            initAccount(account);
-            body = downloadBody(sid, account, out);
-        }
-        DataBufferUtils.write(body, out)
-                .subscribe();
-    }
-
     @SuppressWarnings("all")
-    private Flux<DataBuffer> downloadBody(long sid, OsuAccountUser account, OutputStream out) {
-        return webClient.get()
-                .uri(DOWNLOAD_URL, sid)
+    private void downloadBody(OsuAccountUser account, OutputStream out, String url, Object ... params) {
+        var body = webClient.get()
+                .uri(url, params)
                 .headers(h -> {
                     setHeaders(h, account);
-                    h.set("referer", "https://osu.ppy.sh/beatmapsets/" + sid);
+                    h.set("referer", "https://osu.ppy.sh/home");
                 })
                 .exchangeToFlux(clientResponse -> {
                     parseCookie(clientResponse.headers().asHttpHeaders(), account);
@@ -126,25 +117,35 @@ public class BeatmapFileService {
                         throw new RuntimeException(e);
                     }
                 });
+        DataBufferUtils.write(body, out)
+                .subscribe();
     }
-
 
     private void login(OsuAccountUser accountUser) {
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
         body.set("_token", accountUser.getToken());
         body.set("username", accountUser.getUsername());
         body.set("password", accountUser.getPassword());
-        var client = webClient.post()
-                .headers(h -> {
-                    setHeaders(h, accountUser);
-                    h.set("referer", "https://osu.ppy.sh" + LOGIN_URL);
-                })
-                .bodyValue(body)
-                .retrieve()
-                .toEntity(String.class)
-                .block();
-        if (client == null) throw new LogException("登录失败");
-        parseCookie(client.getHeaders(), accountUser);
+        try {
+            ResponseEntity<String> client = webClient.post()
+                    .uri(LOGIN_URL)
+                    .headers(h -> {
+                        setHeaders(h, accountUser);
+                        h.set("referer", "https://osu.ppy.sh" + LOGIN_URL);
+                    })
+                    .bodyValue(body)
+                    .retrieve()
+                    .toEntity(String.class)
+                    .block();
+            if (client == null || !client.getStatusCode().is2xxSuccessful()) throw new LogException("登录失败");
+            log.info("login result: {}", client.getStatusCode().is2xxSuccessful());
+            parseCookie(client.getHeaders(), accountUser);
+        } catch (Exception e) {
+            accountUser.setSession(null);
+            accountUser.setToken(null);
+            throw e;
+        }
+
     }
 
     private void visitHomePage(OsuAccountUser accountUser) {
