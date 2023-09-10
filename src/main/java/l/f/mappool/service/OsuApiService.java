@@ -181,7 +181,7 @@ public class OsuApiService {
         var map = beatMapRepository.findBeatMapById(bid);
         return map.orElseGet(()->{
             var get = getMapInfo(bid);
-            beatMapRepository.save(get);
+            if (get.getStatus().equals("ranked")) beatMapRepository.save(get);
             return get;
         });
     }
