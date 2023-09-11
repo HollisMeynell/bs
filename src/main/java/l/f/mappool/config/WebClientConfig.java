@@ -5,9 +5,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.http.codec.ServerCodecConfigurer;
 import org.springframework.http.codec.json.Jackson2JsonDecoder;
 import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.config.WebFluxConfigurer;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
@@ -19,7 +21,7 @@ import java.util.Collections;
 
 @Component
 @Configuration
-public class WebClientConfig {
+public class WebClientConfig implements WebFluxConfigurer {
 
     @Bean("osuApiWebClient")
     public WebClient OsuApiWebClient(WebClient.Builder builder) {
@@ -61,5 +63,7 @@ public class WebClientConfig {
                 .build();
     }
 
-
+    public void configureHttpMessageCodecs(ServerCodecConfigurer configurer) {
+        configurer.defaultCodecs().maxInMemorySize(20 * 1024 * 1024);
+    }
 }

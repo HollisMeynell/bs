@@ -264,6 +264,8 @@ public class MapPoolService {
     }
 
     public void addMarkPool(long uid, int pid) {
+        var search = mapPoolMark4UserRepository.queryMapPoolMark4UserByUidAndPid(uid, pid);
+        if (search.isPresent()) return;
         var f = new MapPoolMark4User();
         f.setUid(uid);
         f.setPid(pid);

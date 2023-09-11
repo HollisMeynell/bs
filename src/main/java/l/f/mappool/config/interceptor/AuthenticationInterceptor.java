@@ -7,6 +7,8 @@ import l.f.mappool.exception.HttpError;
 import l.f.mappool.service.UserService;
 import l.f.mappool.util.ContextUtil;
 import l.f.mappool.util.JwtUtil;
+import l.f.mappool.util.TokenBucketUtil;
+import org.springframework.util.ObjectUtils;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -23,6 +25,14 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         if (handler instanceof HandlerMethod handlerMethod) {
+            if (!TokenBucketUtil.getToken(request.getRemoteAddr(), 120, 1.5)) {
+                throw new HttpError(429, "Too Many Requests");
+            }
+
+            if (handlerMethod.getMethod().getName().equals("proxy") && !TokenBucketUtil.getToken('p' + request.getRemoteAddr(), 60, 1)) {
+                throw new HttpError(429, "Too Many Requests");
+            }
+
             // 检查方法上是否有@Open注解
             Open methodAnnotation = handlerMethod.getMethod().getAnnotation(Open.class);
             if (methodAnnotation != null) {
@@ -40,12 +50,12 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
             }
 
             String header = request.getHeader("Authorization");
-            if (header == null || !header.startsWith("Bearer ")) {
+            if (ObjectUtils.isEmpty(header) || !header.startsWith("Bearer ")) {
                 throw new HttpError(401, "no login");
             }
             String token = header.substring(7);
             User user = JwtUtil.verifyToken(token);
-            if (user == null || !userService.loginCheck(user)) {
+            if (ObjectUtils.isEmpty(user) || !userService.loginCheck(user)) {
                 throw new HttpError(401, "身份验证失败,尝试重新登陆");
             }
             ContextUtil.setContextUser(user);
