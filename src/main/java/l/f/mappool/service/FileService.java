@@ -103,6 +103,15 @@ public class FileService {
     public String writeFile(String name, InputStream in) throws IOException {
         var key = UUID.randomUUID().toString();
         Path path = Path.of(UPLOAD_PATH, key);
+        while (true) {
+            try {
+                Files.createFile(path);
+                break;
+            } catch (IOException e) {
+                key = UUID.randomUUID().toString();
+                path = Path.of(UPLOAD_PATH, key);
+            }
+        }
         Files.copy(in, path, StandardCopyOption.REPLACE_EXISTING);
         fileLogRepository.save(name, key);
         return key;

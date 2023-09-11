@@ -11,5 +11,9 @@ public class AfterRun implements CommandLineRunner {
     @Override
     public void run(String... args) {
         log.info("ok!");
+        Runnable run = ()->{
+            log.info("shutdown!");
+        };
+        Runtime.getRuntime().addShutdownHook(new Thread(run,"endThread"));
     }
 }

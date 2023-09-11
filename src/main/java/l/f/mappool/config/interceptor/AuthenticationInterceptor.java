@@ -7,6 +7,7 @@ import l.f.mappool.exception.HttpError;
 import l.f.mappool.service.UserService;
 import l.f.mappool.util.ContextUtil;
 import l.f.mappool.util.JwtUtil;
+import org.springframework.util.ObjectUtils;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -40,12 +41,12 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
             }
 
             String header = request.getHeader("Authorization");
-            if (header == null || !header.startsWith("Bearer ")) {
+            if (ObjectUtils.isEmpty(header) || !header.startsWith("Bearer ")) {
                 throw new HttpError(401, "no login");
             }
             String token = header.substring(7);
             User user = JwtUtil.verifyToken(token);
-            if (user == null || !userService.loginCheck(user)) {
+            if (ObjectUtils.isEmpty(user) || !userService.loginCheck(user)) {
                 throw new HttpError(401, "身份验证失败,尝试重新登陆");
             }
             ContextUtil.setContextUser(user);

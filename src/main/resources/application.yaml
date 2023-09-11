@@ -12,6 +12,8 @@ beatmap-selection:
       token: yourToken
 
 spring:
+  codec:
+    max-in-memory-size: 20MB
   servlet:
     multipart:
       max-file-size: 20MB
