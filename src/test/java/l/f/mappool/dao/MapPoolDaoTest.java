@@ -92,7 +92,7 @@ class MapPoolDaoTest {
         mapPoolDao.createFeedback(uid, item.getId(), null, "aaa");
         var f1 = mapPoolDao.createFeedback(uid, item.getId(), false, "bbb");
         mapPoolDao.createFeedback(uid, item.getId(), true, "ccc");
-        mapPoolDao.handleFeedback(uid, f1.getId(), true);
+        mapPoolDao.handleFeedback(f1, true);
 
         c = mapPoolService.choseCategory(uid, c.getId(), 16115L);
 

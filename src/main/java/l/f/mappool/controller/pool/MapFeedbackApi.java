@@ -33,14 +33,16 @@ public class MapFeedbackApi extends PoolApi {
     @PatchMapping("feedback")
     DataVo<MapFeedback> setFeedback(@RequestBody @Validated(SetFeedback.class) FeedbackDto create) {
         var u = ContextUtil.getContextUser();
-        var feedback = mapPoolDao.updateFeedback(u.getOsuId(), create.getId(), create.getAgree(), create.getFeedback());
+        var feedback = mapPoolDao.checkFeedback(u.getOsuId(), create.getId());
+        feedback = mapPoolDao.updateFeedback(feedback, create.getAgree(), create.getFeedback());
         return new DataVo<>("修改成功", feedback);
     }
 
     @DeleteMapping("feedback")
     DataVo<String> deleteFeedback(@Validated(DeleteFeedback.class) FeedbackDto create){
         var u = ContextUtil.getContextUser();
-        mapPoolDao.deleteFeedback(u.getOsuId(), create.getItemId());
+        var feedback = mapPoolDao.checkFeedback(u.getOsuId(), create.getId());
+        mapPoolDao.deleteFeedback(feedback);
         return new DataVo<>("删除成功", null);
     }
 
@@ -51,7 +53,8 @@ public class MapFeedbackApi extends PoolApi {
     @PatchMapping("feedback/handle")
     DataVo<Boolean> handleFeedback(@RequestBody @Validated(HandleFeedback.class) FeedbackDto create) {
         var u = ContextUtil.getContextUser();
-        var feedback = mapPoolDao.handleFeedback(u.getOsuId(), create.getId(), create.getHandle());
-        return new DataVo<>("修改状态成功", feedback);
+        var feedback = mapPoolDao.checkFeedback(u.getOsuId(), create.getId());
+        feedback = mapPoolDao.handleFeedback(feedback, create.getHandle());
+        return new DataVo<>("修改状态成功", feedback.isHandle());
     }
 }
