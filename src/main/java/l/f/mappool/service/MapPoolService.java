@@ -5,6 +5,9 @@ import l.f.mappool.dao.MapPoolDao;
 import l.f.mappool.dto.map.QueryMapPoolDto;
 import l.f.mappool.entity.*;
 import l.f.mappool.enums.PoolPermission;
+import l.f.mappool.enums.PoolStatus;
+import l.f.mappool.exception.HttpError;
+import l.f.mappool.exception.LogException;
 import l.f.mappool.exception.NotFoundException;
 import l.f.mappool.exception.PermissionException;
 import l.f.mappool.repository.MapPoolMark4UserRepository;
@@ -78,13 +81,33 @@ public class MapPoolService {
         if (!mapPoolDao.isAdminByPool(poolId, userId)) {
             throw new PermissionException();
         }
-        mapPoolDao.deletePool(userId, poolId);
+        var poolOpt = mapPoolDao.getMapPoolById(poolId);
+        if (poolOpt.isEmpty()) {
+            throw new RuntimeException("已被删除");
+        }
+        var pool = poolOpt.get();
+        if (!pool.getGroups().isEmpty()) {
+            throw new RuntimeException("图池不为空,请删掉全部内容.");
+        }
+        if (pool.getUsers().size() > 1) {
+            throw new RuntimeException("图池仍有成员,请删掉所有其他成员.");
+        }
+        mapPoolDao.deletePool(userId, pool);
     }
+
     public void removePool(long userId, int poolId) {
         if (!mapPoolDao.isAdminByPool(poolId, userId)) {
             throw new PermissionException();
         }
-        mapPoolDao.removePool(userId, poolId);
+        var poolOpt = mapPoolDao.getMapPoolById(poolId);
+        if (poolOpt.isEmpty()) {
+            throw new RuntimeException("已被删除");
+        }
+        var pool = poolOpt.get();
+        if (pool.getStatus() != PoolStatus.DELETE) {
+            throw new RuntimeException("先执行delete");
+        }
+        mapPoolDao.removePool(userId, pool);
     }
 
     /***
@@ -207,10 +230,11 @@ public class MapPoolService {
     }
 
     public MapCategoryItem updateCategoryItem(long uid, int itemId, long bid, String info, int sort) {
-        return mapPoolDao.updateCategoryItem(uid, itemId, bid, info, sort);
+        var item = mapPoolDao.checkItem(uid, itemId);
+        return mapPoolDao.updateCategoryItem(item, bid, info, sort);
     }
 
-    public List<MapFeedback> getFeedbackFromItem(long uid, int itemId){
+    public List<MapFeedback> getFeedbackFromItem(long uid, int itemId) {
         var itemOpt = mapPoolDao.getMapCategoryItemById(itemId);
         return itemOpt
                 .map(MapCategoryItem::getFeedbacks)
@@ -221,7 +245,7 @@ public class MapPoolService {
                 .orElseGet(List::of);
     }
 
-    public List<MapFeedback> getPublicFeedbackFromItem(int itemId){
+    public List<MapFeedback> getPublicFeedbackFromItem(int itemId) {
         var itemOpt = mapPoolDao.getMapCategoryItemById(itemId);
         return itemOpt
                 .map(MapCategoryItem::getFeedbacks)
@@ -234,7 +258,8 @@ public class MapPoolService {
 
 
     public void deleteCategoryItem(long uid, int itemId) {
-        mapPoolDao.deleteCategoryItem(uid, itemId);
+        var item = mapPoolDao.checkItem(uid, itemId);
+        mapPoolDao.deleteCategoryItem(item);
     }
 
     public Map<PoolPermission, List<MapPool>> getAllPool(long osuId) {
@@ -301,6 +326,7 @@ public class MapPoolService {
         var u = mapPoolDao.addAdminUser(userId, addUserId, poolId);
         return new DataVo<>(u);
     }
+
     public DataVo<MapPoolUser> addChooserUser(long userId, long addUserId, int poolId) {
         if (!mapPoolDao.isAdminByPool(poolId, userId)) {
             throw new PermissionException();
@@ -308,6 +334,7 @@ public class MapPoolService {
         var u = mapPoolDao.addChooserUser(userId, addUserId, poolId);
         return new DataVo<>(u);
     }
+
     public DataVo<MapPoolUser> addTesterUser(long userId, long addUserId, int poolId) {
         if (!mapPoolDao.isAdminByPool(poolId, userId)) {
             throw new PermissionException();
@@ -319,6 +346,9 @@ public class MapPoolService {
     public void deleteUser(long userId, long deleteUserId, int poolId) {
         if (!mapPoolDao.isCreaterByPool(poolId, userId)) {
             throw new PermissionException();
+        }
+        if (userId == deleteUserId) {
+            throw new LogException("不能删除自己", 401);
         }
         mapPoolDao.deleteUser(userId, deleteUserId, poolId);
     }

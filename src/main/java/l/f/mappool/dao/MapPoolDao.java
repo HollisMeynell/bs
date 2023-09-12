@@ -130,34 +130,14 @@ public class MapPoolDao {
     /***
      * 真删除
      * @param uid uid
-     * @param pid pool id
      */
-    public void removePool(long uid, int pid) {
-        var poolOpt = poolRepository.getById(pid);
-        if (poolOpt.isEmpty()) {
-            throw new RuntimeException("已被删除");
-        }
-        var pool = poolOpt.get();
-        if (pool.getStatus() != PoolStatus.DELETE) {
-            throw new RuntimeException("先执行delete");
-        }
+    public void removePool(long uid, MapPool pool) {
         if (poolUserRepository.deleteByPool(pool) != -1) {
             poolRepository.delete(pool);
         }
     }
 
-    public void deletePool(long uid, int pid) {
-        var poolOpt = poolRepository.getByIdNotDelete(pid);
-        if (poolOpt.isEmpty()) {
-            throw new RuntimeException("已被删除");
-        }
-        var pool = poolOpt.get();
-        if (!pool.getGroups().isEmpty()) {
-            throw new RuntimeException("图池不为空,请删掉全部内容.");
-        }
-        if (!pool.getUsers().isEmpty()) {
-            throw new RuntimeException("图池仍有成员,请删掉所有其他成员.");
-        }
+    public void deletePool(long uid, MapPool pool) {
         pool.setStatus(PoolStatus.DELETE);
         poolRepository.save(pool);
     }
@@ -166,6 +146,10 @@ public class MapPoolDao {
 
     public int queryCountById(int id) {
         return poolRepository.getCountById(id);
+    }
+
+    public MapPoolUser addCreatUser(long userId, long addUserId, int poolId) {
+        return addUser(addUserId, poolId, PoolPermission.CREATE);
     }
 
     public MapPoolUser addAdminUser(long userId, long addUserId, int poolId) {
@@ -355,8 +339,7 @@ public class MapPoolDao {
         return categoryItemRepository.save(categoryItem);
     }
 
-    public MapCategoryItem updateCategoryItem(long userId, int itemId, long bid, String info, int sort) {
-        var item = checkItem(userId, itemId);
+    public MapCategoryItem updateCategoryItem(MapCategoryItem item, long bid, String info, int sort) {
 
         item.setChous(bid);
         item.setSort(sort);
@@ -365,19 +348,14 @@ public class MapPoolDao {
         return categoryItemRepository.save(item);
     }
 
-    public void deleteCategoryItem(long userId, int itemId) {
-        var item = checkItem(userId, itemId);
-        deleteCategoryItem(item);
-    }
-
-    private void deleteCategoryItem(MapCategoryItem item) {
+    public void deleteCategoryItem(MapCategoryItem item) {
         if (item.getFeedbacks().size() != 0) {
             feedbackRepository.deleteAll(item.getFeedbacks());
         }
         categoryItemRepository.delete(item);
     }
 
-    private MapCategoryItem checkItem(long userId, int itemId) {
+    public MapCategoryItem checkItem(long userId, int itemId) {
         var categoryItemOpt = categoryItemRepository.findById(itemId);
         if (categoryItemOpt.isEmpty()) throw new NotFoundException();
         var item = categoryItemOpt.get();
@@ -418,24 +396,22 @@ public class MapPoolDao {
         return feedbackRepository.save(feedback);
     }
 
-    public MapFeedback updateFeedback(long userId, int FeedbackId, @Nullable Boolean agree, String msg) {
-        var feedback = checkFeedback(userId, FeedbackId);
+    public MapFeedback updateFeedback(MapFeedback feedback, @Nullable Boolean agree, String msg) {
         feedback.setAgree(agree);
         feedback.setFeedback(msg);
         return feedbackRepository.save(feedback);
     }
 
-    public void deleteFeedback(long userId, int FeedbackId) {
-        feedbackRepository.delete(checkFeedback(userId, FeedbackId));
+    public void deleteFeedback(MapFeedback feedback) {
+        feedbackRepository.delete(feedback);
     }
 
-    public boolean handleFeedback(long userId, int FeedbackId, boolean handle) {
-        var feedback = checkFeedback(userId, FeedbackId);
+    public MapFeedback handleFeedback(MapFeedback feedback, boolean handle) {
         feedback.setHandle(handle);
-        return feedbackRepository.save(feedback).isHandle();
+        return feedbackRepository.save(feedback);
     }
 
-    private MapFeedback checkFeedback(long userId, int FeedbackId) {
+    public MapFeedback checkFeedback(long userId, int FeedbackId) {
         var feedbackOptional = feedbackRepository.findById(FeedbackId);
         if (feedbackOptional.isEmpty()) {
             throw new NotFoundException();
