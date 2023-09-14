@@ -57,6 +57,10 @@ public class FileService {
         if (!Files.isDirectory(p)) {
             Files.createDirectories(p);
         }
+        p = Path.of(UPLOAD_PATH);
+        if (!Files.isDirectory(p)) {
+            Files.createDirectories(p);
+        }
         this.fileLogRepository = fileLogRepository;
     }
 
