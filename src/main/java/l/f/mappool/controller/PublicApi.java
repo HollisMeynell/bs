@@ -24,7 +24,6 @@ import java.util.List;
 
 @Open
 @Controller
-@CrossOrigin
 @ResponseBody
 @RequestMapping(value = "/api/public", produces = "application/json;charset=UTF-8")
 public class PublicApi {

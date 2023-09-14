@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 @Slf4j
 @Controller
-@CrossOrigin
 @ResponseBody
 @SuppressWarnings("unused")
 @RequestMapping(value = "/api/pool", produces = "application/json;charset=UTF-8")

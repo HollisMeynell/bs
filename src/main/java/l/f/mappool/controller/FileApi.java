@@ -26,7 +26,6 @@ import java.util.Optional;
 @Open
 @Slf4j
 @Controller
-@CrossOrigin
 @ResponseBody
 @RequestMapping(value = "/api/file", produces = "application/json;charset=UTF-8")
 public class FileApi {

@@ -6,7 +6,6 @@ import l.f.mappool.dto.map.QueryMapPoolDto;
 import l.f.mappool.entity.*;
 import l.f.mappool.enums.PoolPermission;
 import l.f.mappool.enums.PoolStatus;
-import l.f.mappool.exception.HttpError;
 import l.f.mappool.exception.LogException;
 import l.f.mappool.exception.NotFoundException;
 import l.f.mappool.exception.PermissionException;
@@ -14,7 +13,6 @@ import l.f.mappool.repository.MapPoolMark4UserRepository;
 import l.f.mappool.repository.MapPoolUserRepository;
 import l.f.mappool.vo.DataListVo;
 import l.f.mappool.vo.DataVo;
-import l.f.mappool.vo.FavoritesLiteVo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -307,16 +305,6 @@ public class MapPoolService {
                 .setTotalItems(list.size())
                 .setPageSize(list.size())
                 .setData(list);
-    }
-
-    /***
-     * 查收藏的
-     * @return 收藏列表
-     */
-
-    public DataListVo<FavoritesLiteVo> getMapInfo() {
-        // TODO
-        return new DataListVo<FavoritesLiteVo>().setData(null).setPageSize(0);
     }
 
     public DataVo<MapPoolUser> addAdminUser(long userId, long addUserId, int poolId) {
