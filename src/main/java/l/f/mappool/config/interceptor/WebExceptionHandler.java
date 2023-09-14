@@ -30,7 +30,7 @@ public class WebExceptionHandler {
     }
 
     @ResponseBody
-    @ExceptionHandler(value = Exception.class)
+    @ExceptionHandler(value = RuntimeException.class)
     public Object errorRuntimeHandler(HttpServletRequest request, HttpServletResponse response, RuntimeException exception) {
         log.warn("接口异常[{}] : {}", request.getRequestURI(), exception.getMessage(), exception);
         response.setStatus(HttpServletResponse.SC_BAD_GATEWAY);
