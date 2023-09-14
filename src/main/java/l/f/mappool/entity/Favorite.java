@@ -34,7 +34,7 @@ public class Favorite {
     @Column(name = "note",columnDefinition = "text")
     String info;
 
-    LocalDateTime created;
+    LocalDateTime created =  LocalDateTime.now();
 
     @Type(StringArrayType.class)
     @Column(name = "tags",columnDefinition = "text[]")

@@ -15,7 +15,6 @@ import javax.validation.constraints.NotNull;
 import java.util.UUID;
 
 @Controller
-@CrossOrigin
 @ResponseBody
 @RequestMapping("/api/user")
 public class UserApi {
