@@ -1,6 +1,7 @@
 package l.f.mappool.repository;
 
 import l.f.mappool.entity.MapPool;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -21,6 +22,10 @@ public interface MapPoolRepository extends JpaRepository<MapPool, Integer> {
 
     @Query("select p from MapPool p where p.status = l.f.mappool.enums.PoolStatus.SHOW")
     List<MapPool> getAllOpenPool();
+
+    @Transactional
+    @Query("select p from MapPool p where p.status = l.f.mappool.enums.PoolStatus.SHOW")
+    Page<MapPool> getAllOpenPool(Pageable pageable);
 
     @Query("select distinct u.pool from MapPoolUser u where u.userId!=:userId and u.pool.status=l.f.mappool.enums.PoolStatus.SHOW")
     List<MapPool> getAllMapPoolOpenPoolExcludeUser(long userId);

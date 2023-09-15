@@ -8,7 +8,9 @@ import l.f.mappool.exception.NotFoundException;
 import l.f.mappool.exception.PermissionException;
 import l.f.mappool.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 
@@ -81,8 +83,8 @@ public class MapPoolDao {
         return poolRepository.getByIdNotDelete(id);
     }
 
-    public List<MapPool> getPublicPool() {
-        return poolRepository.getAllOpenPool();
+    public Page<MapPool> getPublicPool(Pageable pageable) {
+        return poolRepository.getAllOpenPool(pageable);
     }
 
     /***

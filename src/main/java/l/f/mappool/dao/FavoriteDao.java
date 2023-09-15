@@ -4,6 +4,8 @@ import l.f.mappool.entity.Favorite;
 import l.f.mappool.exception.HttpError;
 import l.f.mappool.repository.FavoriteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -46,22 +48,18 @@ public class FavoriteDao {
         return favoriteRepository.allUserTags(uid);
     }
 
-    public Favorite addTag(Favorite favorite, String tag) {
-        // 添加标签
-        favorite.setTags(setTags(favorite.getTags(), tag, true));
-        return favoriteRepository.save(favorite);
-    }
-
-    public Favorite addTags(Favorite favorite, String... tag) {
+    public Favorite addTag(Favorite favorite, String... tag) {
         // 添加标签
         favorite.setTags(setTags(favorite.getTags(), true, tag));
-        return favoriteRepository.save(favorite);
+        favoriteRepository.addTags(favorite.getId(), tag);
+        return favorite;
     }
 
     public Favorite delTag(Favorite favorite, String tag) {
         // 删除标签
         favorite.setTags(setTags(favorite.getTags(), tag, false));
-        return favoriteRepository.save(favorite);
+        favoriteRepository.deleteTags(favorite.getId(), tag);
+        return favorite;
     }
 
     public Favorite delTags(Favorite favorite, String... tag) {

@@ -6,6 +6,7 @@ import org.junit.platform.commons.logging.Logger;
 import org.junit.platform.commons.logging.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.PageRequest;
 
 @SpringBootTest
 class FavoriteRepositoryTest {
@@ -30,8 +31,10 @@ class FavoriteRepositoryTest {
         notationRepository.save(n);
         */
 
-        var s = favoriteRepository.allUserTags(114514L);
+        var s = favoriteRepository.allUserTags(17064371L);
         log.info(()->String.join(",", s));
+
+        if (!s.isEmpty()) return;
 
         var nold = favoriteRepository.findByBidAndUserId(15564L, 114514L);
         log.info(()-> nold.isPresent()?"have":"no");
