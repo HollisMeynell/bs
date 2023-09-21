@@ -1,9 +1,9 @@
 package l.f.mappool.vo;
 
-import l.f.mappool.entity.MapCategory;
+import l.f.mappool.entity.pool.PoolCategory;
 
-public class MapCategoryVo extends DataVo<MapCategory> {
-    public MapCategoryVo(MapCategory m){
+public class MapCategoryVo extends DataVo<PoolCategory> {
+    public MapCategoryVo(PoolCategory m){
         setData(m);
     }
 }

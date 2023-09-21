@@ -4,7 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import l.f.mappool.config.interceptor.Open;
 import l.f.mappool.service.FileService;
-import l.f.mappool.entity.FileRecord;
+import l.f.mappool.entity.file.FileRecord;
 import l.f.mappool.exception.LogException;
 import l.f.mappool.vo.DataVo;
 import lombok.extern.slf4j.Slf4j;

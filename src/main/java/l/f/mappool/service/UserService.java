@@ -1,9 +1,9 @@
 package l.f.mappool.service;
 
 import jakarta.annotation.Resource;
-import l.f.mappool.entity.OsuUser;
+import l.f.mappool.entity.osu.OsuUser;
 import l.f.mappool.entity.User;
-import l.f.mappool.repository.OsuUserRepository;
+import l.f.mappool.repository.osu.OsuUserRepository;
 import l.f.mappool.repository.UserRepository;
 import org.springframework.stereotype.Service;
 

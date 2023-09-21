@@ -1,7 +1,7 @@
 package l.f.mappool.controller;
 
 import jakarta.annotation.Resource;
-import l.f.mappool.entity.BeatMap;
+import l.f.mappool.entity.osu.BeatMap;
 import l.f.mappool.service.FileService;
 import l.f.mappool.service.MapPoolService;
 import l.f.mappool.service.OsuApiService;

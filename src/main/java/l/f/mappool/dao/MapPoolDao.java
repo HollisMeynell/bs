@@ -1,12 +1,12 @@
 package l.f.mappool.dao;
 
 import jakarta.persistence.EntityManager;
-import l.f.mappool.entity.*;
+import l.f.mappool.entity.pool.*;
 import l.f.mappool.enums.PoolPermission;
 import l.f.mappool.enums.PoolStatus;
 import l.f.mappool.exception.NotFoundException;
 import l.f.mappool.exception.PermissionException;
-import l.f.mappool.repository.*;
+import l.f.mappool.repository.pool.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -22,31 +22,31 @@ import java.util.Optional;
 @Component
 @SuppressWarnings("unused")
 public class MapPoolDao {
-    private final MapPoolRepository poolRepository;
-    private final MapFeedbackRepository feedbackRepository;
-    private final MapPoolUserRepository poolUserRepository;
-    private final MapCategoryRepository categoryRepository;
-    private final MapCategoryItemRepository categoryItemRepository;
-    private final MapCategoryGroupRepository categoryGroupRepository;
+    private final PoolRepository poolRepository;
+    private final FeedbackRepository feedbackRepository;
+    private final PoolUserRepository poolUserRepository;
+    private final CategoryRepository categoryRepository;
+    private final CategoryItemRepository categoryItemRepository;
+    private final CategoryGroupRepository categoryGroupRepository;
 
     @SuppressWarnings("all")
     private final EntityManager entityManager;
 
     @Autowired
-    public MapPoolDao(MapPoolRepository mapPoolRepository,
-                      MapPoolUserRepository mapPoolUserRepository,
-                      MapCategoryRepository mapCategoryRepository,
-                      MapCategoryGroupRepository mapCategoryGroupRepository,
-                      MapCategoryItemRepository mapCategoryItemRepository,
-                      MapFeedbackRepository mapFeedbackRepository,
+    public MapPoolDao(PoolRepository poolRepository,
+                      PoolUserRepository poolUserRepository,
+                      CategoryRepository categoryRepository,
+                      CategoryGroupRepository categoryGroupRepository,
+                      CategoryItemRepository categoryItemRepository,
+                      FeedbackRepository feedbackRepository,
                       EntityManager entityManager
     ) {
-        poolRepository = mapPoolRepository;
-        poolUserRepository = mapPoolUserRepository;
-        categoryRepository = mapCategoryRepository;
-        categoryGroupRepository = mapCategoryGroupRepository;
-        categoryItemRepository = mapCategoryItemRepository;
-        feedbackRepository = mapFeedbackRepository;
+        this.poolRepository = poolRepository;
+        this.poolUserRepository = poolUserRepository;
+        this.categoryRepository = categoryRepository;
+        this.categoryGroupRepository = categoryGroupRepository;
+        this.categoryItemRepository = categoryItemRepository;
+        this.feedbackRepository = feedbackRepository;
         this.entityManager = entityManager;
     }
 
@@ -56,8 +56,8 @@ public class MapPoolDao {
      * 创建
      * @return 新 MapPool
      */
-    public MapPool createPool(long userId, String poolName, String banner, String info) {
-        var map = new MapPool();
+    public Pool createPool(long userId, String poolName, String banner, String info) {
+        var map = new Pool();
         map.setName(poolName);
         map.setInfo(info);
         map.setBanner(banner);
@@ -71,7 +71,7 @@ public class MapPoolDao {
         }
     }
 
-    public List<MapPool> queryByName(String name, long userId, int page, int size) {
+    public List<Pool> queryByName(String name, long userId, int page, int size) {
         return poolRepository.queryByName(name, userId, PageRequest.of(page, size));
     }
 
@@ -79,11 +79,11 @@ public class MapPoolDao {
         return poolRepository.countByName(name, userId);
     }
 
-    public Optional<MapPool> queryById(int id) {
+    public Optional<Pool> queryById(int id) {
         return poolRepository.getByIdNotDelete(id);
     }
 
-    public Page<MapPool> getPublicPool(Pageable pageable) {
+    public Page<Pool> getPublicPool(Pageable pageable) {
         return poolRepository.getAllOpenPool(pageable);
     }
 
@@ -92,14 +92,14 @@ public class MapPoolDao {
      * @param userId uid
      * @return 权限+图池
      */
-    public Map<PoolPermission, List<MapPool>> getAllPool(long userId) {
-        var map = new HashMap<PoolPermission, List<MapPool>>();
+    public Map<PoolPermission, List<Pool>> getAllPool(long userId) {
+        var map = new HashMap<PoolPermission, List<Pool>>();
         var ulist = poolUserRepository.searchAllByUserId(userId);
 
-        var uCreates = ulist.stream().filter(u -> u.getPermission() == PoolPermission.CREATE).map(MapPoolUser::getPool).toList();
-        var uAdmins = ulist.stream().filter(u -> u.getPermission() == PoolPermission.ADMIN).map(MapPoolUser::getPool).toList();
-        var uChoosers = ulist.stream().filter(u -> u.getPermission() == PoolPermission.CHOOSER).map(MapPoolUser::getPool).toList();
-        var uTesters = ulist.stream().filter(u -> u.getPermission() == PoolPermission.TESTER).map(MapPoolUser::getPool).toList();
+        var uCreates = ulist.stream().filter(u -> u.getPermission() == PoolPermission.CREATE).map(PoolUser::getPool).toList();
+        var uAdmins = ulist.stream().filter(u -> u.getPermission() == PoolPermission.ADMIN).map(PoolUser::getPool).toList();
+        var uChoosers = ulist.stream().filter(u -> u.getPermission() == PoolPermission.CHOOSER).map(PoolUser::getPool).toList();
+        var uTesters = ulist.stream().filter(u -> u.getPermission() == PoolPermission.TESTER).map(PoolUser::getPool).toList();
 
         map.put(PoolPermission.CREATE, uCreates);
         map.put(PoolPermission.ADMIN, uAdmins);
@@ -109,23 +109,23 @@ public class MapPoolDao {
         return map;
     }
 
-    public List<MapPool> getAllPublicPool() {
+    public List<Pool> getAllPublicPool() {
         return poolRepository.getAllOpenPool();
     }
 
-    public List<MapPool> getAllPublicPoolExcludeUser(long uid) {
+    public List<Pool> getAllPublicPoolExcludeUser(long uid) {
         return poolRepository.getAllOpenPool();
     }
 
-    public List<MapPool> getAllMarkPool(long uid) {
+    public List<Pool> getAllMarkPool(long uid) {
         return poolRepository.queryByUserMark(uid);
     }
 
-    public Optional<MapPool> getMapPoolById(int id) {
+    public Optional<Pool> getMapPoolById(int id) {
         return poolRepository.getByIdNotDelete(id);
     }
 
-    public MapPool saveMapPool(MapPool pool) {
+    public Pool saveMapPool(Pool pool) {
         return poolRepository.saveAndFlush(pool);
     }
 
@@ -133,15 +133,29 @@ public class MapPoolDao {
      * 真删除
      * @param uid uid
      */
-    public void removePool(long uid, MapPool pool) {
+    public void removePool(long uid, Pool pool) {
         if (poolUserRepository.deleteByPool(pool) != -1) {
             poolRepository.delete(pool);
         }
     }
 
-    public void deletePool(long uid, MapPool pool) {
+    public void deletePool(long uid, Pool pool) {
         pool.setStatus(PoolStatus.DELETE);
         poolRepository.save(pool);
+    }
+
+    public void exportPool(Pool pool) {
+        for (var group: pool.getGroups()) {
+            for (var category : group.getCategories()){
+                if (category.getChosed() == null) {
+
+                }
+            }
+        }
+    }
+
+    private void testCategory(){
+
     }
 
     /************************************************** User *****************************************************************/
@@ -150,20 +164,20 @@ public class MapPoolDao {
         return poolRepository.getCountById(id);
     }
 
-    public MapPoolUser addCreatUser(long userId, long addUserId, int poolId) {
+    public PoolUser addCreatUser(long userId, long addUserId, int poolId) {
         return addUser(addUserId, poolId, PoolPermission.CREATE);
     }
 
-    public MapPoolUser addAdminUser(long userId, long addUserId, int poolId) {
+    public PoolUser addAdminUser(long userId, long addUserId, int poolId) {
         return addUser(addUserId, poolId, PoolPermission.ADMIN);
     }
 
 
-    public MapPoolUser addChooserUser(long userId, long addUserId, int poolId) {
+    public PoolUser addChooserUser(long userId, long addUserId, int poolId) {
         return addUser(addUserId, poolId, PoolPermission.CHOOSER);
     }
 
-    public MapPoolUser addTesterUser(long userId, long addUserId, int poolId) {
+    public PoolUser addTesterUser(long userId, long addUserId, int poolId) {
         return addUser(addUserId, poolId, PoolPermission.TESTER);
     }
 
@@ -175,7 +189,7 @@ public class MapPoolDao {
         poolUserRepository.delete(u.get());
     }
 
-    private boolean testBef(Optional<MapPoolUser> userOpt, PoolPermission... poolPermissions) {
+    private boolean testBef(Optional<PoolUser> userOpt, PoolPermission... poolPermissions) {
         if (userOpt.isEmpty()) {
             return false;
         }
@@ -245,14 +259,14 @@ public class MapPoolDao {
         return testPermissionByCategoryGroup(groupId, userId, PoolPermission.values());
     }
 
-    public MapPoolUser addUser(long addUserId, int poolId, PoolPermission permission) {
+    public PoolUser addUser(long addUserId, int poolId, PoolPermission permission) {
         var u = poolUserRepository.getMapPoolUserByPoolIdAndUserId(poolId, addUserId);
-        MapPoolUser addUser;
+        PoolUser addUser;
         if (u.isPresent()) {
             addUser = u.get();
             addUser.setPermission(permission);
         } else {
-            addUser = new MapPoolUser();
+            addUser = new PoolUser();
             addUser.setUserId(addUserId);
             addUser.setPoolId(poolId);
             addUser.setPermission(permission);
@@ -265,8 +279,8 @@ public class MapPoolDao {
     /***
      *  创建分组 比如NM组
      */
-    public MapCategoryGroup createCategoryGroup(long userId, int poolId, String name, String info, int color) {
-        var mg = new MapCategoryGroup();
+    public PoolCategoryGroup createCategoryGroup(long userId, int poolId, String name, String info, int color) {
+        var mg = new PoolCategoryGroup();
         mg.setPoolId(poolId);
         mg.setColor(color);
         mg.setName(name);
@@ -275,19 +289,19 @@ public class MapPoolDao {
         return categoryGroupRepository.save(mg);
     }
 
-    public Optional<MapCategoryGroup> getCategoryGroupById(int groupId) {
+    public Optional<PoolCategoryGroup> getCategoryGroupById(int groupId) {
         return categoryGroupRepository.findById(groupId);
     }
 
-    public MapCategoryGroup saveMapCategoryGroup(MapCategoryGroup group) {
+    public PoolCategoryGroup saveMapCategoryGroup(PoolCategoryGroup group) {
         return categoryGroupRepository.saveAndFlush(group);
     }
 
-    public List<MapCategoryGroup> getAllCategotys(int poolId) {
+    public List<PoolCategoryGroup> getAllCategotys(int poolId) {
         return categoryRepository.getAllCategory(poolId);
     }
 
-    public void deleteMapCategoryGroup(MapCategoryGroup group) {
+    public void deleteMapCategoryGroup(PoolCategoryGroup group) {
         categoryGroupRepository.delete(group);
     }
 
@@ -298,25 +312,25 @@ public class MapPoolDao {
      *
      * @param groupId CategoryGroup.id
      */
-    public MapCategory createCategory(long userId, int groupId, String categoryName) {
-        var category = new MapCategory();
+    public PoolCategory createCategory(long userId, int groupId, String categoryName) {
+        var category = new PoolCategory();
         category.setGroupId(groupId);
         category.setName(categoryName);
         return categoryRepository.save(category);
     }
 
-    public MapCategory saveCategory(MapCategory category) {
+    public PoolCategory saveCategory(PoolCategory category) {
         return categoryRepository.saveAndFlush(category);
     }
 
-    public void deleteCategory(MapCategory category) {
+    public void deleteCategory(PoolCategory category) {
         for (var item : category.getItems()) {
             deleteCategoryItem(item);
         }
         categoryRepository.delete(category);
     }
 
-    public Optional<MapCategory> getMapCategoryById(int categoryId) {
+    public Optional<PoolCategory> getMapCategoryById(int categoryId) {
         return categoryRepository.findById(categoryId);
     }
 
@@ -326,13 +340,13 @@ public class MapPoolDao {
      * 加一张图
      * @return 包含推荐人id, bid, 描述信息的结构
      */
-    public MapCategoryItem createCategoryItem(long userId, int itemId, long bid, String info) {
+    public PoolCategoryItem createCategoryItem(long userId, int itemId, long bid, String info) {
         var categoryOpt = categoryRepository.findById(itemId);
         if (categoryOpt.isEmpty()) {
             throw new NotFoundException();
         }
         var category = categoryOpt.get();
-        var categoryItem = new MapCategoryItem();
+        var categoryItem = new PoolCategoryItem();
         categoryItem.setSort(0);
         categoryItem.setInfo(info);
         categoryItem.setChous(bid);
@@ -341,7 +355,7 @@ public class MapPoolDao {
         return categoryItemRepository.save(categoryItem);
     }
 
-    public MapCategoryItem updateCategoryItem(MapCategoryItem item, long bid, String info, int sort) {
+    public PoolCategoryItem updateCategoryItem(PoolCategoryItem item, long bid, String info, int sort) {
 
         item.setChous(bid);
         item.setSort(sort);
@@ -350,14 +364,14 @@ public class MapPoolDao {
         return categoryItemRepository.save(item);
     }
 
-    public void deleteCategoryItem(MapCategoryItem item) {
+    public void deleteCategoryItem(PoolCategoryItem item) {
         if (item.getFeedbacks().size() != 0) {
             feedbackRepository.deleteAll(item.getFeedbacks());
         }
         categoryItemRepository.delete(item);
     }
 
-    public MapCategoryItem checkItem(long userId, int itemId) {
+    public PoolCategoryItem checkItem(long userId, int itemId) {
         var categoryItemOpt = categoryItemRepository.findById(itemId);
         if (categoryItemOpt.isEmpty()) throw new NotFoundException();
         var item = categoryItemOpt.get();
@@ -369,19 +383,19 @@ public class MapPoolDao {
         return item;
     }
 
-    public Optional<MapCategoryItem> getMapCategoryItemById(int itemId) {
+    public Optional<PoolCategoryItem> getMapCategoryItemById(int itemId) {
         return categoryItemRepository.findById(itemId);
     }
 
-    public List<MapCategoryItem> getAllCategoryItems(int categoryId) {
-        var selectAttr = new MapCategory();
+    public List<PoolCategoryItem> getAllCategoryItems(int categoryId) {
+        var selectAttr = new PoolCategory();
         selectAttr.setId(categoryId);
         return categoryItemRepository.findAllByCategory(selectAttr);
     }
 
     /* ************************************************* Other **************************************************************** */
 
-    public MapFeedback createFeedback(long userId, int categoryItemId, @Nullable Boolean agree, String msg) {
+    public PoolFeedback createFeedback(long userId, int categoryItemId, @Nullable Boolean agree, String msg) {
         var categoryItem = categoryItemRepository.findById(categoryItemId);
         if (categoryItem.isEmpty()) {
             throw new NotFoundException();
@@ -390,7 +404,7 @@ public class MapPoolDao {
         if (!isUserByGroup(category.getGroupId(), userId)) {
             throw new PermissionException();
         }
-        var feedback = new MapFeedback();
+        var feedback = new PoolFeedback();
         feedback.setAgree(agree);
         feedback.setFeedback(msg);
         feedback.setCreaterId(userId);
@@ -398,22 +412,22 @@ public class MapPoolDao {
         return feedbackRepository.save(feedback);
     }
 
-    public MapFeedback updateFeedback(MapFeedback feedback, @Nullable Boolean agree, String msg) {
+    public PoolFeedback updateFeedback(PoolFeedback feedback, @Nullable Boolean agree, String msg) {
         feedback.setAgree(agree);
         feedback.setFeedback(msg);
         return feedbackRepository.save(feedback);
     }
 
-    public void deleteFeedback(MapFeedback feedback) {
+    public void deleteFeedback(PoolFeedback feedback) {
         feedbackRepository.delete(feedback);
     }
 
-    public MapFeedback handleFeedback(MapFeedback feedback, boolean handle) {
+    public PoolFeedback handleFeedback(PoolFeedback feedback, boolean handle) {
         feedback.setHandle(handle);
         return feedbackRepository.save(feedback);
     }
 
-    public MapFeedback checkFeedback(long userId, int FeedbackId) {
+    public PoolFeedback checkFeedback(long userId, int FeedbackId) {
         var feedbackOptional = feedbackRepository.findById(FeedbackId);
         if (feedbackOptional.isEmpty()) {
             throw new NotFoundException();

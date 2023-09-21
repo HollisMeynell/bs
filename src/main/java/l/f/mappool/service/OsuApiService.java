@@ -1,12 +1,12 @@
 package l.f.mappool.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import l.f.mappool.entity.BeatMap;
-import l.f.mappool.entity.OsuUser;
+import l.f.mappool.entity.osu.BeatMap;
+import l.f.mappool.entity.osu.OsuUser;
 import l.f.mappool.properties.BeatmapSelectionProperties;
 import l.f.mappool.properties.OsuProperties;
-import l.f.mappool.repository.BeatMapRepository;
-import l.f.mappool.repository.OsuUserRepository;
+import l.f.mappool.repository.osu.BeatMapRepository;
+import l.f.mappool.repository.osu.OsuUserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

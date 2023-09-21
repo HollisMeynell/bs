@@ -6,8 +6,8 @@ import l.f.mappool.config.interceptor.Open;
 import l.f.mappool.dao.MapPoolDao;
 import l.f.mappool.dto.ProxyDto;
 import l.f.mappool.dto.map.QueryMapPoolDto;
-import l.f.mappool.entity.MapFeedback;
-import l.f.mappool.entity.MapPool;
+import l.f.mappool.entity.pool.PoolFeedback;
+import l.f.mappool.entity.pool.Pool;
 import l.f.mappool.exception.HttpError;
 import l.f.mappool.service.MapPoolService;
 import l.f.mappool.service.OsuApiService;
@@ -22,7 +22,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.validation.constraints.NotNull;
-import java.util.List;
 
 @Open
 @Controller
@@ -44,10 +43,10 @@ public class PublicApi {
      * 获取公开图池
      */
     @GetMapping("getAllPool")
-    DataListVo<MapPool> getAllPool(QueryMapPoolDto query) {
+    DataListVo<Pool> getAllPool(QueryMapPoolDto query) {
         var p = PageRequest.of(query.getPageNum() - 1, query.getPageSize());
         var data = mapPoolDao.getPublicPool(p);
-        return new DataListVo<MapPool>().setData(data.getContent())
+        return new DataListVo<Pool>().setData(data.getContent())
                 .setCurrentPage(data.getNumber())
                 .setPageSize(data.getSize())
                 .setTotalPages(data.getTotalPages())
@@ -121,9 +120,9 @@ public class PublicApi {
         }
     }
     @GetMapping("feedback")
-    DataListVo<MapFeedback> getFeedback(@NotNull(message = "id 不能为空") @RequestParam("id") int itemId){
+    DataListVo<PoolFeedback> getFeedback(@NotNull(message = "id 不能为空") @RequestParam("id") int itemId){
         var feedbacks = mapPoolService.getPublicFeedbackFromItem(itemId);
-        return new DataListVo<MapFeedback>()
+        return new DataListVo<PoolFeedback>()
                 .setTotalItems(feedbacks.size())
                 .setPageSize(feedbacks.size())
                 .setData(feedbacks);

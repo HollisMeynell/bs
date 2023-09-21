@@ -1,6 +1,6 @@
 package l.f.mappool.vo;
 
-import l.f.mappool.entity.BeatMap;
+import l.f.mappool.entity.osu.BeatMap;
 import l.f.mappool.entity.Favorite;
 import lombok.Getter;
 import lombok.Setter;

@@ -1,9 +1,9 @@
 package l.f.mappool.dao;
 
-import l.f.mappool.entity.BeatMap;
-import l.f.mappool.entity.BeatMapSet;
-import l.f.mappool.repository.BeatMapRepository;
-import l.f.mappool.repository.BeatMapSetRepository;
+import l.f.mappool.entity.osu.BeatMap;
+import l.f.mappool.entity.osu.BeatMapSet;
+import l.f.mappool.repository.osu.BeatMapRepository;
+import l.f.mappool.repository.osu.BeatMapSetRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

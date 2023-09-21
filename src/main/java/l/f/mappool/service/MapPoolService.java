@@ -3,15 +3,16 @@ package l.f.mappool.service;
 import jakarta.annotation.Resource;
 import l.f.mappool.dao.MapPoolDao;
 import l.f.mappool.dto.map.QueryMapPoolDto;
-import l.f.mappool.entity.*;
+import l.f.mappool.entity.osu.OsuUser;
+import l.f.mappool.entity.pool.*;
 import l.f.mappool.enums.PoolPermission;
 import l.f.mappool.enums.PoolStatus;
 import l.f.mappool.exception.HttpError;
 import l.f.mappool.exception.LogException;
 import l.f.mappool.exception.NotFoundException;
 import l.f.mappool.exception.PermissionException;
-import l.f.mappool.repository.MapPoolMark4UserRepository;
-import l.f.mappool.repository.MapPoolUserRepository;
+import l.f.mappool.repository.pool.PoolMark4UserRepository;
+import l.f.mappool.repository.pool.PoolUserRepository;
 import l.f.mappool.vo.DataListVo;
 import l.f.mappool.vo.DataVo;
 import lombok.extern.slf4j.Slf4j;
@@ -27,12 +28,12 @@ public class MapPoolService {
     @Resource
     MapPoolDao mapPoolDao;
     @Resource
-    MapPoolUserRepository mapPoolUserRepository;
+    PoolUserRepository poolUserRepository;
     @Resource
     UserService userService;
 
     @Resource
-    MapPoolMark4UserRepository mapPoolMark4UserRepository;
+    PoolMark4UserRepository poolMark4UserRepository;
 
     /***
      * 用户创建的图池数量到了最大值
@@ -40,11 +41,11 @@ public class MapPoolService {
      * @return 当超过数量限制, 即严格大于时返回 true
      */
     public boolean isMax(OsuUser user) {
-        int count = mapPoolUserRepository.getUserCreatedSize(user.getOsuId());
+        int count = poolUserRepository.getUserCreatedSize(user.getOsuId());
         return count > user.getMaxPoolSize();
     }
 
-    public MapPool createMapPool(long userId, String name, String banner, String info) {
+    public Pool createMapPool(long userId, String name, String banner, String info) {
         var user = userService.getOsuUser(userId);
         if (this.isMax(user)) {
             throw new RuntimeException("to many");
@@ -52,7 +53,7 @@ public class MapPoolService {
         return mapPoolDao.createPool(user.getOsuId(), name, banner, info);
     }
 
-    public MapPool updateMapPool(long userId, int poolId, String name, String banner, String info) {
+    public Pool updateMapPool(long userId, int poolId, String name, String banner, String info) {
         if (!mapPoolDao.isAdminByPool(poolId, userId)) {
             throw new PermissionException();
         }
@@ -82,11 +83,11 @@ public class MapPoolService {
         }
         var poolOpt = mapPoolDao.getMapPoolById(poolId);
         if (poolOpt.isEmpty()) {
-            throw new HttpError(403,"已被删除");
+            throw new HttpError(403, "已被删除");
         }
         var pool = poolOpt.get();
         if (!pool.getGroups().isEmpty()) {
-            throw new HttpError(403,"图池不为空,请删掉全部内容.");
+            throw new HttpError(403, "图池不为空,请删掉全部内容.");
         }
         if (pool.getUsers().size() > 1) {
             throw new HttpError(403, "图池仍有成员,请删掉所有其他成员.");
@@ -94,32 +95,50 @@ public class MapPoolService {
         mapPoolDao.deletePool(userId, pool);
     }
 
-    public void removePool(long userId, int poolId) {
+    public void removePool(long userId, int poolId) throws HttpError {
         if (!mapPoolDao.isAdminByPool(poolId, userId)) {
             throw new PermissionException();
         }
         var poolOpt = mapPoolDao.getMapPoolById(poolId);
         if (poolOpt.isEmpty()) {
-            throw new RuntimeException("已被删除");
+            throw new HttpError(403, "已被删除");
         }
         var pool = poolOpt.get();
         if (pool.getStatus() != PoolStatus.DELETE) {
-            throw new RuntimeException("先执行delete");
+            throw new HttpError(403, "先执行delete");
         }
         mapPoolDao.removePool(userId, pool);
+    }
+
+    public void exportPool(long userId, int poolId) throws HttpError {
+        if (!mapPoolDao.isAdminByPool(poolId, userId)) {
+            throw new PermissionException();
+        }
+
+        var poolOptional = mapPoolDao.getMapPoolById(poolId);
+        if (poolOptional.isEmpty()) {
+            throw new NotFoundException();
+        }
+
+        var pool = poolOptional.get();
+        if (!pool.getStatus().equals(PoolStatus.OPEN)) {
+            throw new HttpError(403, "无法导出非编辑中的图池");
+        }
+
+        mapPoolDao.exportPool(pool);
     }
 
     /***
      * 创建一个分类组,比如 NM,HD 这种
      */
-    public MapCategoryGroup createCategoryGroup(long uid, int poolId, String name, String info, int color) {
+    public PoolCategoryGroup createCategoryGroup(long uid, int poolId, String name, String info, int color) {
         if (!mapPoolDao.isAdminByPool(poolId, uid)) {
             throw new PermissionException();
         }
         return mapPoolDao.createCategoryGroup(uid, poolId, name, info, color);
     }
 
-    public MapCategoryGroup updateCategoryGroup(long uid, int groupId, String name, String info, Integer color, Integer sort) {
+    public PoolCategoryGroup updateCategoryGroup(long uid, int groupId, String name, String info, Integer color, Integer sort) {
         if (!mapPoolDao.isAdminByGroup(groupId, uid)) {
             throw new PermissionException();
         }
@@ -167,14 +186,14 @@ public class MapPoolService {
     /***
      * 具体分类 比如 NM1,NM2 这种
      */
-    public MapCategory createCategory(long uid, int groupId, String name) {
+    public PoolCategory createCategory(long uid, int groupId, String name) {
         if (!mapPoolDao.isAdminByGroup(groupId, uid)) {
             throw new PermissionException();
         }
         return mapPoolDao.createCategory(uid, groupId, name);
     }
 
-    public MapCategory updateCategory(long uid, int categoryId, String name) {
+    public PoolCategory updateCategory(long uid, int categoryId, String name) {
         var categoryOpt = mapPoolDao.getMapCategoryById(categoryId);
         if (categoryOpt.isEmpty()) {
             throw new NotFoundException();
@@ -205,7 +224,7 @@ public class MapPoolService {
         mapPoolDao.deleteCategory(category);
     }
 
-    public MapCategory choseCategory(long uid, int categoryId, Long bid) {
+    public PoolCategory choseCategory(long uid, int categoryId, Long bid) {
         var categoryOpt = mapPoolDao.getMapCategoryById(categoryId);
         if (categoryOpt.isEmpty()) {
             throw new NotFoundException();
@@ -221,22 +240,22 @@ public class MapPoolService {
         return mapPoolDao.saveCategory(category);
     }
 
-    public MapCategoryItem createCategoryItem(long uid, int categoryId, long bid, String info) {
+    public PoolCategoryItem createCategoryItem(long uid, int categoryId, long bid, String info) {
         if (!mapPoolDao.isChooserByCategory(categoryId, uid)) {
             throw new PermissionException();
         }
         return mapPoolDao.createCategoryItem(uid, categoryId, bid, info);
     }
 
-    public MapCategoryItem updateCategoryItem(long uid, int itemId, long bid, String info, int sort) {
+    public PoolCategoryItem updateCategoryItem(long uid, int itemId, long bid, String info, int sort) {
         var item = mapPoolDao.checkItem(uid, itemId);
         return mapPoolDao.updateCategoryItem(item, bid, info, sort);
     }
 
-    public List<MapFeedback> getFeedbackFromItem(long uid, int itemId) {
+    public List<PoolFeedback> getFeedbackFromItem(long uid, int itemId) {
         var itemOpt = mapPoolDao.getMapCategoryItemById(itemId);
         return itemOpt
-                .map(MapCategoryItem::getFeedbacks)
+                .map(PoolCategoryItem::getFeedbacks)
                 .map(e -> {
                     e.removeIf(i -> (i.getCreaterId() != uid && i.isHandle()));
                     return e;
@@ -244,12 +263,12 @@ public class MapPoolService {
                 .orElseGet(List::of);
     }
 
-    public List<MapFeedback> getPublicFeedbackFromItem(int itemId) {
+    public List<PoolFeedback> getPublicFeedbackFromItem(int itemId) {
         var itemOpt = mapPoolDao.getMapCategoryItemById(itemId);
         return itemOpt
-                .map(MapCategoryItem::getFeedbacks)
+                .map(PoolCategoryItem::getFeedbacks)
                 .map(e -> {
-                    e.removeIf(MapFeedback::isHandle);
+                    e.removeIf(PoolFeedback::isHandle);
                     return e;
                 })
                 .orElseGet(List::of);
@@ -261,15 +280,15 @@ public class MapPoolService {
         mapPoolDao.deleteCategoryItem(item);
     }
 
-    public Map<PoolPermission, List<MapPool>> getAllPool(long osuId) {
+    public Map<PoolPermission, List<Pool>> getAllPool(long osuId) {
         return mapPoolDao.getAllPool(osuId);
     }
 
-    public List<MapCategoryGroup> getCategoryGroup(int poolId) {
+    public List<PoolCategoryGroup> getCategoryGroup(int poolId) {
         return mapPoolDao.getAllCategotys(poolId);
     }
 
-    public List<MapPool> queryByNameAndId(QueryMapPoolDto query, long userId) {
+    public List<Pool> queryByNameAndId(QueryMapPoolDto query, long userId) {
 
         if (query.getPoolId() != null) {
             var data = mapPoolDao.queryById(query.getPoolId());
@@ -288,27 +307,27 @@ public class MapPoolService {
     }
 
     public void addMarkPool(long uid, int pid) {
-        var search = mapPoolMark4UserRepository.queryMapPoolMark4UserByUidAndPid(uid, pid);
+        var search = poolMark4UserRepository.queryMapPoolMark4UserByUidAndPid(uid, pid);
         if (search.isPresent()) return;
-        var f = new MapPoolMark4User();
+        var f = new PoolMark4User();
         f.setUid(uid);
         f.setPid(pid);
-        mapPoolMark4UserRepository.saveAndFlush(f);
+        poolMark4UserRepository.saveAndFlush(f);
     }
 
     public int deleteMarkPool(long uid, int pid) {
-        return mapPoolMark4UserRepository.deleteAllByUidaAndPid(uid, pid);
+        return poolMark4UserRepository.deleteAllByUidaAndPid(uid, pid);
     }
 
-    public DataListVo<MapPool> getAllMarkPool(long uid) {
+    public DataListVo<Pool> getAllMarkPool(long uid) {
         var list = mapPoolDao.getAllMarkPool(uid);
-        return new DataListVo<MapPool>()
+        return new DataListVo<Pool>()
                 .setTotalItems(list.size())
                 .setPageSize(list.size())
                 .setData(list);
     }
 
-    public DataVo<MapPoolUser> addAdminUser(long userId, long addUserId, int poolId) {
+    public DataVo<PoolUser> addAdminUser(long userId, long addUserId, int poolId) {
         if (!mapPoolDao.isCreaterByPool(poolId, userId)) {
             throw new PermissionException();
         }
@@ -316,7 +335,7 @@ public class MapPoolService {
         return new DataVo<>(u);
     }
 
-    public DataVo<MapPoolUser> addChooserUser(long userId, long addUserId, int poolId) {
+    public DataVo<PoolUser> addChooserUser(long userId, long addUserId, int poolId) {
         if (!mapPoolDao.isAdminByPool(poolId, userId)) {
             throw new PermissionException();
         }
@@ -324,7 +343,7 @@ public class MapPoolService {
         return new DataVo<>(u);
     }
 
-    public DataVo<MapPoolUser> addTesterUser(long userId, long addUserId, int poolId) {
+    public DataVo<PoolUser> addTesterUser(long userId, long addUserId, int poolId) {
         if (!mapPoolDao.isAdminByPool(poolId, userId)) {
             throw new PermissionException();
         }
