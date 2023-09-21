@@ -25,11 +25,11 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         if (handler instanceof HandlerMethod handlerMethod) {
-            if (!TokenBucketUtil.getToken(request.getRemoteAddr(), 120, 1.5)) {
+            if (!TokenBucketUtil.getToken(request.getRemoteAddr(), 60, 1.5)) {
                 throw new HttpError(429, "Too Many Requests");
             }
 
-            if (handlerMethod.getMethod().getName().equals("proxy") && !TokenBucketUtil.getToken('p' + request.getRemoteAddr(), 60, 1)) {
+            if (handlerMethod.getMethod().getName().equals("proxy") && !TokenBucketUtil.getToken('p' + request.getRemoteAddr(), 20, 0.2)) {
                 throw new HttpError(429, "Too Many Requests");
             }
 

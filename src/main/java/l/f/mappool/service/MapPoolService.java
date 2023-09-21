@@ -6,6 +6,7 @@ import l.f.mappool.dto.map.QueryMapPoolDto;
 import l.f.mappool.entity.*;
 import l.f.mappool.enums.PoolPermission;
 import l.f.mappool.enums.PoolStatus;
+import l.f.mappool.exception.HttpError;
 import l.f.mappool.exception.LogException;
 import l.f.mappool.exception.NotFoundException;
 import l.f.mappool.exception.PermissionException;
@@ -75,20 +76,20 @@ public class MapPoolService {
         return mapPoolDao.saveMapPool(pool);
     }
 
-    public void deleteMapPool(long userId, int poolId) {
+    public void deleteMapPool(long userId, int poolId) throws HttpError {
         if (!mapPoolDao.isAdminByPool(poolId, userId)) {
             throw new PermissionException();
         }
         var poolOpt = mapPoolDao.getMapPoolById(poolId);
         if (poolOpt.isEmpty()) {
-            throw new RuntimeException("已被删除");
+            throw new HttpError(403,"已被删除");
         }
         var pool = poolOpt.get();
         if (!pool.getGroups().isEmpty()) {
-            throw new RuntimeException("图池不为空,请删掉全部内容.");
+            throw new HttpError(403,"图池不为空,请删掉全部内容.");
         }
         if (pool.getUsers().size() > 1) {
-            throw new RuntimeException("图池仍有成员,请删掉所有其他成员.");
+            throw new HttpError(403, "图池仍有成员,请删掉所有其他成员.");
         }
         mapPoolDao.deletePool(userId, pool);
     }

@@ -12,7 +12,7 @@ public class MapPoolDto {
     String name;
     @NotEmpty(message = "横幅背景不能为空", groups = {CreatePool.class, SetPool.class})
     String banner;
-    @NotEmpty(message = "介绍不能为空", groups = {CreatePool.class, CreateCategoryGroup.class, SetPool.class})
+    @NotEmpty(message = "介绍不能为空", groups = {CreatePool.class, CreateCategoryGroup.class, SetPool.class, SetCategoryGroup.class})
     String info;
     @NotNull(message = "id 不能为空",groups = {CreateCategoryGroup.class, SetPool.class, DeletePool.class, SetCategoryGroup.class})
     @Range(min = 0, max = Integer.MAX_VALUE, message = "范围异常")

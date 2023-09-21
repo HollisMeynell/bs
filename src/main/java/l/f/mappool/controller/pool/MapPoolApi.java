@@ -12,6 +12,7 @@ import l.f.mappool.dto.validator.mapPool.SetPool;
 import l.f.mappool.entity.MapPool;
 import l.f.mappool.entity.MapPoolUser;
 import l.f.mappool.enums.PoolPermission;
+import l.f.mappool.exception.HttpError;
 import l.f.mappool.util.ContextUtil;
 import l.f.mappool.vo.DataListVo;
 import l.f.mappool.vo.DataVo;
@@ -80,7 +81,7 @@ public class MapPoolApi extends PoolApi {
     }
 
     @DeleteMapping("pool")
-    DataVo<String> deletePool(@Validated(DeletePool.class) MapPoolDto poolDto) {
+    DataVo<String> deletePool(@Validated(DeletePool.class) MapPoolDto poolDto) throws HttpError {
         var u = ContextUtil.getContextUser();
         mapPoolService.deleteMapPool(u.getOsuId(), poolDto.getPoolId());
         return new DataVo<>("删除成功", null);
