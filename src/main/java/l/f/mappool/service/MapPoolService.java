@@ -110,7 +110,7 @@ public class MapPoolService {
         mapPoolDao.removePool(userId, pool);
     }
 
-    public void exportPool(long userId, int poolId) throws HttpError {
+    public Object exportPool(long userId, int poolId) throws HttpError {
         if (!mapPoolDao.isAdminByPool(poolId, userId)) {
             throw new PermissionException();
         }
@@ -125,7 +125,7 @@ public class MapPoolService {
             throw new HttpError(403, "无法导出非编辑中的图池");
         }
 
-        mapPoolDao.exportPool(pool);
+        return mapPoolDao.exportPool(pool);
     }
 
     /***

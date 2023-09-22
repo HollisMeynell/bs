@@ -4,9 +4,11 @@ import jakarta.persistence.EntityManager;
 import l.f.mappool.entity.pool.*;
 import l.f.mappool.enums.PoolPermission;
 import l.f.mappool.enums.PoolStatus;
+import l.f.mappool.exception.HttpError;
 import l.f.mappool.exception.NotFoundException;
 import l.f.mappool.exception.PermissionException;
 import l.f.mappool.repository.pool.*;
+import l.f.mappool.vo.PoolVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -96,10 +98,19 @@ public class MapPoolDao {
         var map = new HashMap<PoolPermission, List<Pool>>();
         var ulist = poolUserRepository.searchAllByUserId(userId);
 
-        var uCreates = ulist.stream().filter(u -> u.getPermission() == PoolPermission.CREATE).map(PoolUser::getPool).toList();
-        var uAdmins = ulist.stream().filter(u -> u.getPermission() == PoolPermission.ADMIN).map(PoolUser::getPool).toList();
-        var uChoosers = ulist.stream().filter(u -> u.getPermission() == PoolPermission.CHOOSER).map(PoolUser::getPool).toList();
-        var uTesters = ulist.stream().filter(u -> u.getPermission() == PoolPermission.TESTER).map(PoolUser::getPool).toList();
+        // 过滤掉删除 / 截止的图池
+        var uCreates = ulist.stream().filter(u -> u.getPermission() == PoolPermission.CREATE)
+                .map(PoolUser::getPool).filter(pool -> !pool.getStatus().equals(PoolStatus.DELETE)).toList();
+        var uAdmins = ulist.stream().filter(u -> u.getPermission() == PoolPermission.ADMIN)
+                .map(PoolUser::getPool).filter(pool -> !pool.getStatus().equals(PoolStatus.DELETE)).toList();
+        var uChoosers = ulist.stream().filter(u -> u.getPermission() == PoolPermission.CHOOSER)
+                .map(PoolUser::getPool)
+                .filter(pool -> !(pool.getStatus().equals(PoolStatus.DELETE) || pool.getStatus().equals(PoolStatus.STOP)))
+                .toList();
+        var uTesters = ulist.stream().filter(u -> u.getPermission() == PoolPermission.TESTER)
+                .map(PoolUser::getPool)
+                .filter(pool -> !(pool.getStatus().equals(PoolStatus.DELETE) || pool.getStatus().equals(PoolStatus.STOP)))
+                .toList();
 
         map.put(PoolPermission.CREATE, uCreates);
         map.put(PoolPermission.ADMIN, uAdmins);
@@ -134,9 +145,8 @@ public class MapPoolDao {
      * @param uid uid
      */
     public void removePool(long uid, Pool pool) {
-        if (poolUserRepository.deleteByPool(pool) != -1) {
-            poolRepository.delete(pool);
-        }
+        poolUserRepository.deleteByPool(pool);
+        poolRepository.delete(pool);
     }
 
     public void deletePool(long uid, Pool pool) {
@@ -144,18 +154,37 @@ public class MapPoolDao {
         poolRepository.save(pool);
     }
 
-    public void exportPool(Pool pool) {
-        for (var group: pool.getGroups()) {
-            for (var category : group.getCategories()){
-                if (category.getChosed() == null) {
-
-                }
+    public Object exportPool(Pool pool) throws HttpError {
+        for (var group : pool.getGroups()) {
+            for (var category : group.getCategories()) {
+                testCategory(category);
             }
         }
+
+        pool.setStatus(PoolStatus.SHOW);
+        var nPool = poolRepository.save(pool);
+        return getExportPool(nPool);
     }
 
-    private void testCategory(){
+    public PoolVo getExportPool(int poolId) throws HttpError {
+        var poolOpt = poolRepository.getByIdNotDelete(poolId);
+        if (poolOpt.isEmpty()) {
+            throw new NotFoundException();
+        }
+        return getExportPool(poolOpt.get());
+    }
 
+    public PoolVo getExportPool(Pool pool) throws HttpError {
+        if (!pool.getStatus().equals(PoolStatus.SHOW)) {
+            throw new HttpError(403, "尝试导出未公开的图池");
+        }
+        return new PoolVo(pool);
+    }
+
+    private void testCategory(PoolCategory category) throws HttpError {
+        if (category.getChosed() == null) {
+            throw new HttpError(403, "包含未确认的位置: " + category.getName());
+        }
     }
 
     /************************************************** User *****************************************************************/
@@ -189,14 +218,14 @@ public class MapPoolDao {
         poolUserRepository.delete(u.get());
     }
 
-    private boolean testBef(Optional<PoolUser> userOpt, PoolPermission... poolPermissions) {
-        if (userOpt.isEmpty()) {
+    private boolean testBef(Optional<PoolPermission> permission, PoolPermission... poolPermissions) {
+        if (permission.isEmpty()) {
             return false;
         }
         if (poolPermissions.length == PoolPermission.values().length) {
             return true;
         }
-        var user = userOpt.get().getPermission();
+        var user = permission.get();
         for (var p : poolPermissions) {
             if (p.equals(user)) {
                 return true;
@@ -212,8 +241,8 @@ public class MapPoolDao {
      * @return yes or no
      */
     public boolean testPermissionByPool(int poolId, long userId, PoolPermission... poolPermissions) {
-        var userOpt = poolUserRepository.getMapPoolUserByPoolIdAndUserId(poolId, userId);
-        return testBef(userOpt, poolPermissions);
+        var permission = poolUserRepository.getMapPoolUserPermission(poolId, userId);
+        return testBef(permission, poolPermissions);
     }
 
 
@@ -234,8 +263,8 @@ public class MapPoolDao {
     }
 
     public boolean testPermissionByCategoryGroup(int groupId, long userId, PoolPermission... poolPermissions) {
-        var userOpt = poolUserRepository.getMapPoolUserByGroupIdAndUserId(groupId, userId);
-        return testBef(userOpt, poolPermissions);
+        var permission = poolUserRepository.getMapPoolUserPermissionByGroupIdAndUserId(groupId, userId);
+        return testBef(permission, poolPermissions);
     }
 
     public boolean isCreaterByGroup(int groupId, long userId) {
@@ -251,8 +280,8 @@ public class MapPoolDao {
     }
 
     public boolean isChooserByCategory(int categoryId, long userId) {
-        var userOpt = poolUserRepository.getMapPoolUserByCategoryIdAndUserId(categoryId, userId);
-        return testBef(userOpt, PoolPermission.CREATE, PoolPermission.ADMIN, PoolPermission.CHOOSER);
+        var permission = poolUserRepository.getMapPoolUserPermission(categoryId, userId);
+        return testBef(permission, PoolPermission.CREATE, PoolPermission.ADMIN, PoolPermission.CHOOSER);
     }
 
     public boolean isUserByGroup(int groupId, long userId) {

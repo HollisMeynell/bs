@@ -36,6 +36,9 @@ public class PoolCategoryItem {
 
     Integer sort;
 
+    /**
+     * 选择的图
+     */
     Long chous;
 
     @JsonIgnoreProperties({"item"})
