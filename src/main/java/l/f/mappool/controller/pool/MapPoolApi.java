@@ -9,9 +9,10 @@ import l.f.mappool.dto.validator.AddUser;
 import l.f.mappool.dto.validator.mapPool.CreatePool;
 import l.f.mappool.dto.validator.mapPool.DeletePool;
 import l.f.mappool.dto.validator.mapPool.SetPool;
-import l.f.mappool.entity.MapPool;
-import l.f.mappool.entity.MapPoolUser;
+import l.f.mappool.entity.pool.Pool;
+import l.f.mappool.entity.pool.PoolUser;
 import l.f.mappool.enums.PoolPermission;
+import l.f.mappool.exception.HttpError;
 import l.f.mappool.util.ContextUtil;
 import l.f.mappool.vo.DataListVo;
 import l.f.mappool.vo.DataVo;
@@ -32,11 +33,11 @@ public class MapPoolApi extends PoolApi {
      * @return 图池
      */
     @GetMapping("queryPublic")
-    DataListVo<MapPool> query(@Validated QueryMapPoolDto queryMapPoolDto) {
+    DataListVo<Pool> query(@Validated QueryMapPoolDto queryMapPoolDto) {
         var u = ContextUtil.getContextUser();
         var allCount = mapPoolService.countByNameAndId(queryMapPoolDto, u.getOsuId());
         var data = mapPoolService.queryByNameAndId(queryMapPoolDto, u.getOsuId());
-        return new DataListVo<MapPool>()
+        return new DataListVo<Pool>()
                 .setData(data)
                 .setTotalItems(allCount)
                 .setTotalPages(allCount / queryMapPoolDto.getPageSize() + allCount % queryMapPoolDto.getPageSize() == 0 ? 0 : 1)
@@ -50,7 +51,7 @@ public class MapPoolApi extends PoolApi {
      * @return 图池
      */
     @GetMapping("getMyPool")
-    DataVo<Map<PoolPermission, List<MapPool>>> getAllPool() {
+    DataVo<Map<PoolPermission, List<Pool>>> getAllPool() {
         var u = ContextUtil.getContextUser();
         return new DataVo<>(mapPoolService.getAllPool(u.getOsuId()));
     }
@@ -62,7 +63,7 @@ public class MapPoolApi extends PoolApi {
      * @return 创建结果
      */
     @PutMapping("pool")
-    DataVo<MapPool> createPool(@RequestBody @Validated(CreatePool.class) MapPoolDto create) {
+    DataVo<Pool> createPool(@RequestBody @Validated(CreatePool.class) MapPoolDto create) {
         var u = ContextUtil.getContextUser();
         var pool = mapPoolService.createMapPool(u.getOsuId(), create.getName(), create.getBanner(), create.getInfo());
         return new DataVo<>("创建成功", pool);
@@ -73,21 +74,21 @@ public class MapPoolApi extends PoolApi {
      * @param poolDto 要修改的信息
      */
     @PatchMapping("pool")
-    DataVo<MapPool> setPool(@RequestBody @Validated(SetPool.class) MapPoolDto poolDto) {
+    DataVo<Pool> setPool(@RequestBody @Validated(SetPool.class) MapPoolDto poolDto) {
         var u = ContextUtil.getContextUser();
         var pool = mapPoolService.updateMapPool(u.getOsuId(), poolDto.getPoolId(), poolDto.getName(), poolDto.getBanner(), poolDto.getInfo());
         return new DataVo<>("创建成功", pool);
     }
 
     @DeleteMapping("pool")
-    DataVo<String> deletePool(@Validated(DeletePool.class) MapPoolDto poolDto) {
+    DataVo<String> deletePool(@Validated(DeletePool.class) MapPoolDto poolDto) throws HttpError {
         var u = ContextUtil.getContextUser();
         mapPoolService.deleteMapPool(u.getOsuId(), poolDto.getPoolId());
         return new DataVo<>("删除成功", null);
     }
 
     @DeleteMapping("removePool")
-    DataVo<String> removePool(@Validated(DeletePool.class) MapPoolDto poolDto) {
+    DataVo<String> removePool(@Validated(DeletePool.class) MapPoolDto poolDto) throws HttpError {
         var u = ContextUtil.getContextUser();
         mapPoolService.removePool(u.getOsuId(), poolDto.getPoolId());
         return new DataVo<>("删除完成", null);
@@ -121,23 +122,23 @@ public class MapPoolApi extends PoolApi {
      * 查询标记的表
      */
     @GetMapping("mark")
-    DataListVo<MapPool> getUserMarkPool() {
+    DataListVo<Pool> getUserMarkPool() {
         var u = ContextUtil.getContextUser();
         return mapPoolService.getAllMarkPool(u.getOsuId());
     }
 
     @PutMapping("addAdmin")
-    DataVo<MapPoolUser> addAdminUser(@RequestBody @Validated(AddUser.class) PoolUserDto user) {
+    DataVo<PoolUser> addAdminUser(@RequestBody @Validated(AddUser.class) PoolUserDto user) {
         var u = ContextUtil.getContextUser();
         return mapPoolService.addAdminUser(u.getOsuId(), user.getUserId(), user.getPoolId());
     }
     @PutMapping("addChooser")
-    DataVo<MapPoolUser> addChooserUser(@RequestBody @Validated(AddUser.class) PoolUserDto user) {
+    DataVo<PoolUser> addChooserUser(@RequestBody @Validated(AddUser.class) PoolUserDto user) {
         var u = ContextUtil.getContextUser();
         return mapPoolService.addChooserUser(u.getOsuId(), user.getUserId(), user.getPoolId());
     }
     @PutMapping("addTester")
-    DataVo<MapPoolUser> addTesterUser(@RequestBody @Validated(AddUser.class) PoolUserDto user) {
+    DataVo<PoolUser> addTesterUser(@RequestBody @Validated(AddUser.class) PoolUserDto user) {
         var u = ContextUtil.getContextUser();
         return mapPoolService.addTesterUser(u.getOsuId(), user.getUserId(), user.getPoolId());
     }
@@ -147,5 +148,11 @@ public class MapPoolApi extends PoolApi {
         var u = ContextUtil.getContextUser();
         mapPoolService.deleteUser(u.getOsuId(), user.getUserId(), user.getPoolId());
         return new DataVo<>("ok");
+    }
+
+    @GetMapping("export")
+    Object exportPool(@RequestParam int poolId) {
+
+        return new String("a");
     }
 }

@@ -2,9 +2,9 @@ package l.f.mappool.service;
 
 import jakarta.annotation.Nullable;
 import jakarta.annotation.Resource;
-import l.f.mappool.entity.OsuAccountUser;
+import l.f.mappool.entity.osu.OsuAccountUser;
 import l.f.mappool.exception.LogException;
-import l.f.mappool.repository.OsuAccountUserRepository;
+import l.f.mappool.repository.osu.OsuAccountUserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.HttpHeaders;

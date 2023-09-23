@@ -5,13 +5,15 @@ import jakarta.annotation.Resource;
 import l.f.mappool.config.interceptor.Open;
 import l.f.mappool.dao.MapPoolDao;
 import l.f.mappool.dto.ProxyDto;
-import l.f.mappool.entity.MapFeedback;
-import l.f.mappool.entity.MapPool;
+import l.f.mappool.dto.map.QueryMapPoolDto;
+import l.f.mappool.entity.pool.PoolFeedback;
+import l.f.mappool.entity.pool.Pool;
 import l.f.mappool.exception.HttpError;
 import l.f.mappool.service.MapPoolService;
 import l.f.mappool.service.OsuApiService;
 import l.f.mappool.vo.DataListVo;
 import l.f.mappool.vo.DataVo;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
@@ -20,7 +22,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.validation.constraints.NotNull;
-import java.util.List;
 
 @Open
 @Controller
@@ -42,8 +43,14 @@ public class PublicApi {
      * 获取公开图池
      */
     @GetMapping("getAllPool")
-    DataVo<List<MapPool>> getAllPool() {
-        return new DataVo<>(mapPoolDao.getPublicPool());
+    DataListVo<Pool> getAllPool(QueryMapPoolDto query) {
+        var p = PageRequest.of(query.getPageNum() - 1, query.getPageSize());
+        var data = mapPoolDao.getPublicPool(p);
+        return new DataListVo<Pool>().setData(data.getContent())
+                .setCurrentPage(data.getNumber())
+                .setPageSize(data.getSize())
+                .setTotalPages(data.getTotalPages())
+                .setTotalItems(data.getTotalElements());
     }
 
     /**
@@ -113,9 +120,9 @@ public class PublicApi {
         }
     }
     @GetMapping("feedback")
-    DataListVo<MapFeedback> getFeedback(@NotNull(message = "id 不能为空") @RequestParam("id") int itemId){
+    DataListVo<PoolFeedback> getFeedback(@NotNull(message = "id 不能为空") @RequestParam("id") int itemId){
         var feedbacks = mapPoolService.getPublicFeedbackFromItem(itemId);
-        return new DataListVo<MapFeedback>()
+        return new DataListVo<PoolFeedback>()
                 .setTotalItems(feedbacks.size())
                 .setPageSize(feedbacks.size())
                 .setData(feedbacks);

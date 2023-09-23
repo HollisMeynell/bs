@@ -4,8 +4,8 @@ import l.f.mappool.controller.PoolApi;
 import l.f.mappool.dto.map.CategoryItemDto;
 import l.f.mappool.dto.validator.mapPool.DeleteCategoryItem;
 import l.f.mappool.dto.validator.mapPool.SetCategoryItem;
-import l.f.mappool.entity.MapCategoryItem;
-import l.f.mappool.entity.MapFeedback;
+import l.f.mappool.entity.pool.PoolCategoryItem;
+import l.f.mappool.entity.pool.PoolFeedback;
 import l.f.mappool.util.ContextUtil;
 import l.f.mappool.vo.DataListVo;
 import l.f.mappool.vo.DataVo;
@@ -19,14 +19,14 @@ import javax.validation.constraints.NotNull;
 public class MapCategoryItemApi extends PoolApi {
 
     @PutMapping("categoryItem")
-    DataVo<MapCategoryItem> createItem(@RequestBody @Validated(CategoryItemDto.class) CategoryItemDto create) {
+    DataVo<PoolCategoryItem> createItem(@RequestBody @Validated(CategoryItemDto.class) CategoryItemDto create) {
         var u = ContextUtil.getContextUser();
         var item = mapPoolService.createCategoryItem(u.getOsuId(), create.getCategoryId(), create.getBeatmapId(), create.getInfo());
         return new DataVo<>("创建成功", item);
     }
 
     @PatchMapping("categoryItem")
-    DataVo<MapCategoryItem> setItem(@RequestBody @Validated(SetCategoryItem.class) CategoryItemDto create) {
+    DataVo<PoolCategoryItem> setItem(@RequestBody @Validated(SetCategoryItem.class) CategoryItemDto create) {
         var u = ContextUtil.getContextUser();
         var item = mapPoolService.updateCategoryItem(u.getOsuId(), create.getItemId(), create.getBeatmapId(), create.getInfo(), create.getSort());
         return new DataVo<>("修改成功", item);
@@ -40,10 +40,10 @@ public class MapCategoryItemApi extends PoolApi {
     }
 
     @GetMapping("feedback")
-    DataListVo<MapFeedback> getFeedback(@NotNull(message = "id 不能为空") @RequestParam("id") int itemId){
+    DataListVo<PoolFeedback> getFeedback(@NotNull(message = "id 不能为空") @RequestParam("id") int itemId){
         var u = ContextUtil.getContextUser();
         var feedbacks = mapPoolService.getFeedbackFromItem(u.getOsuId(), itemId);
-        return new DataListVo<MapFeedback>()
+        return new DataListVo<PoolFeedback>()
                 .setTotalItems(feedbacks.size())
                 .setPageSize(feedbacks.size())
                 .setData(feedbacks);

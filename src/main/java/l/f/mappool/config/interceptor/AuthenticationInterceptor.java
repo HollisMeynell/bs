@@ -8,6 +8,7 @@ import l.f.mappool.service.UserService;
 import l.f.mappool.util.ContextUtil;
 import l.f.mappool.util.JwtUtil;
 import l.f.mappool.util.TokenBucketUtil;
+import org.springframework.lang.NonNull;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -23,13 +24,13 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
     }
 
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+    public boolean preHandle(@NonNull HttpServletRequest request,@NonNull HttpServletResponse response,@NonNull Object handler) throws Exception {
         if (handler instanceof HandlerMethod handlerMethod) {
-            if (!TokenBucketUtil.getToken(request.getRemoteAddr(), 120, 1.5)) {
+            if (!TokenBucketUtil.getToken(request.getRemoteAddr(), 60, 1.5)) {
                 throw new HttpError(429, "Too Many Requests");
             }
 
-            if (handlerMethod.getMethod().getName().equals("proxy") && !TokenBucketUtil.getToken('p' + request.getRemoteAddr(), 60, 1)) {
+            if (handlerMethod.getMethod().getName().equals("proxy") && !TokenBucketUtil.getToken('p' + request.getRemoteAddr(), 20, 0.2)) {
                 throw new HttpError(429, "Too Many Requests");
             }
 
@@ -65,7 +66,7 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
     }
 
     @Override
-    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+    public void afterCompletion(@NonNull HttpServletRequest request,@NonNull HttpServletResponse response,@NonNull Object handler, Exception ex) throws Exception {
         HandlerInterceptor.super.afterCompletion(request, response, handler, ex);
         ContextUtil.clearContext();
     }

@@ -1,8 +1,12 @@
 package l.f.mappool.controller;
 
-import l.f.mappool.entity.BeatMap;
-import l.f.mappool.vo.DataListVo;
+import l.f.mappool.entity.Favorite;
+import l.f.mappool.entity.User;
+import l.f.mappool.service.FavoriteService;
+import l.f.mappool.util.ContextUtil;
+import l.f.mappool.vo.DataVo;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,9 +19,15 @@ import java.util.List;
 @ResponseBody
 @RequestMapping("/api/favorite")
 public class FavoriteApi {
-    @GetMapping
-    public DataListVo<BeatMap> getFavorite() {
+    private final FavoriteService favoriteService;
 
-        return new DataListVo<>();
+    @Autowired
+    public FavoriteApi(FavoriteService favoriteService) {
+        this.favoriteService = favoriteService;
+    }
+    @GetMapping
+    public DataVo<List<Favorite>> getFavorite() {
+        User user = ContextUtil.getContextUser();
+        return favoriteService.getAllFavorite(user);
     }
 }

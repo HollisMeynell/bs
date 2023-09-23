@@ -1,11 +1,11 @@
 package l.f.mappool.service;
 
-import l.f.mappool.entity.FileRecord;
-import l.f.mappool.entity.OsuFileRecord;
+import l.f.mappool.entity.file.FileRecord;
+import l.f.mappool.entity.file.OsuFileRecord;
 import l.f.mappool.exception.LogException;
 import l.f.mappool.properties.BeatmapSelectionProperties;
-import l.f.mappool.repository.FileLogRepository;
-import l.f.mappool.repository.OsuFileLogRepository;
+import l.f.mappool.repository.file.FileLogRepository;
+import l.f.mappool.repository.file.OsuFileLogRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -101,7 +101,7 @@ public class FileService {
         } else {
             fileLogRepository.delete(fileRecord);
         }
-        throw new IOException("file not in local");
+        throw new IOException("file not in file");
     }
 
     public String writeFile(String name, InputStream in) throws IOException {

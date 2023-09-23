@@ -5,7 +5,7 @@ import l.f.mappool.dto.map.MapPoolDto;
 import l.f.mappool.dto.validator.mapPool.CreateCategoryGroup;
 import l.f.mappool.dto.validator.mapPool.DeleteCategoryGroup;
 import l.f.mappool.dto.validator.mapPool.SetCategoryGroup;
-import l.f.mappool.entity.MapCategoryGroup;
+import l.f.mappool.entity.pool.PoolCategoryGroup;
 import l.f.mappool.util.ContextUtil;
 import l.f.mappool.vo.DataListVo;
 import l.f.mappool.vo.DataVo;
@@ -22,20 +22,20 @@ public class MapCategoryGroupApi extends PoolApi {
      * @return 组别信息
      */
     @GetMapping("categoryGroupByPool")
-    DataListVo<MapCategoryGroup> getCategoryGroup(@RequestParam int id) {
+    DataListVo<PoolCategoryGroup> getCategoryGroup(@RequestParam int id) {
         var list = mapPoolService.getCategoryGroup(id);
-        return new DataListVo<MapCategoryGroup>().setData(list).setTotalItems(list.size());
+        return new DataListVo<PoolCategoryGroup>().setData(list).setTotalItems(list.size());
     }
 
     @PutMapping("categoryGroup")
-    DataVo<MapCategoryGroup> createCategoryGroup(@RequestBody @Validated(CreateCategoryGroup.class) MapPoolDto create) {
+    DataVo<PoolCategoryGroup> createCategoryGroup(@RequestBody @Validated(CreateCategoryGroup.class) MapPoolDto create) {
         var u = ContextUtil.getContextUser();
         var group = mapPoolService.createCategoryGroup(u.getOsuId(), create.getPoolId(), create.getName(), create.getInfo(), create.getColor());
         return new DataVo<>("创建成功", group);
     }
 
     @PatchMapping("categoryGroup")
-    DataVo<MapCategoryGroup> setCategoryGroup(@RequestBody @Validated(SetCategoryGroup.class) MapPoolDto group) {
+    DataVo<PoolCategoryGroup> setCategoryGroup(@RequestBody @Validated(SetCategoryGroup.class) MapPoolDto group) {
         var u = ContextUtil.getContextUser();
         var categoryGroup = mapPoolService.updateCategoryGroup(u.getOsuId(), group.getGroupId(), group.getName(), group.getInfo(), group.getColor(), group.getSort());
         return new DataVo<>("修改成功", categoryGroup);

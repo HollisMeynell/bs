@@ -26,7 +26,7 @@ public class WebExceptionHandler {
     public Object errorHandler(HttpServletRequest request, HttpServletResponse response, Exception exception) {
         log.warn("接口异常[{}] : {}", request.getRequestURI(), exception.getMessage(), exception);
         response.setStatus(HttpServletResponse.SC_BAD_GATEWAY);
-        return new DataVo<>(500, "请求出现错误", exception.getMessage());
+        return new DataVo<>(502, "请求出现错误", exception.getMessage());
     }
 
     @ResponseBody
@@ -34,7 +34,7 @@ public class WebExceptionHandler {
     public Object errorRuntimeHandler(HttpServletRequest request, HttpServletResponse response, RuntimeException exception) {
         log.warn("接口异常[{}] : {}", request.getRequestURI(), exception.getMessage(), exception);
         response.setStatus(HttpServletResponse.SC_BAD_GATEWAY);
-        return new DataVo<>(400, exception.getMessage(), exception.getMessage());
+        return new DataVo<>(502, exception.getMessage(), exception.getMessage());
     }
 
     @ResponseBody
@@ -59,6 +59,6 @@ public class WebExceptionHandler {
         log.warn("接口异常[{}] : {}", request.getRequestURI(), exception.getMessage(), exception);
         response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
         var errList = exception.getFieldErrors().stream().map(r -> '[' + r.getField() + "]: " + r.getDefaultMessage()).toList();
-        return new DataListVo<String>().setCode(400).setMessage("参数异常").setData(errList);
+        return new DataListVo<String>().setCode(403).setMessage("参数异常").setData(errList);
     }
 }

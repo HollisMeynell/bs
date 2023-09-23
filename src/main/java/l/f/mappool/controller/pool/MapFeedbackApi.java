@@ -8,7 +8,7 @@ import l.f.mappool.dto.validator.mapPool.CreateFeedback;
 import l.f.mappool.dto.validator.mapPool.DeleteFeedback;
 import l.f.mappool.dto.validator.mapPool.HandleFeedback;
 import l.f.mappool.dto.validator.mapPool.SetFeedback;
-import l.f.mappool.entity.MapFeedback;
+import l.f.mappool.entity.pool.PoolFeedback;
 import l.f.mappool.util.ContextUtil;
 import l.f.mappool.vo.DataVo;
 import org.springframework.stereotype.Controller;
@@ -24,14 +24,14 @@ public class MapFeedbackApi extends PoolApi {
     MapPoolDao mapPoolDao;
 
     @PutMapping("feedback")
-    DataVo<MapFeedback> createFeedback(@RequestBody @Validated(CreateFeedback.class) FeedbackDto create) {
+    DataVo<PoolFeedback> createFeedback(@RequestBody @Validated(CreateFeedback.class) FeedbackDto create) {
         var u = ContextUtil.getContextUser();
         var feedback = mapPoolDao.createFeedback(u.getOsuId(), create.getItemId(), create.getAgree(), create.getFeedback());
         return new DataVo<>("创建成功", feedback);
     }
 
     @PatchMapping("feedback")
-    DataVo<MapFeedback> setFeedback(@RequestBody @Validated(SetFeedback.class) FeedbackDto create) {
+    DataVo<PoolFeedback> setFeedback(@RequestBody @Validated(SetFeedback.class) FeedbackDto create) {
         var u = ContextUtil.getContextUser();
         var feedback = mapPoolDao.checkFeedback(u.getOsuId(), create.getId());
         feedback = mapPoolDao.updateFeedback(feedback, create.getAgree(), create.getFeedback());
