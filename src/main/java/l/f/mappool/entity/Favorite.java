@@ -41,4 +41,10 @@ public class Favorite {
     @Type(StringArrayType.class)
     @Column(name = "tags",columnDefinition = "text[]")
     String[] tags;
+
+    public Favorite setTags(String[] tags) {
+        if (tags == null) tags = new String[0];
+        this.tags = tags;
+        return this;
+    }
 }

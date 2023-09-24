@@ -1,10 +1,12 @@
 package l.f.mappool.vo;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import l.f.mappool.entity.osu.BeatMap;
 import l.f.mappool.entity.pool.Pool;
 import l.f.mappool.entity.pool.PoolCategoryGroup;
 import l.f.mappool.enums.PoolStatus;
 import l.f.mappool.exception.HttpError;
+import l.f.mappool.service.OsuApiService;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.beans.BeanUtils;
@@ -27,4 +29,13 @@ public class PoolVo extends Pool {
                 .toList();
     }
     List<CategoryGroupVo> categoryList;
+    List<BeatMap> mapinfo;
+
+    public void parseMapInfo(OsuApiService apiService) {
+        mapinfo = categoryList.stream()
+                .flatMap(c -> c.getCategory().stream())
+                .map(CategoryGroupVo.Category::bid)
+                .map(apiService::getMapInfoByDB)
+                .toList();
+    }
 }

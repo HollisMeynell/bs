@@ -15,6 +15,7 @@ import l.f.mappool.repository.pool.PoolMark4UserRepository;
 import l.f.mappool.repository.pool.PoolUserRepository;
 import l.f.mappool.vo.DataListVo;
 import l.f.mappool.vo.DataVo;
+import l.f.mappool.vo.PoolVo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -26,11 +27,11 @@ import java.util.Map;
 @Slf4j
 public class MapPoolService {
     @Resource
-    MapPoolDao mapPoolDao;
+    MapPoolDao         mapPoolDao;
     @Resource
     PoolUserRepository poolUserRepository;
     @Resource
-    UserService userService;
+    UserService        userService;
 
     @Resource
     PoolMark4UserRepository poolMark4UserRepository;
@@ -110,7 +111,7 @@ public class MapPoolService {
         mapPoolDao.removePool(userId, pool);
     }
 
-    public Object exportPool(long userId, int poolId) throws HttpError {
+    public PoolVo exportPool(long userId, int poolId) throws HttpError {
         if (!mapPoolDao.isAdminByPool(poolId, userId)) {
             throw new PermissionException();
         }
@@ -126,6 +127,10 @@ public class MapPoolService {
         }
 
         return mapPoolDao.exportPool(pool);
+    }
+
+    public PoolVo getExportPool(int poolId) throws HttpError {
+        return mapPoolDao.getExportPool(poolId);
     }
 
     /***
@@ -224,7 +229,7 @@ public class MapPoolService {
         mapPoolDao.deleteCategory(category);
     }
 
-    public PoolCategory choseCategory(long uid, int categoryId, Long bid) {
+    public PoolCategory choseCategory(long uid, int categoryId, int itemId) {
         var categoryOpt = mapPoolDao.getMapCategoryById(categoryId);
         if (categoryOpt.isEmpty()) {
             throw new NotFoundException();
@@ -235,7 +240,11 @@ public class MapPoolService {
             throw new PermissionException();
         }
 
-        category.setChosed(bid);
+        var itemOpt = mapPoolDao.getMapCategoryItemById(itemId);
+        if (itemOpt.isEmpty()) {
+            throw new NotFoundException();
+        }
+        category.setChosed(itemOpt.get().getChous());
 
         return mapPoolDao.saveCategory(category);
     }

@@ -94,7 +94,7 @@ class PoolDaoTest {
         mapPoolDao.createFeedback(uid, item.getId(), true, "ccc");
         mapPoolDao.handleFeedback(f1, true);
 
-        c = mapPoolService.choseCategory(uid, c.getId(), 16115L);
+        c = mapPoolService.choseCategory(uid, c.getId(), item.getId());
 
         var listd = mapPoolService.getCategoryGroup(pool.getId());
         log.info(JsonUtil.objectToJsonPretty(listd));

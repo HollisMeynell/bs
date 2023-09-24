@@ -10,5 +10,7 @@ public class ChoseCategory {
     @NotNull(message = "categoryId 不能为空")
     @Range(min = 0, max = Integer.MAX_VALUE, message = "范围异常")
     Integer categoryId;
-    Long bid;
+    @NotNull(message = "itemId 不能为空")
+    @Range(min = 0, max = Integer.MAX_VALUE, message = "范围异常")
+    Integer itemId;
 }

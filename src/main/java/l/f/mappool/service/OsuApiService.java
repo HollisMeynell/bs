@@ -6,6 +6,7 @@ import l.f.mappool.entity.osu.OsuUser;
 import l.f.mappool.properties.BeatmapSelectionProperties;
 import l.f.mappool.properties.OsuProperties;
 import l.f.mappool.repository.osu.BeatMapRepository;
+import l.f.mappool.repository.osu.BeatMapSetRepository;
 import l.f.mappool.repository.osu.OsuUserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,7 @@ public class OsuApiService {
     WebClient webClient;
     OsuUserRepository osuUserRepository;
     BeatMapRepository beatMapRepository;
+    BeatMapSetRepository beatMapSetRepository;
     private final String redirectUrl;
     private final int oauthId;
     private final String oauthToken;
@@ -40,7 +42,8 @@ public class OsuApiService {
             OsuUserRepository osuUserRepository,
             BeatmapSelectionProperties properties,
             OsuProperties osuProperties,
-            BeatMapRepository beatMapRepository
+            BeatMapRepository beatMapRepository,
+            BeatMapSetRepository beatMapSetRepository
     ) {
         this.redirectUrl = String.format("http%s://%s%s",
                 Boolean.TRUE.equals(properties.getSsl()) ? "s" : "",
@@ -52,6 +55,7 @@ public class OsuApiService {
         this.oauthId = osuProperties.getOauth().getId();
         this.oauthToken = osuProperties.getOauth().getToken();
         this.beatMapRepository = beatMapRepository;
+        this.beatMapSetRepository = beatMapSetRepository;
     }
 
     /**
@@ -178,10 +182,13 @@ public class OsuApiService {
     }
 
     public BeatMap getMapInfoByDB(long bid) {
-        var map = beatMapRepository.findBeatMapById(bid);
+        var map = beatMapRepository.findById(bid);
         return map.orElseGet(()->{
             var get = getMapInfo(bid);
-            if (get.getStatus().equals("ranked")) beatMapRepository.save(get);
+            if (get.getStatus().equals("ranked")) {
+                beatMapSetRepository.save(get.getBeatMapSet());
+                beatMapRepository.save(get);
+            }
             return get;
         });
     }

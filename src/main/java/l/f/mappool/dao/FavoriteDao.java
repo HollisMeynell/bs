@@ -2,16 +2,15 @@ package l.f.mappool.dao;
 
 import l.f.mappool.entity.Favorite;
 import l.f.mappool.exception.HttpError;
+import l.f.mappool.exception.NotFoundException;
 import l.f.mappool.repository.FavoriteRepository;
+import l.f.mappool.vo.DataVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
 @Component
 public class FavoriteDao {
@@ -27,6 +26,10 @@ public class FavoriteDao {
         return favoriteRepository.save(favorite);
     }
 
+    public Optional<Favorite> getFavoriteById(int favoriteId) {
+        return favoriteRepository.findById(favoriteId);
+    }
+
     public void deleteFavorite(Favorite favorite) {
         favoriteRepository.delete(favorite);
     }
@@ -40,7 +43,7 @@ public class FavoriteDao {
     public List<Favorite> getFavorites(long uid) {
         return favoriteRepository.getAllByUserId(uid);
     }
-    public List<Favorite> getFavoritesByTag(long uid, String tag) {
+    public List<Favorite> getFavoritesByTag(long uid, String... tag) {
         return favoriteRepository.searchUserAllByTags(uid, tag);
     }
 
@@ -50,15 +53,21 @@ public class FavoriteDao {
 
     public Favorite addTag(Favorite favorite, String... tag) {
         // 添加标签
-        favorite.setTags(setTags(favorite.getTags(), true, tag));
+//        favorite.setTags(setTags(favorite.getTags(), true, tag));
         favoriteRepository.addTags(favorite.getId(), tag);
         return favorite;
     }
 
     public Favorite delTag(Favorite favorite, String tag) {
         // 删除标签
-        favorite.setTags(setTags(favorite.getTags(), tag, false));
+//        favorite.setTags(setTags(favorite.getTags(), tag, false));
         favoriteRepository.deleteTags(favorite.getId(), tag);
+        return favorite;
+    }
+
+    public Favorite replaceTag(Favorite favorite, String oldTag, String newTag) {
+        // 删除标签
+        favoriteRepository.replaceTags(favorite.getId(), oldTag, newTag);
         return favorite;
     }
 
@@ -74,6 +83,18 @@ public class FavoriteDao {
             throw new HttpError(404, "Not found");
         }
         return favoriteOptional.get();
+    }
+
+    public Favorite findFavorite(Long uid, int id) {
+        var favoriteOpt = getFavoriteById(id);
+        if (favoriteOpt.isEmpty()) {
+            throw new NotFoundException();
+        }
+        var favorite = favoriteOpt.get();
+        if (!uid.equals(favorite.getUserId())) {
+            throw new NotFoundException();
+        }
+        return favorite;
     }
 
 

@@ -3,6 +3,7 @@ package l.f.mappool.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import l.f.mappool.config.interceptor.Open;
+import l.f.mappool.exception.HttpError;
 import l.f.mappool.service.FileService;
 import l.f.mappool.entity.file.FileRecord;
 import l.f.mappool.exception.LogException;
@@ -111,6 +112,16 @@ public class FileApi {
         } catch (IOException e) {
             throw new LogException("文件已失效...", 404);
         }
+    }
+
+    /**
+     * 下载素材
+     * @param name 位于 static 的路径
+     * @return
+     */
+    @GetMapping(value = "/static/{name}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public byte[] getStaticFile(@PathVariable("name")String name) throws HttpError{
+        return fileService.getStaticFile(name);
     }
 
     @Open

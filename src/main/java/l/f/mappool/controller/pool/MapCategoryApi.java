@@ -43,7 +43,7 @@ public class MapCategoryApi extends PoolApi {
     @PatchMapping("category/chose")
     DataVo<PoolCategory> choseMap(@RequestBody @Validated ChoseCategory choseCategory){
         var u = ContextUtil.getContextUser();
-        var category = mapPoolService.choseCategory(u.getOsuId(), choseCategory.getCategoryId(), choseCategory.getBid());
+        var category = mapPoolService.choseCategory(u.getOsuId(), choseCategory.getCategoryId(), choseCategory.getItemId());
         return new DataVo<>("修改成功", category);
     }
 }

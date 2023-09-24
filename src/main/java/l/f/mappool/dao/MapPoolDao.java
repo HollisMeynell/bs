@@ -154,7 +154,7 @@ public class MapPoolDao {
         poolRepository.save(pool);
     }
 
-    public Object exportPool(Pool pool) throws HttpError {
+    public PoolVo exportPool(Pool pool) throws HttpError {
         for (var group : pool.getGroups()) {
             for (var category : group.getCategories()) {
                 testCategory(category);

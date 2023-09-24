@@ -8,5 +8,5 @@ import java.util.Optional;
 
 @Component
 public interface BeatMapRepository extends JpaRepository<BeatMap, Long> {
-    Optional<BeatMap> findBeatMapById(long id);
+    Optional<BeatMap> findById(long id);
 }

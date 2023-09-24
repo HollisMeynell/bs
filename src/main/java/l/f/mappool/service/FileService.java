@@ -2,6 +2,7 @@ package l.f.mappool.service;
 
 import l.f.mappool.entity.file.FileRecord;
 import l.f.mappool.entity.file.OsuFileRecord;
+import l.f.mappool.exception.HttpError;
 import l.f.mappool.exception.LogException;
 import l.f.mappool.properties.BeatmapSelectionProperties;
 import l.f.mappool.repository.file.FileLogRepository;
@@ -39,6 +40,7 @@ public class FileService {
      * 下载 .osz 的缓存路径, 最终保存格式为 OSU_FILE_PATH/sid/*
      */
     private final String OSU_FILE_PATH;
+    private final String STATIC_PATH;
 
 
     @Autowired
@@ -47,6 +49,7 @@ public class FileService {
         String SAVE_PATH = properties.getFilePath();
         UPLOAD_PATH = properties.getFilePath() + "/upload";
         OSU_FILE_PATH = properties.getFilePath() + "/osu";
+        STATIC_PATH = properties.getFilePath() + "/static";
         this.osuFileLogRepository = osuFileLogRepository;
         this.beatmapFileService = beatmapFileService;
         Path p = Path.of(SAVE_PATH);
@@ -58,6 +61,10 @@ public class FileService {
             Files.createDirectories(p);
         }
         p = Path.of(UPLOAD_PATH);
+        if (!Files.isDirectory(p)) {
+            Files.createDirectories(p);
+        }
+        p = Path.of(STATIC_PATH);
         if (!Files.isDirectory(p)) {
             Files.createDirectories(p);
         }
@@ -318,6 +325,18 @@ public class FileService {
                 zipOut.putNextEntry(zip);
                 zipOut.write(Files.readAllBytes(file));
             }
+        }
+    }
+
+    public byte[] getStaticFile(String fileName) throws HttpError {
+        var path = Path.of(STATIC_PATH, fileName);
+        if (!Files.isRegularFile(path)) {
+            throw new HttpError(400, "file not found");
+        }
+        try {
+            return Files.readAllBytes(path);
+        } catch (IOException e) {
+            throw new HttpError(500, "file read error");
         }
     }
 }
