@@ -31,6 +31,6 @@ public class MapDao {
 
     public Optional<BeatMap> getFirstBeatMap(long id) {
 
-        return beatMapRepository.findBeatMapById(id);
+        return beatMapRepository.findById(id);
     }
 }

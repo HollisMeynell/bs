@@ -38,11 +38,11 @@ public interface FavoriteRepository extends JpaRepository<Favorite, Integer>, Jp
     void replaceTags(int id, String oldTag, String tag);
 
     @Transactional
-    @Query(value = "select * from favorite where :tag like any(favorite.tags)", nativeQuery = true)
-    List<Favorite> searchAllByTags(String tag);
+    @Query(value = "select * from favorite where favorite.tags @> ARRAY[:tag]", nativeQuery = true)
+    List<Favorite> searchAllByTags(String... tag);
     @Transactional
-    @Query(value = "select * from favorite where user_id = :uid and :tag like any(favorite.tags)", nativeQuery = true)
-    List<Favorite> searchUserAllByTags(long uid, String tag);
+    @Query(value = "select * from favorite where user_id = :uid and favorite.tags @> ARRAY[:tag]", nativeQuery = true)
+    List<Favorite> searchUserAllByTags(long uid, String... tag);
     @Transactional
     List<Favorite> getAllByUserId(long userId);
     Optional<Favorite> findByBidAndUserId(Long bid, Long userId);

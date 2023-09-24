@@ -47,6 +47,9 @@ public class OsuFileRecord {
 
                     int start = line.indexOf('"');
                     int end = line.lastIndexOf('"');
+                    if (start == -1) {
+                        break;
+                    }
                     obj.background = line.substring(start + 1, end);
                     break;
                 }
