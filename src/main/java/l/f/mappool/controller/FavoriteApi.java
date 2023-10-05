@@ -82,4 +82,10 @@ public class FavoriteApi {
         User user = ContextUtil.getContextUser();
         return favoriteService.deleteTag(user, tag);
     }
+
+    @PatchMapping("updateTags")
+    public FavoritesVo updateAllTags(@Validated(UpdateTags.class) FavoriteDto tag) {
+        User user = ContextUtil.getContextUser();
+        return favoriteService.updateAllTags(user, tag);
+    }
 }

@@ -64,11 +64,18 @@ public class FavoriteService {
         var favorite = favoriteDao.findFavorite(user.getOsuId(), (int)data.getId());
         return new FavoritesVo(favoriteDao.addTag(favorite, data.getTag()));
     }
+
     public FavoritesVo deleteTag(User user, FavoriteDto data) {
         var favorite = favoriteDao.findFavorite(user.getOsuId(), (int)data.getId());
         return new FavoritesVo(favoriteDao.delTag(favorite, data.getTag()));
     }
 
+    public FavoritesVo updateAllTags(User user, FavoriteDto data) {
+        var favorite = favoriteDao.findFavorite(user.getOsuId(), (int)data.getId());
+        return new FavoritesVo(
+                favoriteDao.setFavorite(favorite, favorite.getInfo(), data.getTags())
+        );
+    }
 
     public FavoritesVo replaceTag(User user, FavoriteDto data) throws HttpError {
         var favorite = favoriteDao.findFavorite(user.getOsuId(), (int)data.getId());

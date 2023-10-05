@@ -186,10 +186,17 @@ public class OsuApiService {
         return map.orElseGet(()->{
             var get = getMapInfo(bid);
             if (get.getStatus().equals("ranked")) {
-                beatMapSetRepository.save(get.getBeatMapSet());
-                beatMapRepository.save(get);
+                saveBeatMap(get);
             }
             return get;
         });
+    }
+
+    private void saveBeatMap(BeatMap map){
+        var mapSet = beatMapSetRepository.findById(map.getMapsetId());
+        if (mapSet.isEmpty()) {
+            beatMapSetRepository.save(map.getBeatMapSet());
+        }
+        beatMapRepository.save(map);
     }
 }

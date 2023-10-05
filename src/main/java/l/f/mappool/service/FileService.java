@@ -193,10 +193,24 @@ public class FileService {
         try (var in = new FileInputStream(Path.of(OSU_FILE_PATH, Long.toString(sid), file).toFile()); out) {
             byte[] buf = new byte[1024];
             int i;
+            long c = 0;
             while ((i = in.read(buf)) != -1) {
                 out.write(buf, 0, i);
+                c += i;
             }
+            log.info("length=[{}]", c);
+            out.flush();
+        } catch (FileNotFoundException fileNotFoundException) {
+            out.close();
         }
+    }
+
+    public long sizeOfOsuFile(long bid, BeatmapFileService.Type type) throws IOException {
+        long sid = osuApiService.getMapInfoByDB(bid).getMapsetId();
+        var file = getPath(sid, bid, type);
+        if (file == null) return 0;
+
+        return Files.size(Path.of(OSU_FILE_PATH, Long.toString(sid), file));
     }
 
     /**

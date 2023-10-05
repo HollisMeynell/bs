@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import l.f.mappool.config.interceptor.Open;
 import l.f.mappool.exception.HttpError;
+import l.f.mappool.service.BeatmapFileService;
 import l.f.mappool.service.FileService;
 import l.f.mappool.entity.file.FileRecord;
 import l.f.mappool.exception.LogException;
@@ -124,6 +125,26 @@ public class FileApi {
         return fileService.getStaticFile(name);
     }
 
+    /**
+     * 下载谱面bg
+     */
+    @Open
+    @GetMapping(value = "/map/{type}/{bid}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public void downloadMapBGFile(@PathVariable Long bid, @PathVariable String type, HttpServletResponse response) throws IOException {
+        var atype = switch (type) {
+            case "bg" -> BeatmapFileService.Type.BACKGROUND;
+            case "song" -> BeatmapFileService.Type.AUDIO;
+            case "osufile" -> BeatmapFileService.Type.FILE;
+            default -> throw new LogException("未知类型", 404);
+        };
+        var size = fileService.sizeOfOsuFile(bid, atype);
+        try (var out = getResponseOut(response, bid.toString(), size)){
+            log.info("下载谱面bg:{}", bid);
+            fileService.outOsuFile(bid, atype, out);
+        }
+    }
+
+
     @Open
     @GetMapping("/map/{sid}")
     public void downloadMapFile(@PathVariable Long sid, HttpServletResponse response) {
@@ -150,7 +171,7 @@ public class FileApi {
         }
     }
 
-    private OutputStream getResponseOut(@NotNull HttpServletResponse response, String name, Integer size) throws IOException {
+    private OutputStream getResponseOut(@NotNull HttpServletResponse response, String name, Long size) throws IOException {
         response.reset();
         response.setContentType("application/octet-stream");
         response.setCharacterEncoding("utf-8");

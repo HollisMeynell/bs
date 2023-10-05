@@ -22,6 +22,7 @@ public class BeatMap {
     Long id;
 
     @JsonProperty("beatmapset_id")
+    @Column(name = "beatmapset_id", insertable=false, updatable=false)
     Long mapsetId;
 
     /***
@@ -75,7 +76,7 @@ public class BeatMap {
 
     @ManyToOne()
     @JsonProperty("beatmapset")
-    @JoinColumn(name = "beatmapset_id_set")
+    @JoinColumn(name = "beatmapset_id")
     BeatMapSet beatMapSet;
 
     @JsonGetter("status")
