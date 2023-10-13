@@ -29,7 +29,6 @@ import java.util.Map;
 
 @Slf4j
 @Component
-@EnableAsync
 @EnableWebSocket
 public class WebSocketConfig implements WebSocketConfigurer {
 

@@ -33,6 +33,7 @@ import java.util.Optional;
 public class FileApi {
     /**
      * 上传文件
+     *
      * @param file 文件结构 formData{ filename: xxx, ...}
      * @return {filename: key}
      */
@@ -52,6 +53,7 @@ public class FileApi {
 
     /**
      * 上传单个文件
+     *
      * @param name 文件名
      * @return key
      * @throws IOException 文件写入失败
@@ -65,16 +67,17 @@ public class FileApi {
 
     /**
      * 加载图片
+     *
      * @param key 文件key
      */
     @GetMapping(value = "/image/{key}", produces = MediaType.IMAGE_PNG_VALUE)
-    public ResponseEntity<byte[]> getImage(@PathVariable("key")String key) {
+    public ResponseEntity<byte[]> getImage(@PathVariable("key") String key) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentDisposition(ContentDisposition.inline().filename(fileService.getFileName(key)).build());
         headers.setContentType(MediaType.IMAGE_PNG);
         try {
             Optional<FileRecord> fileLog = fileService.getFileRecord(key);
-            if (fileLog.isEmpty()){
+            if (fileLog.isEmpty()) {
                 throw new IOException();
             }
             byte[] data = fileService.getData(fileLog.get());
@@ -100,13 +103,14 @@ public class FileApi {
 
     /**
      * 下载文件
+     *
      * @param key 文件key
      */
     @GetMapping(value = "/download/{key}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    public byte[] getFile(@PathVariable("key")String key) {
+    public byte[] getFile(@PathVariable("key") String key) {
         try {
             Optional<FileRecord> fileLog = fileService.getFileRecord(key);
-            if (fileLog.isEmpty()){
+            if (fileLog.isEmpty()) {
                 throw new IOException();
             }
             return fileService.getData(fileLog.get());
@@ -117,11 +121,12 @@ public class FileApi {
 
     /**
      * 下载素材
+     *
      * @param name 位于 static 的路径
      * @return
      */
     @GetMapping(value = "/static/{name}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    public byte[] getStaticFile(@PathVariable("name")String name) throws HttpError{
+    public byte[] getStaticFile(@PathVariable("name") String name) throws HttpError {
         return fileService.getStaticFile(name);
     }
 
@@ -138,7 +143,7 @@ public class FileApi {
             default -> throw new LogException("未知类型", 404);
         };
         var size = fileService.sizeOfOsuFile(bid, atype);
-        try (var out = getResponseOut(response, bid.toString(), size)){
+        try (var out = getResponseOut(response, bid.toString(), size)) {
             log.info("下载谱面bg:{}", bid);
             fileService.outOsuFile(bid, atype, out);
         }
@@ -147,27 +152,31 @@ public class FileApi {
 
     @Open
     @GetMapping("/map/{sid}")
-    public void downloadMapFile(@PathVariable Long sid, HttpServletResponse response) {
-        try (var out = getResponseOut(response, sid + ".osz", null)){
-            fileService.outOsuZipFile(sid, out);
+    public void downloadMapFile(@PathVariable Long sid, HttpServletResponse response) throws IOException {
+        var fileOut = fileService.outOsuZipFile(sid);
+        try (var out = getResponseOut(response, sid + ".osz", null)) {
+            fileOut.write(out);
         } catch (IOException e) {
-            throw new LogException("文件读取异常");
+            log.error("导出 map 出错: ", e);
+            response.sendError(400, "写入流出错");
         }
     }
 
     @Open
     @GetMapping("/maps/{sidStr}")
-    public void downloadMapPackage(@PathVariable String sidStr, HttpServletResponse response) {
+    public void downloadMapPackage(@PathVariable String sidStr, HttpServletResponse response) throws IOException {
         var s = sidStr.split("-");
         var ids = new long[s.length];
         for (int i = 0; i < s.length; i++) {
             ids[i] = Long.parseLong(s[i]);
         }
+        var fileOut = fileService.zipOsuFiles(ids);
 
-        try (var out = getResponseOut(response, "package.zip", null)){
-            fileService.zipOsuFiles(out, ids);
+        try (var out = getResponseOut(response, "package.zip", null)) {
+            fileOut.write(out);
         } catch (IOException e) {
-            throw new LogException("文件读取异常");
+            log.error("导出 maps 出错: ", e);
+            response.sendError(400, "写入流出错");
         }
     }
 

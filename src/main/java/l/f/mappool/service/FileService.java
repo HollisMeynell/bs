@@ -7,15 +7,20 @@ import l.f.mappool.exception.LogException;
 import l.f.mappool.properties.BeatmapSelectionProperties;
 import l.f.mappool.repository.file.FileLogRepository;
 import l.f.mappool.repository.file.OsuFileLogRepository;
+import l.f.mappool.util.AsyncMethodExecutor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.FileSystemUtils;
 
 import java.io.*;
 import java.nio.file.*;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -26,10 +31,14 @@ import java.util.zip.ZipOutputStream;
 @Slf4j
 @Component
 public class FileService {
-    private final OsuApiService        osuApiService;
-    private final FileLogRepository    fileLogRepository;
+    private final OsuApiService osuApiService;
+    private final FileLogRepository fileLogRepository;
     private final OsuFileLogRepository osuFileLogRepository;
-    private final BeatmapFileService   beatmapFileService;
+    private final BeatmapFileService beatmapFileService;
+
+    public interface FileOut {
+        public void write(OutputStream out) throws IOException;
+    }
 
     /**
      * 文件上传时的保存路径
@@ -219,7 +228,9 @@ public class FileService {
     public String getPath(long sid, long bid, BeatmapFileService.Type type) throws IOException {
         var fOpt = osuFileLogRepository.findById(bid);
         if (fOpt.isEmpty()) {
-            fOpt = downloadOsuFile(sid, bid);
+            // 不存在 尝试下载一次
+            downloadOsuFile(sid);
+            fOpt = osuFileLogRepository.findById(bid);
             if (fOpt.isEmpty()) throw new LogException("下载/解析文件出错");
         }
         var fLog = fOpt.get();
@@ -245,7 +256,7 @@ public class FileService {
     public void outOsuZipFile(long sid, OutputStream out) throws IOException {
         Path dir = Path.of(OSU_FILE_PATH, String.valueOf(sid));
         if (!Files.isDirectory(dir)) {
-            downloadOsuFile(sid, 0);
+            downloadOsuFile(sid);
         }
         var zipOut = new ZipOutputStream(out);
         try {
@@ -254,6 +265,22 @@ public class FileService {
             zipOut.finish();
             zipOut.closeEntry();
         }
+    }
+
+    public FileOut outOsuZipFile(long sid) throws IOException {
+        Path dir = Path.of(OSU_FILE_PATH, String.valueOf(sid));
+        if (!Files.isDirectory(dir)) {
+            downloadOsuFile(sid);
+        }
+        return outStream -> {
+            var zipOut = new ZipOutputStream(outStream);
+            try {
+                writeDirToZip(zipOut, dir, "");
+            } finally {
+                zipOut.finish();
+                zipOut.closeEntry();
+            }
+        };
     }
 
     /**
@@ -278,10 +305,50 @@ public class FileService {
 
     }
 
+
+    /**
+     * 将多个 .osz 文件打包为一个 .zip 文件 并写入到输出流
+     *
+     * @param sids sid, 用于打包
+     * @throws IOException 当下载出错/并不存在该谱面时报错
+     */
+    public FileOut zipOsuFiles(long... sids) throws IOException {
+        HashMap<Long, FileOut> files = new HashMap<>(sids.length);
+        for (var sid : sids) {
+            files.put(sid, outOsuZipFile(sid));
+        }
+        return outStream -> {
+            var zipOut = new ZipOutputStream(outStream);
+            files.forEach((key, out) -> {
+                try {
+                    var zip = new ZipEntry(key + ".osz");
+                    zipOut.putNextEntry(zip);
+                    out.write(zipOut);
+                } catch (IOException e) {
+                    log.error("写入文件时异常: ", e);
+                }
+            });
+            zipOut.flush();
+            zipOut.finish();
+            zipOut.closeEntry();
+        };
+    }
+
     /**
      * 下载单个 .osz 并解包写入到缓存目录中, 并将相关文件信息记录到数据库里.
      */
-    private Optional<OsuFileRecord> downloadOsuFile(long sid, long bid) throws IOException {
+    private void downloadOsuFile(long sid) throws IOException {
+        try {
+            AsyncMethodExecutor.execute(() -> doDownload(sid), sid);
+        } catch (IOException ioException) {
+            throw ioException;
+        } catch (Exception e) {
+            log.error("执行出现其他异常", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void doDownload(long sid) throws IOException {
         Path tmp = Path.of(OSU_FILE_PATH, String.valueOf(sid));
         HashMap<String, Path> fileMap = new HashMap<>();
         int writeFile = 0;
@@ -289,25 +356,25 @@ public class FileService {
             Files.createDirectories(tmp);
             var zip = new ZipInputStream(in);
             writeFile = loopWriteFile(zip, tmp.toString(), fileMap);
+        } catch (LogException e) {
+            throw new IOException(e);
         } finally {
-            if (writeFile == 0) {
-                Files.delete(tmp);
+            if (writeFile == 0 && Files.isDirectory(tmp)) {
+                FileSystemUtils.deleteRecursively(tmp);
             }
         }
 
-        return fileMap.entrySet().stream().filter(e -> e.getKey().endsWith(".osu")).map(e -> {
+        // 解析数据 并记录
+        fileMap.entrySet().stream().filter(e -> e.getKey().endsWith(".osu")).forEach(e -> {
             var path = e.getValue();
             try (var read = Files.newBufferedReader(path);) {
                 var log = OsuFileRecord.parse(read);
                 log.setFile(path.getFileName().toString());
-                log = osuFileLogRepository.saveAndFlush(log);
-                return log;
-            } catch (IOException ex) {
+                osuFileLogRepository.saveAndFlush(log);
+            } catch (IOException ignore) {
                 //
             }
-            return null;
-        }).filter(Objects::nonNull).filter(f -> f.getBid() == bid).findAny();
-
+        });
     }
 
     private int loopWriteFile(ZipInputStream zip, String basePath, HashMap<String, Path> fileMap) throws IOException {
