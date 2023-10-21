@@ -3,7 +3,6 @@ package l.f.mappool.entity;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -15,10 +14,10 @@ import org.hibernate.annotations.DynamicUpdate;
 @Getter
 @Setter
 @DynamicUpdate
-@Table(name = "o_user", indexes = {
+@Table(name = "login_user", indexes = {
         @Index(name = "ouid", columnList = "osu_id, code")
 })
-public class User {
+public class LoginUser {
     @Id
     @JsonProperty("id" )
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,4 +29,7 @@ public class User {
 
     @Column(name = "code", columnDefinition = "text")
     String code;
+
+    @Transient
+    boolean admin = false;
 }

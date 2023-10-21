@@ -3,7 +3,7 @@ package l.f.mappool.config.interceptor;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import l.f.mappool.exception.HttpError;
-import l.f.mappool.exception.LogException;
+import l.f.mappool.exception.HttpTipException;
 import l.f.mappool.vo.DataListVo;
 import l.f.mappool.vo.DataVo;
 import lombok.extern.slf4j.Slf4j;
@@ -38,8 +38,8 @@ public class WebExceptionHandler {
     }
 
     @ResponseBody
-    @ExceptionHandler(value = LogException.class)
-    public Object logErrorHandler(HttpServletRequest request, HttpServletResponse response, LogException exception) {
+    @ExceptionHandler(value = HttpTipException.class)
+    public Object logErrorHandler(HttpServletRequest request, HttpServletResponse response, HttpTipException exception) {
         int code = exception.getCode() == 0 ? HttpServletResponse.SC_BAD_GATEWAY : exception.getCode();
         response.setStatus(code);
         return new DataVo<>(code, exception.getMessage());

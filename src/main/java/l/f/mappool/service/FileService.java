@@ -3,7 +3,7 @@ package l.f.mappool.service;
 import l.f.mappool.entity.file.FileRecord;
 import l.f.mappool.entity.file.OsuFileRecord;
 import l.f.mappool.exception.HttpError;
-import l.f.mappool.exception.LogException;
+import l.f.mappool.exception.HttpTipException;
 import l.f.mappool.properties.BeatmapSelectionProperties;
 import l.f.mappool.repository.file.FileLogRepository;
 import l.f.mappool.repository.file.OsuFileLogRepository;
@@ -14,13 +14,16 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.FileSystemUtils;
 
 import java.io.*;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -231,7 +234,7 @@ public class FileService {
             // 不存在 尝试下载一次
             downloadOsuFile(sid);
             fOpt = osuFileLogRepository.findById(bid);
-            if (fOpt.isEmpty()) throw new LogException("下载/解析文件出错");
+            if (fOpt.isEmpty()) throw new HttpTipException("下载/解析文件出错");
         }
         var fLog = fOpt.get();
         String file = null;
@@ -356,7 +359,7 @@ public class FileService {
             Files.createDirectories(tmp);
             var zip = new ZipInputStream(in);
             writeFile = loopWriteFile(zip, tmp.toString(), fileMap);
-        } catch (LogException e) {
+        } catch (HttpTipException e) {
             throw new IOException(e);
         } finally {
             if (writeFile == 0 && Files.isDirectory(tmp)) {

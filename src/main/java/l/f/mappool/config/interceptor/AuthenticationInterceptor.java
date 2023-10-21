@@ -2,8 +2,9 @@ package l.f.mappool.config.interceptor;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import l.f.mappool.entity.User;
-import l.f.mappool.exception.HttpError;
+import l.f.mappool.entity.LoginUser;
+import l.f.mappool.exception.HttpTipException;
+import l.f.mappool.exception.PermissionException;
 import l.f.mappool.service.UserService;
 import l.f.mappool.util.ContextUtil;
 import l.f.mappool.util.JwtUtil;
@@ -13,6 +14,7 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
+import java.util.Objects;
 import java.util.Set;
 
 public class AuthenticationInterceptor implements HandlerInterceptor {
@@ -23,27 +25,33 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
         this.userService = userService;
     }
 
+    private static Open getAnnotation(HandlerMethod handlerMethod) {
+        // 检查方法上是否有@Open注解
+        Open methodAnnotation = handlerMethod.getMethod().getAnnotation(Open.class);
+        if (methodAnnotation != null) return methodAnnotation;
+
+        // 检查Controller类上是否有@Open注解
+        Open classAnnotation = handlerMethod.getBeanType().getAnnotation(Open.class);
+        if (classAnnotation != null) return classAnnotation;
+
+        return null;
+    }
+
     @Override
     public boolean preHandle(@NonNull HttpServletRequest request,@NonNull HttpServletResponse response,@NonNull Object handler) throws Exception {
         if (handler instanceof HandlerMethod handlerMethod) {
             if (!TokenBucketUtil.getToken(request.getRemoteAddr(), 60, 1.5)) {
-                throw new HttpError(429, "Too Many Requests");
+                throw new HttpTipException(429, "Too Many Requests");
             }
 
             if (handlerMethod.getMethod().getName().equals("proxy") && !TokenBucketUtil.getToken('p' + request.getRemoteAddr(), 20, 0.2)) {
-                throw new HttpError(429, "Too Many Requests");
+                throw new HttpTipException(429, "Too Many Requests");
             }
 
-            // 检查方法上是否有@Open注解
-            Open methodAnnotation = handlerMethod.getMethod().getAnnotation(Open.class);
-            if (methodAnnotation != null) {
-                return true; // 公开访问，无需验证身份
-            }
-
-            // 检查Controller类上是否有@Open注解
-            Open classAnnotation = handlerMethod.getBeanType().getAnnotation(Open.class);
-            if (classAnnotation != null) {
-                return true; // 公开访问，无需验证身份
+            Open methodAnnotation = getAnnotation(handlerMethod);
+            if (Objects.nonNull(methodAnnotation) && !methodAnnotation.admin()) {
+                // 公开访问，无需验证身份
+                return true;
             }
 
             if (PUBLIC_PATH.contains(request.getRequestURI())) {
@@ -52,14 +60,17 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
 
             String header = request.getHeader("Authorization");
             if (ObjectUtils.isEmpty(header) || !header.startsWith("Bearer ")) {
-                throw new HttpError(401, "no login");
+                throw new HttpTipException(401, "no login");
             }
             String token = header.substring(7);
-            User user = JwtUtil.verifyToken(token);
-            if (ObjectUtils.isEmpty(user) || !userService.loginCheck(user)) {
-                throw new HttpError(401, "身份验证失败,尝试重新登陆");
+            LoginUser loginUser = JwtUtil.verifyToken(token);
+            if (ObjectUtils.isEmpty(loginUser) || !userService.loginCheck(loginUser)) {
+                throw new HttpTipException(401, "Unauthorized");
             }
-            ContextUtil.setContextUser(user);
+            if (Objects.nonNull(methodAnnotation) && methodAnnotation.admin() && !loginUser.isAdmin()) {
+                throw new PermissionException();
+            }
+            ContextUtil.setContextUser(loginUser);
             return true;
         }
         return true;

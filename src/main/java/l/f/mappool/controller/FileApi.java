@@ -3,11 +3,11 @@ package l.f.mappool.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import l.f.mappool.config.interceptor.Open;
+import l.f.mappool.entity.file.FileRecord;
 import l.f.mappool.exception.HttpError;
+import l.f.mappool.exception.HttpTipException;
 import l.f.mappool.service.BeatmapFileService;
 import l.f.mappool.service.FileService;
-import l.f.mappool.entity.file.FileRecord;
-import l.f.mappool.exception.LogException;
 import l.f.mappool.vo.DataVo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -84,7 +84,7 @@ public class FileApi {
             headers.setContentLength(data.length);
             return new ResponseEntity<>(data, headers, HttpStatus.OK);
         } catch (IOException e) {
-            throw new LogException("文件已失效...", 404);
+            throw new HttpTipException(400, "文件已失效...");
         }
     }
 
@@ -115,7 +115,7 @@ public class FileApi {
             }
             return fileService.getData(fileLog.get());
         } catch (IOException e) {
-            throw new LogException("文件已失效...", 404);
+            throw new HttpTipException(400, "文件已失效...");
         }
     }
 
@@ -140,7 +140,7 @@ public class FileApi {
             case "bg" -> BeatmapFileService.Type.BACKGROUND;
             case "song" -> BeatmapFileService.Type.AUDIO;
             case "osufile" -> BeatmapFileService.Type.FILE;
-            default -> throw new LogException("未知类型", 404);
+            default -> throw new HttpTipException(400, "未知类型");
         };
         var size = fileService.sizeOfOsuFile(bid, atype);
         try (var out = getResponseOut(response, bid.toString(), size)) {
@@ -158,7 +158,7 @@ public class FileApi {
             fileOut.write(out);
         } catch (IOException e) {
             log.error("导出 map 出错: ", e);
-            response.sendError(400, "写入流出错");
+            response.sendError(500, "写入流出错");
         }
     }
 
@@ -176,7 +176,7 @@ public class FileApi {
             fileOut.write(out);
         } catch (IOException e) {
             log.error("导出 maps 出错: ", e);
-            response.sendError(400, "写入流出错");
+            response.sendError(500, "写入流出错");
         }
     }
 

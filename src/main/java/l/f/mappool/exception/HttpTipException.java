@@ -8,19 +8,19 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class LogException extends RuntimeException {
+public class HttpTipException extends RuntimeException {
     int code = 0;
 
-    public LogException(String message) {
+    public HttpTipException(String message) {
         super(message);
     }
 
-    public LogException(String message, int code) {
+    public HttpTipException(String message, int code) {
         super(message);
         this.code = code;
     }
 
-    public LogException(int code, String message) {
+    public HttpTipException(int code, String message) {
         super(message);
         this.code = code;
     }

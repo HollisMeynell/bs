@@ -3,7 +3,7 @@ package l.f.mappool.controller;
 import l.f.mappool.dto.FavoriteDto;
 import l.f.mappool.dto.validator.favorite.*;
 import l.f.mappool.entity.Favorite;
-import l.f.mappool.entity.User;
+import l.f.mappool.entity.LoginUser;
 import l.f.mappool.exception.HttpError;
 import l.f.mappool.service.FavoriteService;
 import l.f.mappool.util.ContextUtil;
@@ -31,61 +31,61 @@ public class FavoriteApi {
 
     @GetMapping
     public DataVo<List<Favorite>> getFavorite() {
-        User user = ContextUtil.getContextUser();
-        return favoriteService.getAllFavorite(user);
+        LoginUser loginUser = ContextUtil.getContextUser();
+        return favoriteService.getAllFavorite(loginUser);
     }
 
     @GetMapping("allTags")
     public DataVo<String[]> getFavoriteTags() {
-        User user = ContextUtil.getContextUser();
-        return favoriteService.getAllTags(user);
+        LoginUser loginUser = ContextUtil.getContextUser();
+        return favoriteService.getAllTags(loginUser);
     }
 
     @GetMapping("byTags")
     public DataVo<List<Favorite>> getByTags(@Validated(GetByTags.class) FavoriteDto favorite) {
-        User user = ContextUtil.getContextUser();
-        return favoriteService.getByTags(user, favorite);
+        LoginUser loginUser = ContextUtil.getContextUser();
+        return favoriteService.getByTags(loginUser, favorite);
     }
 
     @PutMapping
     public FavoritesVo addFavorite(@RequestBody @Validated(CreateFavorite.class) FavoriteDto favorite) {
-        User user = ContextUtil.getContextUser();
-        return favoriteService.addFavorite(user, favorite);
+        LoginUser loginUser = ContextUtil.getContextUser();
+        return favoriteService.addFavorite(loginUser, favorite);
     }
 
     @DeleteMapping
     public DataVo<?> deleteFavorite(@Validated(DeleteFavorite.class) FavoriteDto favorite) {
-        User user = ContextUtil.getContextUser();
-        return favoriteService.deleteFavorite(user, favorite);
+        LoginUser loginUser = ContextUtil.getContextUser();
+        return favoriteService.deleteFavorite(loginUser, favorite);
     }
 
     @PatchMapping
     public FavoritesVo updateFavorite(@RequestBody @Validated(UpdateFavorite.class) FavoriteDto favorite) throws HttpError {
-        User user = ContextUtil.getContextUser();
-        return favoriteService.setFavorite(user, favorite);
+        LoginUser loginUser = ContextUtil.getContextUser();
+        return favoriteService.setFavorite(loginUser, favorite);
     }
 
     @PutMapping("tag")
     public FavoritesVo addTag(@RequestBody @Validated(AddTag.class) FavoriteDto tag) {
-        User user = ContextUtil.getContextUser();
-        return favoriteService.addTag(user, tag);
+        LoginUser loginUser = ContextUtil.getContextUser();
+        return favoriteService.addTag(loginUser, tag);
     }
 
     @PatchMapping("tag")
     public FavoritesVo updateTag(@RequestBody @Validated(ReplaceTag.class) FavoriteDto tag) throws HttpError {
-        User user = ContextUtil.getContextUser();
-        return favoriteService.replaceTag(user, tag);
+        LoginUser loginUser = ContextUtil.getContextUser();
+        return favoriteService.replaceTag(loginUser, tag);
     }
 
     @DeleteMapping ("tag")
     public FavoritesVo deleteTag(@Validated(DeleteTag.class) FavoriteDto tag) {
-        User user = ContextUtil.getContextUser();
-        return favoriteService.deleteTag(user, tag);
+        LoginUser loginUser = ContextUtil.getContextUser();
+        return favoriteService.deleteTag(loginUser, tag);
     }
 
     @PatchMapping("updateTags")
     public FavoritesVo updateAllTags(@Validated(UpdateTags.class) FavoriteDto tag) {
-        User user = ContextUtil.getContextUser();
-        return favoriteService.updateAllTags(user, tag);
+        LoginUser loginUser = ContextUtil.getContextUser();
+        return favoriteService.updateAllTags(loginUser, tag);
     }
 }

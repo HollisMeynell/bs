@@ -3,7 +3,7 @@ package l.f.mappool.service;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.Resource;
 import l.f.mappool.entity.osu.OsuAccountUser;
-import l.f.mappool.exception.LogException;
+import l.f.mappool.exception.HttpTipException;
 import l.f.mappool.repository.osu.OsuAccountUserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.buffer.DataBufferUtils;
@@ -58,7 +58,7 @@ public class BeatmapFileService {
 
     public OsuAccountUser getRandomAccount() {
         long count = accountUserRepository.count();
-        if (count == 0) throw new LogException("未获取到任何账号信息");
+        if (count == 0) throw new HttpTipException("未获取到任何账号信息");
         return accountUserRepository.getByIndex(ThreadLocalRandom.current().nextLong(count));
     }
 
@@ -137,7 +137,7 @@ public class BeatmapFileService {
                     .retrieve()
                     .toEntity(String.class)
                     .block();
-            if (client == null || !client.getStatusCode().is2xxSuccessful()) throw new LogException("登录失败");
+            if (client == null || !client.getStatusCode().is2xxSuccessful()) throw new HttpTipException("登录失败");
             log.info("login result: {}", client.getStatusCode().is2xxSuccessful());
             parseCookie(client.getHeaders(), accountUser);
         } catch (Exception e) {
@@ -155,7 +155,7 @@ public class BeatmapFileService {
                 .retrieve()
                 .toEntity(String.class)
                 .block();
-        if (client == null) throw new LogException("访问页面错误!");
+        if (client == null) throw new HttpTipException("访问页面错误!");
         parseCookie(client.getHeaders(), accountUser);
     }
 

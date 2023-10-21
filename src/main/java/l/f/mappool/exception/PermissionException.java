@@ -1,8 +1,8 @@
 package l.f.mappool.exception;
 
-public class PermissionException extends LogException{
+public class PermissionException extends HttpTipException {
     public PermissionException() {
-        super("You are not allow!");
+        super("Unauthorized");
         code = 401;
     }
 
