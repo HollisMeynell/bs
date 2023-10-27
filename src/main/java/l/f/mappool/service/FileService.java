@@ -371,7 +371,7 @@ public class FileService {
         fileMap.entrySet().stream().filter(e -> e.getKey().endsWith(".osu")).forEach(e -> {
             var path = e.getValue();
             try (var read = Files.newBufferedReader(path);) {
-                var log = OsuFileRecord.parse(read);
+                var log = OsuFileRecord.parse(read, osuApiService);
                 log.setFile(path.getFileName().toString());
                 osuFileLogRepository.saveAndFlush(log);
             } catch (IOException ignore) {
