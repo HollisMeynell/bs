@@ -8,7 +8,7 @@ import l.f.mappool.entity.pool.*;
 import l.f.mappool.enums.PoolPermission;
 import l.f.mappool.enums.PoolStatus;
 import l.f.mappool.exception.HttpError;
-import l.f.mappool.exception.LogException;
+import l.f.mappool.exception.HttpTipException;
 import l.f.mappool.exception.NotFoundException;
 import l.f.mappool.exception.PermissionException;
 import l.f.mappool.repository.pool.PoolMark4UserRepository;
@@ -365,7 +365,7 @@ public class MapPoolService {
             throw new PermissionException();
         }
         if (userId == deleteUserId) {
-            throw new LogException("不能删除自己", 401);
+            throw new HttpTipException(401, "不能删除自己");
         }
         mapPoolDao.deleteUser(userId, deleteUserId, poolId);
     }

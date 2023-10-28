@@ -3,9 +3,8 @@ package l.f.mappool.service;
 import l.f.mappool.dao.FavoriteDao;
 import l.f.mappool.dto.FavoriteDto;
 import l.f.mappool.entity.Favorite;
-import l.f.mappool.entity.User;
+import l.f.mappool.entity.LoginUser;
 import l.f.mappool.exception.HttpError;
-import l.f.mappool.vo.DataListVo;
 import l.f.mappool.vo.DataVo;
 import l.f.mappool.vo.FavoritesVo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,58 +26,58 @@ public class FavoriteService {
         this.favoriteDao = favoriteDao;
     }
 
-    public FavoritesVo addFavorite(User user, FavoriteDto data) {
-        var favorite = favoriteDao.addFavorite(user.getOsuId(), data.getBid(), data.getInfo(), data.getTags());
+    public FavoritesVo addFavorite(LoginUser loginUser, FavoriteDto data) {
+        var favorite = favoriteDao.addFavorite(loginUser.getOsuId(), data.getBid(), data.getInfo(), data.getTags());
         return new FavoritesVo(favorite).parseBeatMap(osuApiService);
     }
 
-    public FavoritesVo setFavorite(User user, FavoriteDto data) {
-        var favorite = favoriteDao.findFavorite(user.getOsuId(), (int) data.getId());
+    public FavoritesVo setFavorite(LoginUser loginUser, FavoriteDto data) {
+        var favorite = favoriteDao.findFavorite(loginUser.getOsuId(), (int) data.getId());
         favorite = favoriteDao.setFavorite(favorite, data.getInfo(), data.getTags());
         return new FavoritesVo(favorite).parseBeatMap(osuApiService);
     }
 
-    public DataVo<?> deleteFavorite(User user, FavoriteDto data){
-        var favorite = favoriteDao.findFavorite(user.getOsuId(), (int)data.getId());
+    public DataVo<?> deleteFavorite(LoginUser loginUser, FavoriteDto data) {
+        var favorite = favoriteDao.findFavorite(loginUser.getOsuId(), (int) data.getId());
         favoriteDao.deleteFavorite(favorite);
         return new DataVo<>("删除成功");
     }
 
-    public DataVo<List<Favorite>> getAllFavorite(User user) {
-        var data = favoriteDao.getFavorites(user.getOsuId());
+    public DataVo<List<Favorite>> getAllFavorite(LoginUser loginUser) {
+        var data = favoriteDao.getFavorites(loginUser.getOsuId());
         return new DataVo<>(data);
     }
 
-    public DataVo<String[]> getAllTags(User user) {
-        var tagList = favoriteDao.getTags(user.getOsuId());
+    public DataVo<String[]> getAllTags(LoginUser loginUser) {
+        var tagList = favoriteDao.getTags(loginUser.getOsuId());
         return new DataVo<>(tagList.toArray(new String[tagList.size()]));
     }
 
-    public DataVo<List<Favorite>> getByTags(User user, FavoriteDto data) {
-        var favorites = favoriteDao.getFavoritesByTag(user.getOsuId(), data.getTags());
+    public DataVo<List<Favorite>> getByTags(LoginUser loginUser, FavoriteDto data) {
+        var favorites = favoriteDao.getFavoritesByTag(loginUser.getOsuId(), data.getTags());
         return new DataVo<>(favorites);
     }
 
     /**************************  tag ********************************/
-    public FavoritesVo addTag(User user, FavoriteDto data) {
-        var favorite = favoriteDao.findFavorite(user.getOsuId(), (int)data.getId());
+    public FavoritesVo addTag(LoginUser loginUser, FavoriteDto data) {
+        var favorite = favoriteDao.findFavorite(loginUser.getOsuId(), (int) data.getId());
         return new FavoritesVo(favoriteDao.addTag(favorite, data.getTag()));
     }
 
-    public FavoritesVo deleteTag(User user, FavoriteDto data) {
-        var favorite = favoriteDao.findFavorite(user.getOsuId(), (int)data.getId());
+    public FavoritesVo deleteTag(LoginUser loginUser, FavoriteDto data) {
+        var favorite = favoriteDao.findFavorite(loginUser.getOsuId(), (int) data.getId());
         return new FavoritesVo(favoriteDao.delTag(favorite, data.getTag()));
     }
 
-    public FavoritesVo updateAllTags(User user, FavoriteDto data) {
-        var favorite = favoriteDao.findFavorite(user.getOsuId(), (int)data.getId());
+    public FavoritesVo updateAllTags(LoginUser loginUser, FavoriteDto data) {
+        var favorite = favoriteDao.findFavorite(loginUser.getOsuId(), (int) data.getId());
         return new FavoritesVo(
                 favoriteDao.setFavorite(favorite, favorite.getInfo(), data.getTags())
         );
     }
 
-    public FavoritesVo replaceTag(User user, FavoriteDto data) throws HttpError {
-        var favorite = favoriteDao.findFavorite(user.getOsuId(), (int)data.getId());
+    public FavoritesVo replaceTag(LoginUser loginUser, FavoriteDto data) throws HttpError {
+        var favorite = favoriteDao.findFavorite(loginUser.getOsuId(), (int) data.getId());
         if (data.getTags().length != 2) throw new HttpError(403, "参数无效");
         return new FavoritesVo(favoriteDao.replaceTag(favorite, data.getTags()[0], data.getTags()[1]));
     }

@@ -1,10 +1,11 @@
 package l.f.mappool.service;
 
 import jakarta.annotation.Resource;
+import l.f.mappool.entity.LoginUser;
 import l.f.mappool.entity.osu.OsuUser;
-import l.f.mappool.entity.User;
-import l.f.mappool.repository.osu.OsuUserRepository;
+import l.f.mappool.properties.BeatmapSelectionProperties;
 import l.f.mappool.repository.UserRepository;
+import l.f.mappool.repository.osu.OsuUserRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -17,6 +18,8 @@ public class UserService {
     OsuUserRepository osuUserRepository;
     @Resource
     UserRepository userRepository;
+    @Resource
+    BeatmapSelectionProperties properties;
 
     public OsuUser doLogin(String code) {
         var user = osuApiService.getToken(code);
@@ -25,8 +28,8 @@ public class UserService {
         return user;
     }
 
-    public void saveUser(User user) {
-        userRepository.save(user);
+    public void saveUser(LoginUser loginUser) {
+        userRepository.save(loginUser);
     }
 
     public OsuUser getOsuUser(long id) {
@@ -36,11 +39,11 @@ public class UserService {
     }
 
     @SuppressWarnings("unused")
-    public List<User> getAllLoginUser(long osuId) {
+    public List<LoginUser> getAllLoginUser(long osuId) {
         return userRepository.findByOsuId(osuId);
     }
 
-    public boolean loginCheck(User user) {
-        return userRepository.countByOsuIdAndCode(user.getOsuId(), user.getCode()) > 0;
+    public boolean loginCheck(LoginUser loginUser) {
+        return userRepository.countByOsuIdAndCode(loginUser.getOsuId(), loginUser.getCode()) > 0;
     }
 }

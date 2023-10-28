@@ -1,9 +1,10 @@
 package l.f.mappool.properties;
 
 import lombok.Data;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Data
 @Component
@@ -22,4 +23,8 @@ public class BeatmapSelectionProperties {
      * 是否为https
      */
     Boolean ssl = false;
+    /**
+     * 管理员
+     */
+    List<Long> adminUsers;
 }

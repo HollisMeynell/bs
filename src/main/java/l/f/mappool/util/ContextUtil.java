@@ -1,7 +1,7 @@
 package l.f.mappool.util;
 
 import io.micrometer.common.util.StringUtils;
-import l.f.mappool.entity.User;
+import l.f.mappool.entity.LoginUser;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,11 +35,11 @@ public class ContextUtil {
         if (threadLocalService.get() != null) threadLocalService.remove();
     }
 
-    public static User getContextUser() {
-        return getContext("**USER", User.class);
+    public static LoginUser getContextUser() {
+        return getContext("**USER", LoginUser.class);
     }
 
-    public static void setContextUser(User u) {
+    public static void setContextUser(LoginUser u) {
         setContext("**USER", u);
     }
 

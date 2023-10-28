@@ -7,6 +7,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
+/**
+ * 内部错误使用, 记入日志
+ */
 @Getter
 @Setter
 @NoArgsConstructor
