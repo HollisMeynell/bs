@@ -7,6 +7,7 @@ import l.f.mappool.exception.HttpTipException;
 import l.f.mappool.repository.osu.OsuAccountUserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.buffer.DataBufferUtils;
+import org.springframework.core.io.buffer.NettyDataBuffer;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -117,8 +118,13 @@ public class BeatmapFileService {
                         throw new RuntimeException(e);
                     }
                 });
-        DataBufferUtils.write(body, out)
-                .subscribe();
+        DataBufferUtils
+                .write(body, out)
+                .subscribe(b -> {
+                    if (b instanceof NettyDataBuffer nb) {
+                        nb.release();
+                    }
+                });
     }
 
     private void login(OsuAccountUser accountUser) {

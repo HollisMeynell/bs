@@ -1,10 +1,10 @@
 package l.f.mappool.util;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -50,26 +50,37 @@ public class JsonUtil {
         JsonNode node;
         try {
             node = mapper.readTree(body);
-            return mapper.treeToValue(node, clazz);
-
+            return parseObject(node, clazz);
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         }
         return null;
     }
 
+    @SneakyThrows
+    public static <T> T parseObject(JsonNode body, Class<T> clazz) {
+        return mapper.treeToValue(body, clazz);
+    }
+
     public static <T> List<T> parseObjectList(String body, Class<T> clazz) {
         JsonNode node;
         try {
             node = mapper.readTree(body);
-            return mapper.convertValue(node, new TypeReference<List<T>>() {
-            });
-
-        } catch (IOException e) {
+            return parseObjectList(node, clazz);
+        } catch (IOException | RuntimeException e) {
             log.error(e.getMessage(), e);
         }
         return List.of();
     }
 
+    public static <T> List<T> parseObjectList(JsonNode body, Class<T> clazz) {
+        if (body == null || !body.isArray()) {
+            throw new RuntimeException("不能为空或非数组");
+        }
+        return mapper.convertValue(
+                body,
+                mapper.getTypeFactory().constructCollectionType(List.class, clazz)
+        );
+    }
 
 }

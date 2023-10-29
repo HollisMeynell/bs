@@ -6,13 +6,14 @@ import l.f.mappool.config.interceptor.Open;
 import l.f.mappool.dao.MapPoolDao;
 import l.f.mappool.dto.ProxyDto;
 import l.f.mappool.dto.map.QueryMapPoolDto;
-import l.f.mappool.entity.pool.PoolFeedback;
 import l.f.mappool.entity.pool.Pool;
+import l.f.mappool.entity.pool.PoolFeedback;
 import l.f.mappool.exception.HttpError;
 import l.f.mappool.service.MapPoolService;
 import l.f.mappool.service.OsuApiService;
 import l.f.mappool.vo.DataListVo;
 import l.f.mappool.vo.DataVo;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Controller;
@@ -24,6 +25,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import javax.validation.constraints.NotNull;
 
 @Open
+@Slf4j
 @Controller
 @ResponseBody
 @RequestMapping(value = "/api/public", produces = "application/json;charset=UTF-8")

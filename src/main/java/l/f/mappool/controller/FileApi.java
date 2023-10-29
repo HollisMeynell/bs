@@ -143,9 +143,22 @@ public class FileApi {
             default -> throw new HttpTipException(400, "未知类型");
         };
         var size = fileService.sizeOfOsuFile(bid, atype);
-        try (var out = getResponseOut(response, bid.toString(), size)) {
+
+        try (var in = fileService.outOsuFile(bid, atype);
+             var out = getResponseOut(response, bid.toString(), size)) {
             log.info("下载谱面bg:{}", bid);
-            fileService.outOsuFile(bid, atype, out);
+            byte[] buf = new byte[1024];
+            int i;
+            long c = 0;
+            while ((i = in.read(buf)) != -1) {
+                out.write(buf, 0, i);
+                c += i;
+            }
+            log.info("length=[{}]", c);
+            out.flush();
+        } catch (Exception e) {
+            response.reset();
+            throw new HttpTipException(500, e.getMessage());
         }
     }
 
@@ -157,8 +170,8 @@ public class FileApi {
         try (var out = getResponseOut(response, sid + ".osz", null)) {
             fileOut.write(out);
         } catch (IOException e) {
-            log.error("导出 map 出错: ", e);
-            response.sendError(500, "写入流出错");
+            log.error("导出 map 出错: ");
+            throw new HttpTipException(500, "写入流出错");
         }
     }
 
@@ -176,13 +189,13 @@ public class FileApi {
             fileOut.write(out);
         } catch (IOException e) {
             log.error("导出 maps 出错: ", e);
-            response.sendError(500, "写入流出错");
+            throw new HttpTipException(500, "写入流出错");
         }
     }
 
     private OutputStream getResponseOut(@NotNull HttpServletResponse response, String name, Long size) throws IOException {
         response.reset();
-        response.setContentType("application/octet-stream");
+        response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
         response.setCharacterEncoding("utf-8");
         if (size != null && size > 0) {
             response.setContentLengthLong(size);

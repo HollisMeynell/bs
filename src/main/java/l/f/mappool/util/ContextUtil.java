@@ -35,6 +35,10 @@ public class ContextUtil {
         if (threadLocalService.get() != null) threadLocalService.remove();
     }
 
+    public static void clearContext(String key) {
+        if (threadLocalService.get() != null) threadLocalService.get().remove(key);
+    }
+
     public static LoginUser getContextUser() {
         return getContext("**USER", LoginUser.class);
     }
@@ -43,7 +47,7 @@ public class ContextUtil {
         setContext("**USER", u);
     }
 
-    public static void remove() {
+    private static void remove() {
         threadLocalService.remove();
     }
 

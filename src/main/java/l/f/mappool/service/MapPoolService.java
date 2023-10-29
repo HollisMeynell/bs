@@ -3,7 +3,7 @@ package l.f.mappool.service;
 import jakarta.annotation.Resource;
 import l.f.mappool.dao.MapPoolDao;
 import l.f.mappool.dto.map.QueryMapPoolDto;
-import l.f.mappool.entity.osu.OsuUser;
+import l.f.mappool.entity.osu.OsuOauthUser;
 import l.f.mappool.entity.pool.*;
 import l.f.mappool.enums.PoolPermission;
 import l.f.mappool.enums.PoolStatus;
@@ -41,7 +41,7 @@ public class MapPoolService {
      * @param user 用户
      * @return 当超过数量限制, 即严格大于时返回 true
      */
-    public boolean isMax(OsuUser user) {
+    public boolean isMax(OsuOauthUser user) {
         int count = poolUserRepository.getUserCreatedSize(user.getOsuId());
         return count > user.getMaxPoolSize();
     }

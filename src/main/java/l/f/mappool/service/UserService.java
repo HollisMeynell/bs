@@ -2,7 +2,7 @@ package l.f.mappool.service;
 
 import jakarta.annotation.Resource;
 import l.f.mappool.entity.LoginUser;
-import l.f.mappool.entity.osu.OsuUser;
+import l.f.mappool.entity.osu.OsuOauthUser;
 import l.f.mappool.properties.BeatmapSelectionProperties;
 import l.f.mappool.repository.UserRepository;
 import l.f.mappool.repository.osu.OsuUserRepository;
@@ -21,7 +21,7 @@ public class UserService {
     @Resource
     BeatmapSelectionProperties properties;
 
-    public OsuUser doLogin(String code) {
+    public OsuOauthUser doLogin(String code) {
         var user = osuApiService.getToken(code);
         user = osuApiService.getMeInfo(user);
         osuUserRepository.saveAndFlush(user);
@@ -32,7 +32,7 @@ public class UserService {
         userRepository.save(loginUser);
     }
 
-    public OsuUser getOsuUser(long id) {
+    public OsuOauthUser getOsuUser(long id) {
         var uOpt = osuUserRepository.findById(id);
         if (uOpt.isEmpty()) throw new RuntimeException("用户检索失败");
         return uOpt.get();

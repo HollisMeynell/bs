@@ -1,6 +1,9 @@
 package l.f.mappool.entity.osu;
 
-import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -29,6 +32,10 @@ public class BeatMapSet {
     @Column(name = "mapper_id")
     Long mapperId;
 
+    @JsonProperty("ranked")
+    @Column(name = "status_int")
+    Integer status;
+
     @JsonProperty("creator")
     @Column(name = "mapper_name", columnDefinition = "text")
     String mapperName;
@@ -49,7 +56,7 @@ public class BeatMapSet {
     @Column(name = "title_unicode", columnDefinition = "text")
     String titleUTF8;
 
-    @JsonIgnore
+    @JsonProperty("beatmaps")
     @OneToMany(mappedBy = "beatMapSet",cascade = {CascadeType.REFRESH}, orphanRemoval = true)
     List<BeatMap> beatMaps;
 }

@@ -2,12 +2,14 @@ package l.f.mappool.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import l.f.mappool.entity.osu.BeatMap;
-import l.f.mappool.entity.osu.OsuUser;
+import l.f.mappool.entity.osu.BeatMapSet;
+import l.f.mappool.entity.osu.OsuOauthUser;
 import l.f.mappool.properties.BeatmapSelectionProperties;
 import l.f.mappool.properties.OsuProperties;
 import l.f.mappool.repository.osu.BeatMapRepository;
 import l.f.mappool.repository.osu.BeatMapSetRepository;
 import l.f.mappool.repository.osu.OsuUserRepository;
+import l.f.mappool.util.JsonUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,6 +17,9 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import java.util.Collection;
+import java.util.List;
 
 @Service
 @Slf4j
@@ -27,11 +32,11 @@ public class OsuApiService {
      * https://osu.ppy.sh/users/17064371/scores/recent?mode=osu&limit=51&offset=0 24h打图
      */
     long time = System.currentTimeMillis();
-    String accessToken;
-    WebClient webClient;
-    OsuUserRepository osuUserRepository;
-    BeatMapRepository beatMapRepository;
-    BeatMapSetRepository beatMapSetRepository;
+    private String accessToken;
+    private WebClient webClient;
+    private OsuUserRepository osuUserRepository;
+    private BeatMapRepository beatMapRepository;
+    private BeatMapSetRepository beatMapSetRepository;
     private final String redirectUrl;
     private final int oauthId;
     private final String oauthToken;
@@ -101,7 +106,7 @@ public class OsuApiService {
     /**
      * 获取用户的 Oauth2 token
      */
-    public OsuUser getToken(String code) {
+    public OsuOauthUser getToken(String code) {
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
         body.add("client_id", String.valueOf(oauthId));
         body.add("client_secret", oauthToken);
@@ -122,7 +127,7 @@ public class OsuApiService {
         String refreshToken = s.get("refresh_token").asText();
         // 计算过期时间毫秒数
         time = System.currentTimeMillis() + s.get("expires_in").asLong() * 1000;
-        var user = new OsuUser();
+        var user = new OsuOauthUser();
         user.setAccessToken(accessToken);
         user.setRefreshToken(refreshToken);
         user.setTime(time);
@@ -131,14 +136,14 @@ public class OsuApiService {
 
     /***
      * 刷新令牌
-     * @param osuUser user
+     * @param osuOauthUser user
      * @return 令牌请求的原始类型
      */
-    public JsonNode refreshToken(OsuUser osuUser) {
+    public JsonNode refreshToken(OsuOauthUser osuOauthUser) {
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
         body.add("client_id", String.valueOf(oauthId));
         body.add("client_secret", oauthToken);
-        body.add("refresh_token", osuUser.getRefreshToken());
+        body.add("refresh_token", osuOauthUser.getRefreshToken());
         body.add("grant_type", "refresh_token");
         body.add("redirect_uri", redirectUrl);
 
@@ -150,14 +155,14 @@ public class OsuApiService {
                 .block();
 
         if (s == null) throw new RuntimeException("refresh token error");
-        osuUser.setRefreshToken(s.get("access_token").asText());
-        osuUser.setAccessToken(s.get("access_token").asText());
-        osuUser.nextTime(s.get("expires_in").asLong());
-        osuUserRepository.updateToken(osuUser);
+        osuOauthUser.setRefreshToken(s.get("access_token").asText());
+        osuOauthUser.setAccessToken(s.get("access_token").asText());
+        osuOauthUser.nextTime(s.get("expires_in").asLong());
+        osuUserRepository.updateToken(osuOauthUser);
         return s;
     }
 
-    public OsuUser getMeInfo(OsuUser user) {
+    public OsuOauthUser getMeInfo(OsuOauthUser user) {
         var data = webClient.get()
                 .uri("/me")
                 .header("Authorization", "Bearer " + user.getAccessToken(this))
@@ -170,6 +175,15 @@ public class OsuApiService {
         }
         osuUserRepository.saveAndFlush(user);
         return user;
+    }
+
+    public BeatMapSet getMapsetInfo(long sid) {
+        return webClient.get()
+                .uri("/beatmapsets/{sid}", sid)
+                .header("Authorization", "Bearer " + getToken())
+                .retrieve()
+                .bodyToMono(BeatMapSet.class)
+                .block();
     }
 
     public BeatMap getMapInfo(long bid) {
@@ -190,6 +204,16 @@ public class OsuApiService {
             }
             return get;
         });
+    }
+
+    public List<JsonNode> getAllUser(Collection<? extends Number> usersId) {
+        return webClient.get()
+                .uri(b -> b.path("/users").queryParam("ids[]", usersId).build())
+                .header("Authorization", "Bearer " + getToken())
+                .retrieve()
+                .bodyToMono(JsonNode.class)
+                .map(result -> JsonUtil.parseObjectList(result.get("users"), JsonNode.class))
+                .block();
     }
 
     private void saveBeatMap(BeatMap map){

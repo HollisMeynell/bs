@@ -14,8 +14,8 @@ import org.hibernate.annotations.DynamicUpdate;
 @Getter
 @Setter
 @DynamicUpdate
-@Table(name = "osu_user")
-public class OsuUser {
+@Table(name = "osu_oauth")
+public class OsuOauthUser {
     @Id
     @Column(name = "osu_id")
     private Long osuId;

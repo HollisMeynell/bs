@@ -1,7 +1,8 @@
 package l.f.mappool.entity.file;
 
 import jakarta.persistence.*;
-import l.f.mappool.service.OsuApiService;
+import l.f.mappool.entity.osu.BeatMap;
+import l.f.mappool.entity.osu.BeatMapSet;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -32,9 +33,10 @@ public class OsuFileRecord {
     String file;
     String background;
     String audio;
+    String version;
     Integer mode;
 
-    public static OsuFileRecord parse(BufferedReader read, OsuApiService osuApiService) throws IOException {
+    public static OsuFileRecord parse(BufferedReader read, BeatMapSet set) throws IOException {
         OsuFileRecord obj = new OsuFileRecord();
         try (read) {
             var versionStr = read.readLine();
@@ -43,14 +45,29 @@ public class OsuFileRecord {
             }
             int version = Integer.parseInt(versionStr.substring(17));
             if (version < 5) {
-                parse(read, obj, "AudioFilename");
+                parse(read, obj);
+                BeatMap beatMap = set.getBeatMaps()
+                        .stream()
+                        .filter(m -> m.getVersion().equals(obj.version))
+                        .findAny()
+                        .orElseThrow();
                 // mode
                 // bid sid
+                obj.mode = beatMap.getModeInt().intValue();
+                obj.bid = beatMap.getId();
+                obj.sid = set.getId();
             } else if (version < 11) {
+                parse(read, obj, "Mode");
+                BeatMap beatMap = set.getBeatMaps()
+                        .stream()
+                        .filter(m -> m.getVersion().equals(obj.version))
+                        .findAny()
+                        .orElseThrow();
                 // bid sid
-                parse(read, obj, "AudioFilename", "Mode");
+                obj.bid = beatMap.getId();
+                obj.sid = set.getId();
             } else {
-                parse(read, obj, "AudioFilename", "Mode", "BeatmapID", "BeatmapSetID");
+                parse(read, obj, "Mode", "BeatmapID", "BeatmapSetID");
             }
         }
         return obj;
@@ -58,8 +75,9 @@ public class OsuFileRecord {
 
     private static void parse(BufferedReader read, OsuFileRecord obj, String... keys) throws IOException {
         String line;
-        Map<String, String> result = new HashMap<>(keys.length);
+        Map<String, String> result = new HashMap<>(keys.length + 2);
         result.put("AudioFilename", null);
+        result.put("Version", null);
         for (String key : keys) {
             result.put(key, null);
         }
@@ -71,8 +89,11 @@ public class OsuFileRecord {
             if (line.startsWith("[") || line.isBlank()) continue;
             parseKeyValue(line, result);
         }
-        if (result.containsKey("AudioFilename") && result.get("AudioFilename") != null) {
+        if (result.get("AudioFilename") != null) {
             obj.audio = result.get("AudioFilename");
+        }
+        if (result.get("AudioFilename") != null) {
+            obj.version = result.get("Version");
         }
         if (result.containsKey("Mode") && result.get("Mode") != null) {
             obj.mode = Integer.parseInt(result.get("Mode"));
@@ -90,7 +111,7 @@ public class OsuFileRecord {
         while ((line = read.readLine()) != null) {
             if (line.startsWith("0,0,\"")) {
                 int end = line.lastIndexOf('"');
-                return line.substring(6, end);
+                return line.substring(5, end);
             }
             if (line.startsWith("[")) break;
         }

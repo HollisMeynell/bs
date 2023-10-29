@@ -2,6 +2,7 @@ package l.f.mappool.service;
 
 import l.f.mappool.entity.file.FileRecord;
 import l.f.mappool.entity.file.OsuFileRecord;
+import l.f.mappool.entity.osu.BeatMapSet;
 import l.f.mappool.exception.HttpError;
 import l.f.mappool.exception.HttpTipException;
 import l.f.mappool.properties.BeatmapSelectionProperties;
@@ -19,10 +20,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -38,6 +36,7 @@ public class FileService {
     private final FileLogRepository fileLogRepository;
     private final OsuFileLogRepository osuFileLogRepository;
     private final BeatmapFileService beatmapFileService;
+    public static final String SET_CATCH = "SET_CATCH";
 
     public interface FileOut {
         public void write(OutputStream out) throws IOException;
@@ -52,6 +51,10 @@ public class FileService {
      * 下载 .osz 的缓存路径, 最终保存格式为 OSU_FILE_PATH/sid/*
      */
     private final String OSU_FILE_PATH;
+    /**
+     * 非最终状态下的 .osz 的缓存路径, 最终保存格式为 OSU_FILE_PATH_TMP/sid/*
+     */
+    private final String OSU_FILE_PATH_TMP;
     private final String STATIC_PATH;
 
 
@@ -61,6 +64,7 @@ public class FileService {
         String SAVE_PATH = properties.getFilePath();
         UPLOAD_PATH = properties.getFilePath() + "/upload";
         OSU_FILE_PATH = properties.getFilePath() + "/osu";
+        OSU_FILE_PATH_TMP = OSU_FILE_PATH + "/tmp";
         STATIC_PATH = properties.getFilePath() + "/static";
         this.osuFileLogRepository = osuFileLogRepository;
         this.beatmapFileService = beatmapFileService;
@@ -199,22 +203,13 @@ public class FileService {
      * @param type 类型
      */
     @SuppressWarnings("unused")
-    public void outOsuFile(long bid, BeatmapFileService.Type type, OutputStream out) throws IOException {
+    public InputStream outOsuFile(long bid, BeatmapFileService.Type type) throws IOException {
         long sid = osuApiService.getMapInfoByDB(bid).getMapsetId();
         var file = getPath(sid, bid, type);
-        try (var in = new FileInputStream(Path.of(OSU_FILE_PATH, Long.toString(sid), file).toFile()); out) {
-            byte[] buf = new byte[1024];
-            int i;
-            long c = 0;
-            while ((i = in.read(buf)) != -1) {
-                out.write(buf, 0, i);
-                c += i;
-            }
-            log.info("length=[{}]", c);
-            out.flush();
-        } catch (FileNotFoundException fileNotFoundException) {
-            out.close();
+        if (Objects.isNull(file)) {
+            throw new IOException("no file");
         }
+        return new FileInputStream(Path.of(OSU_FILE_PATH, Long.toString(sid), file).toFile());
     }
 
     public long sizeOfOsuFile(long bid, BeatmapFileService.Type type) throws IOException {
@@ -352,7 +347,14 @@ public class FileService {
     }
 
     private void doDownload(long sid) throws IOException {
-        Path tmp = Path.of(OSU_FILE_PATH, String.valueOf(sid));
+        BeatMapSet mapSet = osuApiService.getMapsetInfo(sid);
+        Path tmp;
+        // 对应 ranked / loved
+        if (mapSet.getStatus() == 1 || mapSet.getStatus() == 4) {
+            tmp = Path.of(OSU_FILE_PATH, String.valueOf(sid));
+        } else {
+            tmp = Path.of(OSU_FILE_PATH, "tmp", String.valueOf(sid));
+        }
         HashMap<String, Path> fileMap = new HashMap<>();
         int writeFile = 0;
         try (var in = beatmapFileService.downloadOsz(sid, beatmapFileService.getRandomAccount());) {
@@ -366,16 +368,15 @@ public class FileService {
                 FileSystemUtils.deleteRecursively(tmp);
             }
         }
-
         // 解析数据 并记录
         fileMap.entrySet().stream().filter(e -> e.getKey().endsWith(".osu")).forEach(e -> {
             var path = e.getValue();
-            try (var read = Files.newBufferedReader(path);) {
-                var log = OsuFileRecord.parse(read, osuApiService);
+            try (var read = Files.newBufferedReader(path)) {
+                var log = OsuFileRecord.parse(read, mapSet);
                 log.setFile(path.getFileName().toString());
                 osuFileLogRepository.saveAndFlush(log);
-            } catch (IOException ignore) {
-                //
+            } catch (IOException | RuntimeException ignore) {
+                // 不处理, 跳过
             }
         });
     }
