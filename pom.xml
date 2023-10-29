@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>l.f</groupId>
-    <artifactId>MapPool</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-    <name>MapPool</name>
-    <description>MapPool</description>
+    <artifactId>OsuMatch</artifactId>
+    <version>release</version>
+    <name>OsuMatch</name>
+    <description>OsuMatch</description>
     <properties>
         <java.version>21</java.version>
     </properties>
