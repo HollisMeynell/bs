@@ -20,6 +20,7 @@ import java.util.Set;
 public class AuthenticationInterceptor implements HandlerInterceptor {
     static final private Set<String> PUBLIC_PATH = Set.of("/error", "/swagger-ui");
     private final UserService userService;
+    private static final String BOT_KEY = System.getenv("SUPER_KEY");
 
     public AuthenticationInterceptor(UserService userService) {
         this.userService = userService;
@@ -38,9 +39,14 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
     }
 
     @Override
-    public boolean preHandle(@NonNull HttpServletRequest request,@NonNull HttpServletResponse response,@NonNull Object handler) throws Exception {
+    public boolean preHandle(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull Object handler) throws Exception {
         if (handler instanceof HandlerMethod handlerMethod) {
+            if (BOT_KEY.isBlank() && request.getHeader("AuthorizationX") != null && request.getHeader("AuthorizationX").equals(BOT_KEY)) {
+                // 特殊接口, 不做拦截
+                return true;
+            }
             if (!TokenBucketUtil.getToken(request.getRemoteAddr(), 60, 1.5)) {
+                // 对请求限速
                 throw new HttpTipException(429, "Too Many Requests");
             }
 
@@ -77,7 +83,7 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
     }
 
     @Override
-    public void afterCompletion(@NonNull HttpServletRequest request,@NonNull HttpServletResponse response,@NonNull Object handler, Exception ex) throws Exception {
+    public void afterCompletion(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull Object handler, Exception ex) throws Exception {
         HandlerInterceptor.super.afterCompletion(request, response, handler, ex);
         ContextUtil.clearContext();
     }
