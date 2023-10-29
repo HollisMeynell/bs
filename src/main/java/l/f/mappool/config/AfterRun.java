@@ -23,7 +23,7 @@ public class AfterRun implements CommandLineRunner {
         try {
             log.info("lib:{}",lib.getFile());
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            log.error("", e);
         }
         Runtime.getRuntime().addShutdownHook(new Thread(run,"endThread"));
     }

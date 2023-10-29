@@ -11,4 +11,6 @@ public interface OsuFileLogRepository extends JpaRepository<OsuFileRecord, Long>
 
     @SuppressWarnings("unused")
     Optional<OsuFileRecord> findOsuFileLogBySid(Long sid);
+
+    void deleteAllBySid(long sid);
 }

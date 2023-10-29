@@ -20,8 +20,12 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -193,8 +197,8 @@ public class FileService {
     @SuppressWarnings("unused")
     public byte[] getOsuFile(long bid, BeatmapFileService.Type type) throws IOException {
         long sid = osuApiService.getMapInfoByDB(bid).getMapsetId();
-        String file = getPath(sid, bid, type);
-        return Files.readAllBytes(Path.of(OSU_FILE_PATH, Long.toString(sid), file));
+        Path file = getPath(sid, bid, type);
+        return Files.readAllBytes(file);
     }
 
     /**
@@ -205,25 +209,20 @@ public class FileService {
     @SuppressWarnings("unused")
     public InputStream outOsuFile(long bid, BeatmapFileService.Type type) throws IOException {
         long sid = osuApiService.getMapInfoByDB(bid).getMapsetId();
-        var file = getPath(sid, bid, type);
-        if (Objects.isNull(file)) {
-            throw new IOException("no file");
-        }
-        return new FileInputStream(Path.of(OSU_FILE_PATH, Long.toString(sid), file).toFile());
+        var filePath = getPath(sid, bid, type);
+        return new FileInputStream(filePath.toFile());
     }
 
     public long sizeOfOsuFile(long bid, BeatmapFileService.Type type) throws IOException {
         long sid = osuApiService.getMapInfoByDB(bid).getMapsetId();
         var file = getPath(sid, bid, type);
-        if (file == null) return 0;
-
-        return Files.size(Path.of(OSU_FILE_PATH, Long.toString(sid), file));
+        return Files.size(file);
     }
 
     /**
      * 获得谱面文件在本地缓存中的文件名, 支持获取 音频/背景图片/谱面.osu文件
      */
-    public String getPath(long sid, long bid, BeatmapFileService.Type type) throws IOException {
+    public Path getPath(long sid, long bid, BeatmapFileService.Type type) throws IOException {
         var fOpt = osuFileLogRepository.findById(bid);
         if (fOpt.isEmpty()) {
             // 不存在 尝试下载一次
@@ -232,13 +231,20 @@ public class FileService {
             if (fOpt.isEmpty()) throw new HttpTipException("下载/解析文件出错");
         }
         var fLog = fOpt.get();
-        String file = null;
-        switch (type) {
-            case FILE -> file = fLog.getFile();
-            case AUDIO -> file = fLog.getAudio();
-            case BACKGROUND -> file = fLog.getBackground();
+        String basePath = OSU_FILE_PATH + '/' + sid;
+        var path = Path.of(basePath);
+        if (!Files.isDirectory(path)) {
+            basePath = OSU_FILE_PATH_TMP + '/' + sid;
         }
-        return file;
+        String fileLocal = switch (type) {
+            case FILE -> fLog.getFile();
+            case AUDIO -> fLog.getAudio();
+            case BACKGROUND -> fLog.getBackground();
+        };
+
+        if (fileLocal == null) throw new IOException("no file in this beatmap");
+
+        return Path.of(basePath, fileLocal);
     }
 
     @SuppressWarnings("unused")
@@ -422,6 +428,34 @@ public class FileService {
             return Files.readAllBytes(path);
         } catch (IOException e) {
             throw new HttpError(500, "file read error");
+        }
+    }
+
+    public void removeTemp() throws IOException {
+        Consumer<Path> consumer = p -> {
+            var sid = Long.parseLong(p.getFileName().toString());
+            try {
+                osuFileLogRepository.deleteAllBySid(sid);
+                FileSystemUtils.deleteRecursively(p);
+            } catch (IOException ignored) {
+            }
+        };
+        try (var stream = Files.list(Path.of(OSU_FILE_PATH_TMP))) {
+            stream.forEach(consumer);
+        }
+    }
+
+    public void removeTemp(long delSid) throws IOException {
+        Consumer<Path> consumer = p -> {
+            var sid = Long.parseLong(p.getFileName().toString());
+            try {
+                osuFileLogRepository.deleteAllBySid(sid);
+                FileSystemUtils.deleteRecursively(p);
+            } catch (IOException ignored) {
+            }
+        };
+        try (var stream = Files.list(Path.of(OSU_FILE_PATH_TMP))) {
+            stream.filter(p -> p.getFileName().endsWith(Long.toString(delSid))).forEach(consumer);
         }
     }
 }
