@@ -66,13 +66,14 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
 
             String header = request.getHeader("Authorization");
             if (ObjectUtils.isEmpty(header) || !header.startsWith("Bearer ")) {
-                throw new HttpTipException(401, "no login");
+                throw new PermissionException();
             }
             String token = header.substring(7);
             LoginUser loginUser = JwtUtil.verifyToken(token);
             if (ObjectUtils.isEmpty(loginUser) || !userService.loginCheck(loginUser)) {
-                throw new HttpTipException(401, "Unauthorized");
+                throw new PermissionException();
             }
+            // 是否为后台管理员
             if (Objects.nonNull(methodAnnotation) && methodAnnotation.admin() && !loginUser.isAdmin()) {
                 throw new PermissionException();
             }
