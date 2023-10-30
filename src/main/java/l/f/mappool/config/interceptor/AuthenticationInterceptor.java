@@ -41,9 +41,13 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull Object handler) throws Exception {
         if (handler instanceof HandlerMethod handlerMethod) {
-            if (BOT_KEY.isBlank() && request.getHeader("AuthorizationX") != null && request.getHeader("AuthorizationX").equals(BOT_KEY)) {
-                // 特殊接口, 不做拦截
-                return true;
+            if (request.getHeader("AuthorizationX") != null
+                    && BOT_KEY.isBlank()
+                    && request.getHeader("AuthorizationX").equals(BOT_KEY)
+            ) {
+                // 特殊接口
+                Open annotation = getAnnotation(handlerMethod);
+                return Objects.nonNull(annotation) && annotation.bot();
             }
             if (!TokenBucketUtil.getToken(request.getRemoteAddr(), 60, 1.5)) {
                 // 对请求限速
@@ -55,7 +59,10 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
             }
 
             Open methodAnnotation = getAnnotation(handlerMethod);
-            if (Objects.nonNull(methodAnnotation) && !methodAnnotation.admin()) {
+            if (Objects.nonNull(methodAnnotation)
+                    && methodAnnotation.pub()
+                    && !methodAnnotation.admin()
+            ) {
                 // 公开访问，无需验证身份
                 return true;
             }
@@ -74,7 +81,7 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
                 throw new PermissionException();
             }
             // 是否为后台管理员
-            if (Objects.nonNull(methodAnnotation) && methodAnnotation.admin() && !loginUser.isAdmin()) {
+            if (!loginUser.isAdmin() && Objects.nonNull(methodAnnotation) && methodAnnotation.admin()) {
                 throw new PermissionException();
             }
             ContextUtil.setContextUser(loginUser);
