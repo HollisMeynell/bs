@@ -208,6 +208,18 @@ public class FileApi {
         return response.getOutputStream();
     }
 
+    @Open(bot = true)
+    @GetMapping("local/{type}/{bid}")
+    public String getLocalPath(@PathVariable Long bid, @PathVariable String type) throws IOException {
+        var atype = switch (type) {
+            case "bg" -> BeatmapFileService.Type.BACKGROUND;
+            case "song" -> BeatmapFileService.Type.AUDIO;
+            case "osufile" -> BeatmapFileService.Type.FILE;
+            default -> throw new HttpTipException(400, "未知类型");
+        };
+        return fileService.getPathByBid(bid, atype).toString();
+    }
+
     private final FileService fileService;
 
     @Autowired

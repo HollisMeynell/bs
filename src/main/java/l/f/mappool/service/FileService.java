@@ -219,23 +219,22 @@ public class FileService {
         return Files.size(file);
     }
 
+    public Path getPathByBid(long bid, BeatmapFileService.Type type) throws IOException {
+        long sid = osuApiService.getMapInfoByDB(bid).getMapsetId();
+        var file = getPath(sid, bid, type);
+        return file.toAbsolutePath();
+    }
+
     /**
      * 获得谱面文件在本地缓存中的文件名, 支持获取 音频/背景图片/谱面.osu文件
      */
     public Path getPath(long sid, long bid, BeatmapFileService.Type type) throws IOException {
+        Path basePath = getPath(sid);
         var fOpt = osuFileLogRepository.findById(bid);
         if (fOpt.isEmpty()) {
-            // 不存在 尝试下载一次
-            downloadOsuFile(sid);
-            fOpt = osuFileLogRepository.findById(bid);
-            if (fOpt.isEmpty()) throw new HttpTipException("下载/解析文件出错");
+            throw new HttpTipException("下载/解析文件出错");
         }
         var fLog = fOpt.get();
-        String basePath = OSU_FILE_PATH + '/' + sid;
-        var path = Path.of(basePath);
-        if (!Files.isDirectory(path)) {
-            basePath = OSU_FILE_PATH_TMP + '/' + sid;
-        }
         String fileLocal = switch (type) {
             case FILE -> fLog.getFile();
             case AUDIO -> fLog.getAudio();
@@ -244,7 +243,7 @@ public class FileService {
 
         if (fileLocal == null) throw new IOException("no file in this beatmap");
 
-        return Path.of(basePath, fileLocal);
+        return basePath.resolve(fileLocal);
     }
 
     @SuppressWarnings("unused")
@@ -258,10 +257,7 @@ public class FileService {
      * 将 .osz 文件写入到输出流, 优先从本地缓存中读取
      */
     public void outOsuZipFile(long sid, OutputStream out) throws IOException {
-        Path dir = Path.of(OSU_FILE_PATH, String.valueOf(sid));
-        if (!Files.isDirectory(dir)) {
-            downloadOsuFile(sid);
-        }
+        Path dir = getPath(sid);
         var zipOut = new ZipOutputStream(out);
         try {
             writeDirToZip(zipOut, dir, "");
@@ -272,10 +268,7 @@ public class FileService {
     }
 
     public FileOut outOsuZipFile(long sid) throws IOException {
-        Path dir = Path.of(OSU_FILE_PATH, String.valueOf(sid));
-        if (!Files.isDirectory(dir)) {
-            downloadOsuFile(sid);
-        }
+        Path dir = getPath(sid);
         return outStream -> {
             var zipOut = new ZipOutputStream(outStream);
             try {
@@ -285,6 +278,15 @@ public class FileService {
                 zipOut.closeEntry();
             }
         };
+    }
+
+    private Path getPath(long sid) throws IOException {
+        Path dir = Path.of(OSU_FILE_PATH, String.valueOf(sid));
+        if (!Files.isDirectory(dir)
+                && !Files.isDirectory((dir = Path.of(OSU_FILE_PATH_TMP, String.valueOf(sid))))) {
+            downloadOsuFile(sid);
+        }
+        return dir;
     }
 
     /**
@@ -381,7 +383,8 @@ public class FileService {
                 var log = OsuFileRecord.parse(read, mapSet);
                 log.setFile(path.getFileName().toString());
                 osuFileLogRepository.saveAndFlush(log);
-            } catch (IOException | RuntimeException ignore) {
+            } catch (IOException | RuntimeException err) {
+                log.error("解析数据时出错", err);
                 // 不处理, 跳过
             }
         });
