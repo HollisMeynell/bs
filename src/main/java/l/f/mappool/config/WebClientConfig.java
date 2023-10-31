@@ -41,6 +41,7 @@ public class WebClientConfig implements WebFluxConfigurer {
                                 .port(7890)
                 )
                 .baseUrl("https://osu.ppy.sh/api/v2/")
+                .followRedirect(true)
                 .responseTimeout(Duration.ofSeconds(30));
         ReactorClientHttpConnector connector = new ReactorClientHttpConnector(httpClient);
         ExchangeStrategies strategies = ExchangeStrategies

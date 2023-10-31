@@ -38,8 +38,8 @@ public class BeatmapFileService {
     private static final HttpClient httpClient = HttpClient.create()
             .baseUrl("https://osu.ppy.sh/")
             .proxy(proxy ->
-                    proxy.type(ProxyProvider.Proxy.SOCKS5)
-                            .host("127.0.0.1")
+                    proxy.type(ProxyProvider.Proxy.HTTP)
+                            .host("localhost")
                             .port(7890)
             )
             .followRedirect(true)
