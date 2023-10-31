@@ -393,6 +393,7 @@ public class FileService {
         int count = 0;
         while ((zipFile = zip.getNextEntry()) != null) {
             try {
+                if (zipFile.isDirectory()) continue;
                 Path zipFilePath = Path.of(basePath, zipFile.getName());
                 Files.createDirectories(zipFilePath.getParent());
                 Files.write(zipFilePath, zip.readNBytes((int) zipFile.getSize()));
