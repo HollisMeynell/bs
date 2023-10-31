@@ -13,6 +13,7 @@ import org.springframework.web.reactive.config.WebFluxConfigurer;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
+import reactor.netty.transport.ProxyProvider;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -26,14 +27,11 @@ public class WebClientConfig implements WebFluxConfigurer {
     public WebClient OsuApiWebClient(WebClient.Builder builder) {
         HttpClient httpClient = HttpClient.create()
                 .baseUrl("https://osu.ppy.sh/api/v2/")
-                /*
                 .proxy(proxy ->
                         proxy.type(ProxyProvider.Proxy.SOCKS5)
                                 .host("127.0.0.1")
                                 .port(7890)
                 )
-
-                 */
                 .responseTimeout(Duration.ofSeconds(30));
         ReactorClientHttpConnector connector = new ReactorClientHttpConnector(httpClient);
         ExchangeStrategies strategies = ExchangeStrategies
