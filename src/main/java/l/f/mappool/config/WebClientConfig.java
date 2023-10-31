@@ -38,7 +38,7 @@ public class WebClientConfig implements WebFluxConfigurer {
                 .baseUrl("https://osu.ppy.sh/api/v2/")
                 .proxy(proxy ->
                         proxy.type(ProxyProvider.Proxy.SOCKS5)
-                                .host("127.0.0.1")
+                                .host("localhost")
                                 .port(7890)
                 )
                 .responseTimeout(Duration.ofSeconds(30));
