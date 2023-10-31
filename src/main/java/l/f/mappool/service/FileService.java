@@ -20,10 +20,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
@@ -258,6 +255,7 @@ public class FileService {
      */
     public void outOsuZipFile(long sid, OutputStream out) throws IOException {
         Path dir = getPath(sid);
+        if (Objects.isNull(out)) return;
         var zipOut = new ZipOutputStream(out);
         try {
             writeDirToZip(zipOut, dir, "");
