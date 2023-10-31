@@ -13,6 +13,7 @@ import org.springframework.web.reactive.config.WebFluxConfigurer;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
+import reactor.netty.resources.ConnectionProvider;
 import reactor.netty.transport.ProxyProvider;
 
 import java.time.Duration;
@@ -25,7 +26,15 @@ public class WebClientConfig implements WebFluxConfigurer {
 
     @Bean("osuApiWebClient")
     public WebClient OsuApiWebClient(WebClient.Builder builder) {
-        HttpClient httpClient = HttpClient.create()
+        /*
+         * Setting maxIdleTime as 30s, because servers usually have a keepAliveTimeout of 60s, after which the connection gets closed.
+         * If the connection pool has any connection which has been idle for over 10s, it will be evicted from the pool.
+         * Refer https://github.com/reactor/reactor-netty/issues/1318#issuecomment-702668918
+         */
+        ConnectionProvider connectionProvider = ConnectionProvider.builder("connectionProvider")
+                .maxIdleTime(Duration.ofSeconds(30))
+                .build();
+        HttpClient httpClient = HttpClient.create(connectionProvider)
                 .baseUrl("https://osu.ppy.sh/api/v2/")
                 .proxy(proxy ->
                         proxy.type(ProxyProvider.Proxy.SOCKS5)
