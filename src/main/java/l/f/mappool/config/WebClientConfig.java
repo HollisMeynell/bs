@@ -35,12 +35,12 @@ public class WebClientConfig implements WebFluxConfigurer {
                 .maxIdleTime(Duration.ofSeconds(30))
                 .build();
         HttpClient httpClient = HttpClient.create(connectionProvider)
-                .baseUrl("https://osu.ppy.sh/api/v2/")
                 .proxy(proxy ->
-                        proxy.type(ProxyProvider.Proxy.SOCKS5)
+                        proxy.type(ProxyProvider.Proxy.HTTP)
                                 .host("localhost")
                                 .port(7890)
                 )
+                .baseUrl("https://osu.ppy.sh/api/v2/")
                 .responseTimeout(Duration.ofSeconds(30));
         ReactorClientHttpConnector connector = new ReactorClientHttpConnector(httpClient);
         ExchangeStrategies strategies = ExchangeStrategies
