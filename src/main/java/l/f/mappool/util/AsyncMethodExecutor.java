@@ -2,6 +2,7 @@ package l.f.mappool.util;
 
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -15,6 +16,27 @@ public class AsyncMethodExecutor {
     }
     public interface Runnable{
         void run()throws Exception;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T waitForResult(Condition lock, Object key, T defaultValue) throws Exception {
+        CountDownLatch countDownLock = null;
+        try {
+            reentrantLock.lock();
+            Util.add(lock);
+            lock.await();
+            reentrantLock.unlock();
+            countDownLock = countDownLocks.get(key);
+            Object result = results.get(key);
+            if (result instanceof Exception e) {
+                throw e;
+            }
+            return (T) result;
+        } catch (InterruptedException ignore) {
+            return defaultValue;
+        } finally {
+            if (countDownLock != null) countDownLock.countDown();
+        }
     }
     private static final ReentrantLock reentrantLock = new ReentrantLock();
     private static final ConcurrentHashMap<Object, CountDownLatch> countDownLocks = new ConcurrentHashMap<>();
@@ -46,56 +68,67 @@ public class AsyncMethodExecutor {
             return getResult(lock,key,supplier);
         }
     }
-    @SuppressWarnings("unchecked")
-    private static<T> T waitForResult(Condition lock, Object key, T defaultValue){
-        CountDownLatch countDownLock = null;
-        try {
-            reentrantLock.lock();
-            lock.await();
-            reentrantLock.unlock();
-            countDownLock = countDownLocks.get(key);
-            return (T)results.get(key);
-        } catch (InterruptedException ignore) {
-            return defaultValue;
-        } finally {
-            if (countDownLock != null) countDownLock.countDown();
-        }
-    }
+
     @SuppressWarnings("unchecked")
     private static<T> T waitForResult(Condition lock, Object key, Supplier<T> getDefault) throws Exception {
         CountDownLatch countDownLock = null;
         try {
             reentrantLock.lock();
+            Util.add(lock);
             lock.await();
             reentrantLock.unlock();
             countDownLock = countDownLocks.get(key);
-            return (T)results.get(key);
+            Object result = results.get(key);
+            if (result instanceof Exception e) {
+                throw e;
+            }
+            return (T) result;
         } catch (InterruptedException ignore) {
             return getDefault.get();
         } finally {
             if (countDownLock != null) countDownLock.countDown();
         }
     }
+
+    @SuppressWarnings("unchecked")
     private static<T> T getResult(Condition lock, Object key, Supplier<T> supplier) throws Exception {
-        T result;
+
         try {
-            result = supplier.get();
+            T result = supplier.get();
             results.put(key, result);
+            return result;
+        } catch (Exception e) {
+            results.put(key, e);
+            throw e;
+        } finally {
             reentrantLock.lock();
-            int locksSum = reentrantLock.getWaitQueueLength(lock);
+            int locksSum = Util.getAndRemove(lock);
+            log.info("sum : {}", locksSum);
             CountDownLatch count = countDownLocks.computeIfAbsent(key, k -> new CountDownLatch(locksSum));
             lock.signalAll();
             reentrantLock.unlock();
-
-            if (count.await(5, TimeUnit.SECONDS)) {
+            if (!count.await(5, TimeUnit.SECONDS)) {
                 if (locksSum > 0) log.warn("wait to long");
             }
-        } finally {
             results.remove(key);
             locks.remove(key);
             countDownLocks.remove(key);
         }
-        return result;
+
+    }
+
+    private static class Util {
+        static ConcurrentHashMap<Condition, Integer> conditionCount = new ConcurrentHashMap<>();
+
+        static void add(Condition lock) {
+            conditionCount.putIfAbsent(lock, 0);
+            conditionCount.computeIfPresent(lock, (k, v) -> v + 1);
+        }
+
+        static int getAndRemove(Condition lock) {
+            Integer count = conditionCount.remove(lock);
+            return Objects.nonNull(count) ? count : 0;
+        }
     }
 
     public static void execute(Runnable work, Object key) throws Exception {
