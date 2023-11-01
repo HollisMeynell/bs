@@ -279,12 +279,18 @@ public class FileService {
     }
 
     private Path getPath(long sid) throws IOException {
-        Path dir = Path.of(OSU_FILE_PATH, String.valueOf(sid));
-        if (!Files.isDirectory(dir)
-                && !Files.isDirectory((dir = Path.of(OSU_FILE_PATH_TMP, String.valueOf(sid))))) {
-            downloadOsuFile(sid);
+        final Path path = Path.of(OSU_FILE_PATH, String.valueOf(sid));
+        final Path path_tmp = Path.of(OSU_FILE_PATH_TMP, String.valueOf(sid));
+        boolean isArchive = true;
+        if (!Files.isDirectory(path)
+                && !Files.isDirectory(path_tmp)) {
+            isArchive = downloadOsuFile(sid);
         }
-        return dir;
+        if (isArchive) {
+            return path;
+        } else {
+            return path_tmp;
+        }
     }
 
     /**
@@ -341,9 +347,13 @@ public class FileService {
     /**
      * 下载单个 .osz 并解包写入到缓存目录中, 并将相关文件信息记录到数据库里.
      */
-    private void downloadOsuFile(long sid) throws IOException {
+    private boolean downloadOsuFile(long sid) throws IOException {
         try {
-            AsyncMethodExecutor.execute(() -> doDownload(sid), sid);
+            return AsyncMethodExecutor.<Boolean>execute(
+                    () -> doDownload(sid),
+                    sid,
+                    () -> Files.isDirectory(Path.of(OSU_FILE_PATH, String.valueOf(sid))));
+
         } catch (IOException ioException) {
             throw ioException;
         } catch (Exception e) {
@@ -352,14 +362,15 @@ public class FileService {
         }
     }
 
-    private void doDownload(long sid) throws IOException {
+    private boolean doDownload(long sid) throws IOException {
         BeatMapSet mapSet = osuApiService.getMapsetInfo(sid);
         Path tmp;
         // 对应 ranked / loved
-        if (mapSet.getStatus() == 1 || mapSet.getStatus() == 4) {
+        boolean isArchive = mapSet.getStatus() == 1 || mapSet.getStatus() == 4;
+        if (isArchive) {
             tmp = Path.of(OSU_FILE_PATH, String.valueOf(sid));
         } else {
-            tmp = Path.of(OSU_FILE_PATH, "tmp", String.valueOf(sid));
+            tmp = Path.of(OSU_FILE_PATH_TMP, String.valueOf(sid));
         }
         HashMap<String, Path> fileMap = new HashMap<>();
         int writeFile = 0;
@@ -386,6 +397,7 @@ public class FileService {
                 // 不处理, 跳过
             }
         });
+        return isArchive;
     }
 
     private int loopWriteFile(ZipInputStream zip, String basePath, HashMap<String, Path> fileMap) throws IOException {

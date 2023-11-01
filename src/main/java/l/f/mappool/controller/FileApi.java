@@ -15,6 +15,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
@@ -217,11 +218,16 @@ public class FileApi {
             case "osufile" -> BeatmapFileService.Type.FILE;
             default -> throw new HttpTipException(400, "未知类型");
         };
-        return fileService.getPathByBid(bid, atype).toString();
+        try {
+            return fileService.getPathByBid(bid, atype).toString();
+        } catch (WebClientResponseException e) {
+            throw new HttpTipException(400, e.getMessage());
+        }
     }
 
     static int SUM = 0;
-    @Open(bot = true)
+
+    @Open(bot = true, pub = false)
     @GetMapping("local/async/{bid}")
     public String getLocalPathAsync(@PathVariable Long bid, @RequestHeader("SET_ID") Long sid) throws IOException {
         log.info("异步任务: 开始下载 [{}]", sid);
