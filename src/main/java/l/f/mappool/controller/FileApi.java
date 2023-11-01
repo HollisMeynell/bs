@@ -209,7 +209,7 @@ public class FileApi {
         return response.getOutputStream();
     }
 
-    @Open()
+    @Open(bot = true)
     @GetMapping("local/{type}/{bid}")
     public String getLocalPath(@PathVariable Long bid, @PathVariable String type) throws IOException {
         var atype = switch (type) {
@@ -227,7 +227,7 @@ public class FileApi {
 
     static int SUM = 0;
 
-    @Open()
+    @Open(bot = true, pub = false)
     @GetMapping("local/async/{bid}")
     public String getLocalPathAsync(@PathVariable Long bid, @RequestHeader("SET_ID") Long sid) throws IOException {
         log.info("异步任务: 开始下载 [{}]", sid);
