@@ -42,6 +42,8 @@ public class AsyncMethodExecutor {
     private static final ConcurrentHashMap<Object, CountDownLatch> countDownLocks = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Object, Condition> locks = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Object, Object> results = new ConcurrentHashMap<>();
+
+    @SuppressWarnings("unused")
     public static<T> T execute(Supplier<T> supplier, Object key, T defaultValue) throws Exception {
         boolean hasLock;
         Condition lock;
@@ -90,7 +92,6 @@ public class AsyncMethodExecutor {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private static<T> T getResult(Condition lock, Object key, Supplier<T> supplier) throws Exception {
 
         try {
@@ -131,6 +132,7 @@ public class AsyncMethodExecutor {
         }
     }
 
+    @SuppressWarnings("unused")
     public static void execute(Runnable work, Object key) throws Exception {
         boolean hasLock;
         Condition lock;
