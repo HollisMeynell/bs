@@ -220,17 +220,21 @@ public class FileApi {
         return fileService.getPathByBid(bid, atype).toString();
     }
 
+    static int SUM = 0;
     @Open(bot = true)
     @GetMapping("local/async/{bid}")
     public String getLocalPathAsync(@PathVariable Long bid, @RequestHeader("SET_ID") Long sid) throws IOException {
         log.info("异步任务: 开始下载 [{}]", sid);
-//        Thread.startVirtualThread(() -> {
-//            try {
-//                fileService.outOsuZipFile(sid, null);
-//            } catch (IOException e) {
-//                log.error("Async download osu file error", e);
-//            }
-//        });
+        if (SUM < 50) {
+            Thread.startVirtualThread(() -> {
+                try {
+                    fileService.outOsuZipFile(sid, null);
+                } catch (IOException e) {
+                    log.error("Async download osu file error", e);
+                }
+            });
+            SUM++;
+        }
         return "ok";
     }
 
