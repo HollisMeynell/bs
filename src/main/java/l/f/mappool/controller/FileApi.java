@@ -20,10 +20,12 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.RandomAccessFile;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 @Open
@@ -135,32 +137,85 @@ public class FileApi {
      * 下载谱面bg
      */
     @Open
-    @GetMapping(value = "/map/{type}/{bid}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    public void downloadMapBGFile(@PathVariable Long bid, @PathVariable String type, HttpServletResponse response) throws IOException {
+    @GetMapping(value = "/map/{type}/{bid}")
+    public void downloadMapBGFile(@PathVariable Long bid, @PathVariable String type,
+                                  @RequestHeader(value = "Range", required = false) String range,
+                                  HttpServletResponse response) throws IOException {
+        String mediaType;
         var atype = switch (type) {
-            case "bg" -> BeatmapFileService.Type.BACKGROUND;
-            case "song" -> BeatmapFileService.Type.AUDIO;
-            case "osufile" -> BeatmapFileService.Type.FILE;
+            case "bg" -> {
+                mediaType = "image/jpeg";
+                yield BeatmapFileService.Type.BACKGROUND;
+            }
+            case "song" -> {
+                mediaType = "audio/mpeg";
+                yield BeatmapFileService.Type.AUDIO;
+            }
+            case "osufile" -> {
+                mediaType = "application/octet-stream";
+                yield BeatmapFileService.Type.FILE;
+            }
             default -> throw new HttpTipException(400, "未知类型");
         };
-        var size = fileService.sizeOfOsuFile(bid, atype);
-
-        try (var in = fileService.outOsuFile(bid, atype);
-             var out = getResponseOut(response, bid.toString(), size)) {
-            log.info("下载谱面bg:{}", bid);
-            byte[] buf = new byte[1024];
-            int i;
-            long c = 0;
-            while ((i = in.read(buf)) != -1) {
-                out.write(buf, 0, i);
-                c += i;
+        var in = new RandomAccessFile(fileService.getPathByBid(bid, atype).toFile(), "r");
+        var size = in.length();
+        long needWriteSize;
+        if (Objects.isNull(range)) {
+            response.setHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(size));
+            response.setStatus(200);
+            needWriteSize = size;
+        } else {
+            var f = range.substring(6).split("-");
+            long bytesStart;
+            long bytesEnd;
+            if (f.length == 2) {
+                bytesStart = Long.parseLong(f[0]);
+                bytesEnd = Long.parseLong(f[1]);
+            } else if (f.length == 1) {
+                bytesStart = Long.parseLong(f[0]);
+                bytesEnd = Math.min(bytesStart + 1048576, size - 1);
+            } else {
+                throw new HttpTipException(400, "Range error");
             }
-            log.info("length=[{}]", c);
-            out.flush();
-        } catch (Exception e) {
-            response.reset();
-            throw new HttpTipException(500, e.getMessage());
+            String rangeValue = String.format("bytes %s-%s/%s", bytesStart, bytesEnd, size);
+            in.seek(bytesStart);
+            needWriteSize = bytesEnd - bytesStart + 1;
+            response.setStatus(206);
+            response.setHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(needWriteSize));
+            response.setHeader(HttpHeaders.ACCEPT_RANGES, "bytes");
+            response.setHeader(HttpHeaders.CONTENT_RANGE, rangeValue);
+//            return ResponseEntity
+//                    .ok()
+//                    .contentLength(bytesEnd - bytesStart)
+//                    .contentType(MediaType.valueOf(mediaType))
+//                    .header(HttpHeaders.ACCEPT_RANGES,
+//                            "bytes")
+//                    .header(HttpHeaders.CONTENT_DISPOSITION,
+//                            String.format("attachment; filename=\"%s\"", bid))
+//                    .header(HttpHeaders.CONTENT_RANGE,
+//                            rangeValue)
+//                    .body(new InputStreamResource(in));
         }
+
+        response.setHeader(HttpHeaders.CONTENT_TYPE, mediaType);
+        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, String.format("attachment; filename=\"%s\"", bid));
+        try (in;
+             var out = response.getOutputStream()) {
+
+            log.debug("下载文件:range[{}] type[{}] id[{}]", range, atype, bid);
+            int i;
+            // 已写入输出流的字节数
+            int alreadyWriteSize = 0;
+            byte[] data = new byte[1024];
+            while ((i = in.read(data)) != -1 && alreadyWriteSize < needWriteSize) {
+                out.write(data, 0, i);
+                alreadyWriteSize += i;
+                out.flush();
+            }
+        } catch (Exception e) {
+            log.error("下载出现异常", e);
+        }
+
     }
 
 
@@ -168,7 +223,7 @@ public class FileApi {
     @GetMapping("/map/{sid}")
     public void downloadMapFile(@PathVariable Long sid, HttpServletResponse response) throws IOException {
         var fileOut = fileService.outOsuZipFile(sid);
-        try (var out = getResponseOut(response, sid + ".osz", null)) {
+        try (var out = getResponseOut(response, sid + ".osz")) {
             fileOut.write(out);
         } catch (IOException e) {
             log.error("导出 map 出错: ");
@@ -186,7 +241,7 @@ public class FileApi {
         }
         var fileOut = fileService.zipOsuFiles(ids);
 
-        try (var out = getResponseOut(response, "package.zip", null)) {
+        try (var out = getResponseOut(response, "package.zip")) {
             fileOut.write(out);
         } catch (IOException e) {
             log.error("导出 maps 出错: ", e);
@@ -194,13 +249,17 @@ public class FileApi {
         }
     }
 
-    private OutputStream getResponseOut(@NotNull HttpServletResponse response, String name, Long size) throws IOException {
-        response.reset();
+    /**
+     * 获取 http 响应的输出流
+     *
+     * @param response 响应对象
+     * @param name     文件名
+     * @return 响应输出流
+     * @throws IOException 打开失败
+     */
+    private OutputStream getResponseOut(@NotNull HttpServletResponse response, String name) throws IOException {
         response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
         response.setCharacterEncoding("utf-8");
-        if (size != null && size > 0) {
-            response.setContentLengthLong(size);
-        }
         if (name != null && !name.isBlank()) {
             response.setHeader("Content-Disposition", "attachment;filename=" + name);
         } else {

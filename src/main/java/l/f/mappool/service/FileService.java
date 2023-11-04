@@ -205,9 +205,7 @@ public class FileService {
      */
     @SuppressWarnings("unused")
     public InputStream outOsuFile(long bid, BeatmapFileService.Type type) throws IOException {
-        long sid = osuApiService.getMapInfoByDB(bid).getMapsetId();
-        var filePath = getPath(sid, bid, type);
-        return new FileInputStream(filePath.toFile());
+        return new FileInputStream(getPathByBid(bid, type).toFile());
     }
 
     public long sizeOfOsuFile(long bid, BeatmapFileService.Type type) throws IOException {
@@ -283,7 +281,7 @@ public class FileService {
         final Path path_tmp = Path.of(OSU_FILE_PATH_TMP, String.valueOf(sid));
         boolean isArchive = true;
         if (!Files.isDirectory(path)
-                && !Files.isDirectory(path_tmp)) {
+                && (isArchive = !Files.isDirectory(path_tmp))) {
             isArchive = downloadOsuFile(sid);
         }
         if (isArchive) {
