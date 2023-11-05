@@ -34,6 +34,7 @@ import java.util.Optional;
 @ResponseBody
 @RequestMapping(value = "/api/file", produces = "application/json;charset=UTF-8")
 public class FileApi {
+    static private final String CORS_KEY = System.getenv("CORS_KEY");
     /**
      * 上传文件
      *
@@ -140,6 +141,8 @@ public class FileApi {
     @GetMapping(value = "/map/{type}/{bid}")
     public void downloadMapBGFile(@PathVariable Long bid, @PathVariable String type,
                                   @RequestHeader(value = "Range", required = false) String range,
+                                  @RequestParam(value = "key",required = false) String corsKeyParam,
+                                  @RequestHeader(value = "key",required = false) String corsKeyHeader,
                                   HttpServletResponse response) throws IOException {
         String mediaType;
         var atype = switch (type) {
@@ -157,6 +160,10 @@ public class FileApi {
             }
             default -> throw new HttpTipException(400, "未知类型");
         };
+        if ((Objects.nonNull(corsKeyParam) && corsKeyParam.equals(CORS_KEY))
+                || (Objects.nonNull(corsKeyHeader) && corsKeyHeader.equals(CORS_KEY))) {
+            PublicApi.setCors(response);
+        }
         var in = new RandomAccessFile(fileService.getPathByBid(bid, atype).toFile(), "r");
         var size = in.length();
         long needWriteSize;
@@ -302,6 +309,8 @@ public class FileApi {
         }
         return "ok";
     }
+
+
 
 
     private final FileService fileService;
