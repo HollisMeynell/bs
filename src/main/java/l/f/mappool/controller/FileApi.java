@@ -163,6 +163,9 @@ public class FileApi {
         if ((Objects.nonNull(corsKeyParam) && corsKeyParam.equals(CORS_KEY))
                 || (Objects.nonNull(corsKeyHeader) && corsKeyHeader.equals(CORS_KEY))) {
             PublicApi.setCors(response);
+        } else {
+            // 为docs添加跨域允许
+            PublicApi.setCors(response, "https://docs.365246692.xyz");
         }
         var in = new RandomAccessFile(fileService.getPathByBid(bid, atype).toFile(), "r");
         var size = in.length();
