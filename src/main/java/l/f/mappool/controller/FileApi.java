@@ -18,6 +18,7 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import javax.validation.constraints.NotNull;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
@@ -140,7 +141,7 @@ public class FileApi {
     @GetMapping(value = "/map/{type}/{bid}")
     public void downloadMapBGFile(@PathVariable Long bid, @PathVariable String type,
                                   @RequestHeader(value = "Range", required = false) String range,
-                                  HttpServletResponse response) throws IOException {
+                                  HttpServletResponse response) throws IOException, HttpError {
         String mediaType;
         var atype = switch (type) {
             case "bg" -> {
@@ -157,7 +158,17 @@ public class FileApi {
             }
             default -> throw new HttpTipException(400, "未知类型");
         };
-        var in = new RandomAccessFile(fileService.getPathByBid(bid, atype).toFile(), "r");
+        File localFile;
+        try {
+            localFile = fileService.getPathByBid(bid, atype).toFile();
+        } catch (IOException e) {
+            localFile = switch (atype) {
+                case BACKGROUND -> fileService.getStaticFilePath("default/bg.png").toFile();
+                case AUDIO -> fileService.getStaticFilePath("default/audio.mp3").toFile();
+                case FILE -> fileService.getStaticFilePath("default/file.osu").toFile();
+            };
+        }
+        var in = new RandomAccessFile(localFile, "r");
         var size = in.length();
         long needWriteSize;
         if (Objects.isNull(range)) {

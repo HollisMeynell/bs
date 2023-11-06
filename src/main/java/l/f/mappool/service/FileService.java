@@ -443,6 +443,14 @@ public class FileService {
         }
     }
 
+    public Path getStaticFilePath(String fileName) throws HttpError {
+        var path = Path.of(STATIC_PATH, fileName);
+        if (!Files.isRegularFile(path)) {
+            throw new HttpError(400, "file not found");
+        }
+        return path;
+    }
+
     public void removeTemp() throws IOException {
         Consumer<Path> consumer = p -> {
             var sid = Long.parseLong(p.getFileName().toString());
