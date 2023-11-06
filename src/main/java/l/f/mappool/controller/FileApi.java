@@ -35,6 +35,7 @@ import java.util.Optional;
 @ResponseBody
 @RequestMapping(value = "/api/file", produces = "application/json;charset=UTF-8")
 public class FileApi {
+    static private final String CORS_KEY = System.getenv("CORS_KEY");
     /**
      * 上传文件
      *
@@ -141,6 +142,8 @@ public class FileApi {
     @GetMapping(value = "/map/{type}/{bid}")
     public void downloadMapBGFile(@PathVariable Long bid, @PathVariable String type,
                                   @RequestHeader(value = "Range", required = false) String range,
+                                  @RequestParam(value = "key",required = false) String corsKeyParam,
+                                  @RequestHeader(value = "key",required = false) String corsKeyHeader,
                                   HttpServletResponse response) throws IOException, HttpError {
         String mediaType;
         var atype = switch (type) {
@@ -158,6 +161,13 @@ public class FileApi {
             }
             default -> throw new HttpTipException(400, "未知类型");
         };
+        if ((Objects.nonNull(corsKeyParam) && corsKeyParam.equals(CORS_KEY))
+                || (Objects.nonNull(corsKeyHeader) && corsKeyHeader.equals(CORS_KEY))) {
+            PublicApi.setCors(response);
+        } else {
+            // 为docs添加跨域允许
+            PublicApi.setCors(response, "https://docs.365246692.xyz");
+        }
         File localFile;
         try {
             localFile = fileService.getPathByBid(bid, atype).toFile();
