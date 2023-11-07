@@ -171,7 +171,7 @@ public class FileApi {
         File localFile;
         try {
             localFile = fileService.getPathByBid(bid, atype).toFile();
-        } catch (IOException e) {
+        } catch (IOException | WebClientResponseException e) {
             localFile = switch (atype) {
                 case BACKGROUND -> fileService.getStaticFilePath("default/bg.png").toFile();
                 case AUDIO -> fileService.getStaticFilePath("default/audio.mp3").toFile();
