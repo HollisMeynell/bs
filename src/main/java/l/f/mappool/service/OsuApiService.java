@@ -3,6 +3,7 @@ package l.f.mappool.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import l.f.mappool.entity.osu.BeatMap;
 import l.f.mappool.entity.osu.BeatMapSet;
+import l.f.mappool.entity.osu.MatchesSearch;
 import l.f.mappool.entity.osu.OsuOauthUser;
 import l.f.mappool.properties.BeatmapSelectionProperties;
 import l.f.mappool.properties.OsuProperties;
@@ -12,6 +13,7 @@ import l.f.mappool.repository.osu.OsuUserRepository;
 import l.f.mappool.util.JsonUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -20,6 +22,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @Slf4j
@@ -180,7 +183,7 @@ public class OsuApiService {
     public BeatMapSet getMapsetInfo(long sid) {
         return webClient.get()
                 .uri("/beatmapsets/{sid}", sid)
-                .header("Authorization", "Bearer " + getToken())
+                .headers(this::insertHeader)
                 .retrieve()
                 .bodyToMono(BeatMapSet.class)
                 .block();
@@ -189,7 +192,7 @@ public class OsuApiService {
     public BeatMap getMapInfo(long bid) {
         return webClient.get()
                 .uri("/beatmaps/{bid}", bid)
-                .header("Authorization", "Bearer " + getToken())
+                .headers(this::insertHeader)
                 .retrieve()
                 .bodyToMono(BeatMap.class)
                 .block();
@@ -209,7 +212,7 @@ public class OsuApiService {
     public List<JsonNode> getAllUser(Collection<? extends Number> usersId) {
         return webClient.get()
                 .uri(b -> b.path("/users").queryParam("ids[]", usersId).build())
-                .header("Authorization", "Bearer " + getToken())
+                .headers(this::insertHeader)
                 .retrieve()
                 .bodyToMono(JsonNode.class)
                 .map(result -> JsonUtil.parseObjectList(result.get("users"), JsonNode.class))
@@ -222,5 +225,34 @@ public class OsuApiService {
             beatMapSetRepository.save(map.getBeatMapSet());
         }
         beatMapRepository.save(map);
+    }
+
+    public MatchesSearch getMatches() {
+        return webClient.get()
+                .uri("/matches")
+                .headers(this::insertHeader)
+                .retrieve()
+                .bodyToMono(MatchesSearch.class)
+                .block();
+    }
+
+
+    public JsonNode getMatchesInfo(long mid, Long before) {
+        return webClient.get()
+                .uri(p -> {
+                    var builder = p.pathSegment("matches", "{mid}");
+                    if (Objects.nonNull(before)) {
+                        builder.queryParam("before", before).queryParam("limit", 100);
+                    }
+                    return builder.build(mid);
+                })
+                .headers(this::insertHeader)
+                .retrieve()
+                .bodyToMono(JsonNode.class)
+                .block();
+    }
+
+    private void insertHeader(HttpHeaders headers) {
+        headers.set("Authorization", "Bearer " + getToken());
     }
 }

@@ -1,6 +1,7 @@
 package l.f.mappool.controller;
 
 import jakarta.annotation.Resource;
+import l.f.mappool.config.interceptor.Open;
 import l.f.mappool.entity.osu.BeatMap;
 import l.f.mappool.service.FileService;
 import l.f.mappool.service.MapPoolService;
@@ -26,6 +27,7 @@ public class MapApi {
     @Resource
     protected FileService fileService;
 
+    @Open
     @GetMapping("/getBeatMapInfo/{bid}")
     public DataVo<BeatMap> getBeatmap(@PathVariable("bid") long bid) {
         return new DataVo<>(osuService.getMapInfoByDB(bid));

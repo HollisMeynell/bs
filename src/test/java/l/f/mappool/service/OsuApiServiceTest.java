@@ -34,4 +34,16 @@ class OsuApiServiceTest {
             log.error("err: {}", e.getClass());
         }
     }
+
+    @Test
+    void getMatches() {
+        var m = osuApiService.getMatches();
+        log.info(JsonUtil.objectToJsonPretty(m));
+    }
+
+    @Test
+    void getMatchesInfo() {
+        var m = osuApiService.getMatchesInfo(111203621L, null);
+        log.info(JsonUtil.objectToJsonPretty(m));
+    }
 }
