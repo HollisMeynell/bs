@@ -40,7 +40,6 @@ public class WebClientConfig implements WebFluxConfigurer {
                                 .host("127.0.0.1")
                                 .port(7890)
                 )
-                .baseUrl("https://osu.ppy.sh/api/v2/")
                 .followRedirect(true)
                 .responseTimeout(Duration.ofSeconds(30));
         ReactorClientHttpConnector connector = new ReactorClientHttpConnector(httpClient);
@@ -56,9 +55,11 @@ public class WebClientConfig implements WebFluxConfigurer {
                 .clientConnector(connector)
                 .exchangeStrategies(strategies)
                 .defaultHeaders((headers) -> {
-                    headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-                    headers.setAccept(Collections.singletonList(MediaType.APPLICATION_FORM_URLENCODED));
+                    headers.setContentType(MediaType.APPLICATION_JSON);
+                    headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
                 })
+                .baseUrl("https://osu.ppy.sh/api/v2/")
+                .codecs(codecs -> codecs.defaultCodecs().maxInMemorySize(Integer.MAX_VALUE))
                 .build();
     }
 
@@ -70,6 +71,7 @@ public class WebClientConfig implements WebFluxConfigurer {
 
         return builder
                 .clientConnector(connector)
+                .codecs(codecs -> codecs.defaultCodecs().maxInMemorySize(Integer.MAX_VALUE))
                 .build();
     }
 

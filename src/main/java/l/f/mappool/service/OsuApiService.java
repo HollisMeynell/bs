@@ -14,6 +14,7 @@ import l.f.mappool.util.JsonUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -95,6 +96,7 @@ public class OsuApiService {
 
         var s = webClient.post()
                 .uri("https://osu.ppy.sh/oauth/token")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                 .bodyValue(body)
                 .retrieve()
                 .bodyToMono(JsonNode.class)
@@ -102,6 +104,8 @@ public class OsuApiService {
         if (s != null) {
             accessToken = s.get("access_token").asText();
             time = System.currentTimeMillis() + s.get("expires_in").asLong() * 1000;
+        } else {
+            throw new RuntimeException("更新 Oauth 令牌 请求失败");
         }
         return accessToken;
     }
@@ -119,6 +123,7 @@ public class OsuApiService {
 
         var s = webClient.post()
                 .uri("https://osu.ppy.sh/oauth/token")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                 .bodyValue(body)
                 .retrieve()
                 .bodyToMono(JsonNode.class)
@@ -152,6 +157,7 @@ public class OsuApiService {
 
         JsonNode s = webClient.post()
                 .uri("https://osu.ppy.sh/oauth/token")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                 .bodyValue(body)
                 .retrieve()
                 .bodyToMono(JsonNode.class)
