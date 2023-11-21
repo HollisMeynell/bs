@@ -166,7 +166,9 @@ public class FileApi {
             PublicApi.setCors(response);
         } else {
             // 为docs添加跨域允许
-            PublicApi.setCors(response, "https://docs.365246692.xyz");
+            PublicApi.setCors(response,
+                    "https://docs.365246692.xyz",
+                    "https://bot.365246692.xyz");
         }
         File localFile;
         try {
