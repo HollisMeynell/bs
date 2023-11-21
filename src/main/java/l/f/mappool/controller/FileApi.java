@@ -24,10 +24,7 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 @Open
 @Slf4j
@@ -36,6 +33,11 @@ import java.util.Optional;
 @RequestMapping(value = "/api/file", produces = "application/json;charset=UTF-8")
 public class FileApi {
     static private final String CORS_KEY = System.getenv("CORS_KEY");
+    static final Set<String> ORIGIN_ALLOW = new HashSet<>();
+    static {
+        ORIGIN_ALLOW.add("https://bot.365246692.xyz");
+        ORIGIN_ALLOW.add("https://docs.365246692.xyz");
+    }
     /**
      * 上传文件
      *
@@ -144,7 +146,7 @@ public class FileApi {
                                   @RequestHeader(value = "Range", required = false) String range,
                                   @RequestParam(value = "key",required = false) String corsKeyParam,
                                   @RequestHeader(value = "key",required = false) String corsKeyHeader,
-                                  HttpServletResponse response) throws IOException, HttpError {
+                                  HttpServletRequest request, HttpServletResponse response) throws IOException, HttpError {
         String mediaType;
         var atype = switch (type) {
             case "bg" -> {
@@ -166,9 +168,10 @@ public class FileApi {
             PublicApi.setCors(response);
         } else {
             // 为docs添加跨域允许
-            PublicApi.setCors(response,
-                    "https://docs.365246692.xyz",
-                    "https://bot.365246692.xyz");
+            String origin = request.getHeader("Origin");
+            if (ORIGIN_ALLOW.contains(origin)){
+                PublicApi.setCors(response, origin);
+            }
         }
         File localFile;
         try {
