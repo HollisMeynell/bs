@@ -101,7 +101,7 @@ public class FileApi {
         try {
             fileService.deleteFile(key);
         } catch (IOException e) {
-            return new DataVo<>(Boolean.FALSE).setMessage("删除失败: " + e.getMessage()).setCode(502);
+            return new DataVo<>(Boolean.FALSE).setMessage("删除失败: " + e.getMessage()).setCode(500);
         }
         return new DataVo<>(Boolean.TRUE);
     }
