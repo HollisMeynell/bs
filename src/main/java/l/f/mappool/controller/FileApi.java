@@ -8,6 +8,7 @@ import l.f.mappool.exception.HttpError;
 import l.f.mappool.exception.HttpTipException;
 import l.f.mappool.service.BeatmapFileService;
 import l.f.mappool.service.FileService;
+import l.f.mappool.util.WebUtil;
 import l.f.mappool.vo.DataVo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +25,10 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 @Open
 @Slf4j
@@ -32,14 +36,6 @@ import java.util.*;
 @ResponseBody
 @RequestMapping(value = "/api/file", produces = "application/json;charset=UTF-8")
 public class FileApi {
-    static final Set<String> ORIGIN_ALLOW = new HashSet<>();
-    static {
-        ORIGIN_ALLOW.add("https://bot.365246692.xyz");
-        ORIGIN_ALLOW.add("https://bot.v6.365246692.xyz:88");
-        ORIGIN_ALLOW.add("https://docs.365246692.xyz");
-        ORIGIN_ALLOW.add("https://docs.v6.365246692.xyz:88");
-        ORIGIN_ALLOW.add("http://localhost:5173");
-    }
     /**
      * 上传文件
      *
@@ -146,8 +142,6 @@ public class FileApi {
     @GetMapping(value = "/map/{type}/{bid}")
     public void downloadMapBGFile(@PathVariable Long bid, @PathVariable String type,
                                   @RequestHeader(value = "Range", required = false) String range,
-                                  @RequestParam(value = "key",required = false) String corsKeyParam,
-                                  @RequestHeader(value = "key",required = false) String corsKeyHeader,
                                   HttpServletRequest request, HttpServletResponse response) throws IOException, HttpError {
         String mediaType;
         var atype = switch (type) {
@@ -165,13 +159,8 @@ public class FileApi {
             }
             default -> throw new HttpTipException(400, "未知类型");
         };
-        {
-            // 为docs添加跨域允许
-            String origin = request.getHeader("Origin");
-            if (ORIGIN_ALLOW.contains(origin)){
-                PublicApi.setCors(response, origin);
-            }
-        }
+        // 为docs添加跨域允许
+        WebUtil.setOriginAllow(response, request);
         File localFile;
         try {
             localFile = fileService.getPathByBid(bid, atype).toFile();

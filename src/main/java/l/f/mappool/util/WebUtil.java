@@ -1,72 +1,60 @@
 package l.f.mappool.util;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import l.f.mappool.config.interceptor.Open;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
+import org.springframework.util.StringUtils;
 
-import java.io.IOException;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 
+@Slf4j
 public class WebUtil {
-    private static final Logger log = LoggerFactory.getLogger(WebUtil.class);
-    public static final ObjectMapper objectMapper = JsonMapper.builder().build();
+    private static final Set<String> ORIGIN_ALLOW = new HashSet<>();
+    private static final String BOT_KEY;
+    static private final String CORS_KEY;
 
-    public static void writeObjectToResponse(HttpServletResponse response, Object obj) throws IOException {
-        try (var write = response.getWriter()) {
-            response.setContentType("application/json; charset=utf-8");
-            response.setCharacterEncoding("UTF-8");
-            write.print(objectToJson(obj));
-            write.flush();
+    static {
+        BOT_KEY = System.getenv("SUPER_KEY");
+        CORS_KEY = System.getenv("CORS_KEY");
+        ORIGIN_ALLOW.add("https://bot.365246692.xyz");
+        ORIGIN_ALLOW.add("https://bot.v6.365246692.xyz:88");
+        ORIGIN_ALLOW.add("https://docs.365246692.xyz");
+        ORIGIN_ALLOW.add("https://docs.v6.365246692.xyz:88");
+        ORIGIN_ALLOW.add("http://localhost:5173");
+    }
+
+    public static boolean checkBot(Open annotation, HttpServletRequest request) {
+        return request.getHeader("AuthorizationX") != null &&
+                StringUtils.hasLength(BOT_KEY) &&
+                request.getHeader("AuthorizationX").equals(BOT_KEY) &&
+                Objects.nonNull(annotation) &&
+                annotation.bot();
+    }
+
+    public static void setOriginAllow(HttpServletResponse response, HttpServletRequest request) {
+        String origin = request.getHeader("Origin");
+        if (ORIGIN_ALLOW.contains(origin)) {
+            setOriginAllow(response, origin);
         }
     }
 
-    public static <T> String objectToJsonPretty(T obj) {
-        if (obj == null) {
-            return null;
-        }
-        try {
-            return obj instanceof String ? (String) obj : objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(obj);
-        } catch (Exception e) {
-            log.warn("Parse Object to Json error", e);
-            e.printStackTrace();
-            return null;
-        }
+    public static void setOriginAllow(HttpServletResponse response) {
+        response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+        response.setHeader(HttpHeaders.ACCESS_CONTROL_MAX_AGE, "3600");
+        response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, "*");
+        response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+        response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, "POST, GET");
     }
 
-    public static <T> String objectToJson(T obj) {
-        if (obj == null) {
-            return null;
-        }
-        try {
-            return obj instanceof String ? (String) obj : objectMapper.writeValueAsString(obj);
-        } catch (Exception e) {
-            log.warn("Parse Object to Json error", e);
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    public static <T> T jsonToObject(String src, Class<T> clazz) {
-        if (src == null || "".equals(src.trim()) || clazz == null) {
-            return null;
-        }
-        try {
-            return clazz.equals(String.class) ? (T) src : objectMapper.readValue(src, clazz);
-        } catch (Exception e) {
-            log.warn("Parse Json to Object error", e);
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    public static <T> T parseObject(JsonNode node, Class<T> clazz) {
-        try {
-            return objectMapper.treeToValue(node, clazz);
-        } catch (IOException e) {
-            log.error(e.getMessage(), e);
-        }
-        return null;
+    public static void setOriginAllow(HttpServletResponse response, String allow) {
+        response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, allow);
+        response.setHeader(HttpHeaders.ACCESS_CONTROL_MAX_AGE, "3600");
+        response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, "*");
+        response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+        response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, "POST, GET");
     }
 }

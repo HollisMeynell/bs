@@ -2,7 +2,6 @@ package l.f.mappool.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.annotation.Resource;
-import jakarta.servlet.http.HttpServletResponse;
 import l.f.mappool.config.interceptor.Open;
 import l.f.mappool.dao.MapPoolDao;
 import l.f.mappool.dto.ProxyDto;
@@ -16,7 +15,6 @@ import l.f.mappool.vo.DataListVo;
 import l.f.mappool.vo.DataVo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
@@ -130,17 +128,5 @@ public class PublicApi {
                 .setTotalItems(feedbacks.size())
                 .setPageSize(feedbacks.size())
                 .setData(feedbacks);
-    }
-
-    public static void setCors(HttpServletResponse response, String... allow) {
-        switch (allow.length) {
-            case 0 -> response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
-            case 1 -> response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, allow[0]);
-            default -> response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, String.join(",", allow));
-        }
-        response.setHeader(HttpHeaders.ACCESS_CONTROL_MAX_AGE, "3600");
-        response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, "*");
-        response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
-        response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, "POST, GET");
     }
 }

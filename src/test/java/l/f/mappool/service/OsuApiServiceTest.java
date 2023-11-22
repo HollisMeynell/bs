@@ -18,7 +18,8 @@ class OsuApiServiceTest {
     @Test
     void getMapsetInfo() {
         try {
-            var set = osuApiService.getMapsetInfo(1198905L);
+            var set = osuApiService.getMapsetInfo(17796L);
+//            var set = osuApiService.getMapsetInfo(1198905L);
             log.info(JsonUtil.objectToJsonPretty(set));
         } catch (WebClientResponseException.NotFound e) {
             log.error("err: {}", e.getClass());

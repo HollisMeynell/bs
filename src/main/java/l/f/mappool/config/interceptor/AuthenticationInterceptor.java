@@ -2,7 +2,6 @@ package l.f.mappool.config.interceptor;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import l.f.mappool.controller.PublicApi;
 import l.f.mappool.entity.LoginUser;
 import l.f.mappool.exception.HttpTipException;
 import l.f.mappool.exception.PermissionException;
@@ -10,6 +9,7 @@ import l.f.mappool.service.UserService;
 import l.f.mappool.util.ContextUtil;
 import l.f.mappool.util.JwtUtil;
 import l.f.mappool.util.TokenBucketUtil;
+import l.f.mappool.util.WebUtil;
 import org.springframework.lang.NonNull;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.method.HandlerMethod;
@@ -43,14 +43,11 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull Object handler) throws Exception {
         if (handler instanceof HandlerMethod handlerMethod) {
-            if (request.getHeader("AuthorizationX") != null
-                    && BOT_KEY.isBlank()
-                    && request.getHeader("AuthorizationX").equals(BOT_KEY)
-            ) {
-                // 特殊接口
-                Open annotation = getAnnotation(handlerMethod);
-                return Objects.nonNull(annotation) && annotation.bot();
+            Open methodAnnotation = getAnnotation(handlerMethod);
+            if (WebUtil.checkBot(methodAnnotation, request)) {
+                return true;
             }
+
             if (!TokenBucketUtil.getToken(request.getRemoteAddr(), 60, 1.5)) {
                 // 对请求限速
                 throw new HttpTipException(429, "Too Many Requests");
@@ -64,11 +61,11 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
                 String key;
                 if (Objects.nonNull(key = request.getParameter("key")) && key.equals(CORS_KEY) ||
                         Objects.nonNull((key = request.getHeader("key"))) && key.equals(CORS_KEY)) {
-                    PublicApi.setCors(response, "*");
+                    WebUtil.setOriginAllow(response);
                 }
             }
 
-            Open methodAnnotation = getAnnotation(handlerMethod);
+
             if (Objects.nonNull(methodAnnotation)
                     && methodAnnotation.pub()
                     && !methodAnnotation.admin()
