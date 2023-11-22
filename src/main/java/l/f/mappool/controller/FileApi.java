@@ -32,11 +32,13 @@ import java.util.*;
 @ResponseBody
 @RequestMapping(value = "/api/file", produces = "application/json;charset=UTF-8")
 public class FileApi {
-    static private final String CORS_KEY = System.getenv("CORS_KEY");
     static final Set<String> ORIGIN_ALLOW = new HashSet<>();
     static {
         ORIGIN_ALLOW.add("https://bot.365246692.xyz");
+        ORIGIN_ALLOW.add("https://bot.v6.365246692.xyz:88");
         ORIGIN_ALLOW.add("https://docs.365246692.xyz");
+        ORIGIN_ALLOW.add("https://docs.v6.365246692.xyz:88");
+        ORIGIN_ALLOW.add("http://localhost:5173");
     }
     /**
      * 上传文件
@@ -163,10 +165,7 @@ public class FileApi {
             }
             default -> throw new HttpTipException(400, "未知类型");
         };
-        if ((Objects.nonNull(corsKeyParam) && corsKeyParam.equals(CORS_KEY))
-                || (Objects.nonNull(corsKeyHeader) && corsKeyHeader.equals(CORS_KEY))) {
-            PublicApi.setCors(response);
-        } else {
+        {
             // 为docs添加跨域允许
             String origin = request.getHeader("Origin");
             if (ORIGIN_ALLOW.contains(origin)){

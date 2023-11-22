@@ -2,6 +2,7 @@ package l.f.mappool.config.interceptor;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import l.f.mappool.controller.PublicApi;
 import l.f.mappool.entity.LoginUser;
 import l.f.mappool.exception.HttpTipException;
 import l.f.mappool.exception.PermissionException;
@@ -21,6 +22,7 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
     static final private Set<String> PUBLIC_PATH = Set.of("/error", "/swagger-ui");
     private final UserService userService;
     private static final String BOT_KEY = System.getenv("SUPER_KEY");
+    static private final String CORS_KEY = System.getenv("CORS_KEY");
 
     public AuthenticationInterceptor(UserService userService) {
         this.userService = userService;
@@ -56,6 +58,14 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
 
             if (handlerMethod.getMethod().getName().equals("proxy") && !TokenBucketUtil.getToken('p' + request.getRemoteAddr(), 20, 0.2)) {
                 throw new HttpTipException(429, "Too Many Requests");
+            }
+
+            {
+                String key;
+                if (Objects.nonNull(key = request.getParameter("key")) && key.equals(CORS_KEY) ||
+                        Objects.nonNull((key = request.getHeader("key"))) && key.equals(CORS_KEY)) {
+                    PublicApi.setCors(response, "*");
+                }
             }
 
             Open methodAnnotation = getAnnotation(handlerMethod);
