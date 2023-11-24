@@ -17,7 +17,7 @@ public class JsonUtil {
 
     public static <T>String objectToJsonPretty(T obj){
         if(obj == null){
-            return "";
+            return "{}";
         }
         try {
             if (obj instanceof String s) {
@@ -27,12 +27,12 @@ public class JsonUtil {
             return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(obj);
         } catch (Exception e) {
             log.warn("Parse Object to Json error",e);
-            return "";
+            return "{error}";
         }
     }
     public static <T>String objectToJson(T obj){
         if(obj == null){
-            return "";
+            return "{}";
         }
         try {
             if (obj instanceof String s) {
@@ -42,7 +42,7 @@ public class JsonUtil {
             return  mapper.writeValueAsString(obj);
         } catch (Exception e) {
             log.warn("Parse Object to Json error",e);
-            return "";
+            return "{error}";
         }
     }
 

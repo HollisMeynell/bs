@@ -42,6 +42,7 @@ public class JwtUtil {
             user.setCode(jwt.getClaim("code").asString());
             user.setOsuId(jwt.getClaim("uid").asLong());
             if (ADMIN_USER_SET.contains(user.getOsuId())) user.setAdmin(true);
+            ContextUtil.setContextUser(user);
             return user;
         } catch (Exception e) {
             log.error("token解码异常", e);

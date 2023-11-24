@@ -91,7 +91,6 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
             if (!loginUser.isAdmin() && Objects.nonNull(methodAnnotation) && methodAnnotation.admin()) {
                 throw new PermissionException();
             }
-            ContextUtil.setContextUser(loginUser);
             return true;
         }
         return true;

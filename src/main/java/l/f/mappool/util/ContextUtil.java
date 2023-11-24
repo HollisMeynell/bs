@@ -7,15 +7,13 @@ import java.io.File;
 import java.io.IOException;
 import java.net.JarURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarFile;
 
 public class ContextUtil {
     static ThreadLocal<Map<String, Object>> threadLocalService = new ThreadLocal<>();
-
+    private static final String USER_KEY = "**USER";
 
     public static <T> T getContext(String name, Class<T> tClass) {
         if (threadLocalService.get() == null) return null;
@@ -28,7 +26,11 @@ public class ContextUtil {
         if (threadLocalService.get() == null) {
             threadLocalService.set(new ConcurrentHashMap<>());
         }
-        threadLocalService.get().put(name, o);
+        if (Objects.nonNull(o)) {
+            threadLocalService.get().put(name, o);
+        } else {
+            threadLocalService.get().remove(name);
+        }
     }
 
     public static void clearContext() {
@@ -40,11 +42,15 @@ public class ContextUtil {
     }
 
     public static LoginUser getContextUser() {
-        return getContext("**USER", LoginUser.class);
+        return getContext(USER_KEY, LoginUser.class);
     }
 
     public static void setContextUser(LoginUser u) {
-        setContext("**USER", u);
+        setContext(USER_KEY, u);
+    }
+
+    public static Optional<LoginUser> getContextUserOptional() {
+        return Optional.ofNullable(getContext(USER_KEY, LoginUser.class));
     }
 
     private static void remove() {
