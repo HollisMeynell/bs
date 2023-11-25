@@ -160,7 +160,7 @@ public class FileApi {
             default -> throw new HttpTipException(400, "未知类型");
         };
         // 为docs添加跨域允许
-        WebUtil.setOriginAllow(response, request);
+        WebUtil.setOriginAllow(request, response);
         File localFile;
         try {
             localFile = fileService.getPathByBid(bid, atype).toFile();

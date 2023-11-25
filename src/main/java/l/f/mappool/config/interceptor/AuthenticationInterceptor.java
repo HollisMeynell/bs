@@ -21,8 +21,6 @@ import java.util.Set;
 public class AuthenticationInterceptor implements HandlerInterceptor {
     static final private Set<String> PUBLIC_PATH = Set.of("/error", "/swagger-ui");
     private final UserService userService;
-    private static final String BOT_KEY = System.getenv("SUPER_KEY");
-    static private final String CORS_KEY = System.getenv("CORS_KEY");
 
     public AuthenticationInterceptor(UserService userService) {
         this.userService = userService;
@@ -31,11 +29,11 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
     private static Open getAnnotation(HandlerMethod handlerMethod) {
         // 检查方法上是否有@Open注解
         Open methodAnnotation = handlerMethod.getMethod().getAnnotation(Open.class);
-        if (methodAnnotation != null) return methodAnnotation;
+        if (Objects.nonNull(methodAnnotation)) return methodAnnotation;
 
         // 检查Controller类上是否有@Open注解
         Open classAnnotation = handlerMethod.getBeanType().getAnnotation(Open.class);
-        if (classAnnotation != null) return classAnnotation;
+        if (Objects.nonNull(classAnnotation)) return classAnnotation;
 
         return null;
     }
@@ -48,50 +46,19 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
                 return true;
             }
 
-            if (!TokenBucketUtil.getToken(request.getRemoteAddr(), 60, 1.5)) {
+            if (WebUtil.limitRequest(request, handlerMethod)) {
                 // 对请求限速
                 throw new HttpTipException(429, "Too Many Requests");
             }
 
-            if (handlerMethod.getMethod().getName().equals("proxy") && !TokenBucketUtil.getToken('p' + request.getRemoteAddr(), 20, 0.2)) {
-                throw new HttpTipException(429, "Too Many Requests");
-            }
+            WebUtil.originAllow(request, response);
 
-            {
-                String key;
-                if (Objects.nonNull(key = request.getParameter("key")) && key.equals(CORS_KEY) ||
-                        Objects.nonNull((key = request.getHeader("key"))) && key.equals(CORS_KEY)) {
-                    WebUtil.setOriginAllow(response);
-                }
-            }
-
-
-            if (Objects.nonNull(methodAnnotation)
-                    && methodAnnotation.pub()
-                    && !methodAnnotation.admin()
-            ) {
+            if (WebUtil.isPublic(methodAnnotation) || PUBLIC_PATH.contains(request.getRequestURI())) {
                 // 公开访问，无需验证身份
                 return true;
             }
 
-            if (PUBLIC_PATH.contains(request.getRequestURI())) {
-                return true;
-            }
-
-            String header = request.getHeader("Authorization");
-            if (ObjectUtils.isEmpty(header) || !header.startsWith("Bearer ")) {
-                throw new PermissionException();
-            }
-            String token = header.substring(7);
-            LoginUser loginUser = JwtUtil.verifyToken(token);
-            if (ObjectUtils.isEmpty(loginUser) || !userService.loginCheck(loginUser)) {
-                throw new PermissionException();
-            }
-            // 是否为后台管理员
-            if (!loginUser.isAdmin() && Objects.nonNull(methodAnnotation) && methodAnnotation.admin()) {
-                throw new PermissionException();
-            }
-            return true;
+            WebUtil.permission(request, userService, methodAnnotation);
         }
         return true;
     }
