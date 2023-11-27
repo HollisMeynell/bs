@@ -27,6 +27,10 @@ public class PoolCategoryGroup {
     @Column(name = "name", columnDefinition = "text")
     String name;
     Integer color;
+    @Column(name = "mod_optional")
+    Integer modsOptional = 0;
+    @Column(name = "mod_required")
+    Integer modsRequired = 0;
     @Column(name = "info", columnDefinition = "text")
     String info;
 

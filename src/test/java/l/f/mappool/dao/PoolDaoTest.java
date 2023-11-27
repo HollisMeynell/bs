@@ -13,6 +13,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.util.Optional;
+
 @SpringBootTest
 class PoolDaoTest {
     private static final Logger log = LoggerFactory.getLogger(PoolDaoTest.class);
@@ -48,7 +50,7 @@ class PoolDaoTest {
     @Test
     void testAll() {
         var p = mapPoolDao.getAllPool(uid).get(PoolPermission.CREATE).get(0);
-        var g = mapPoolDao.createCategoryGroup(uid, p.getId(), "e name", "# e info", 0x000);
+        var g = mapPoolDao.createCategoryGroup(uid, p.getId(), "e name", "# e info", 0x000, Optional.empty(), Optional.empty());
         var c = mapPoolDao.createCategory(uid, g.getId(), "eeeffff");
         var map0 = mapPoolDao.createCategoryItem(uid, c.getId(), 1155, "dsa");
         mapPoolDao.addUser(uid1, p.getId(), PoolPermission.CHOOSER);
@@ -82,9 +84,9 @@ class PoolDaoTest {
     void createALl() {
         var uid = 17064371L;
         var pool = mapPoolDao.createPool(uid, "testCreat", "banner", "info");
-        var group1 = mapPoolDao.createCategoryGroup(uid, pool.getId(), "testCreatGroup", "cf", 0);
-        var group2 = mapPoolDao.createCategoryGroup(uid, pool.getId(), "testCreatGroup x", "cf2", 0);
-        group2 = mapPoolService.updateCategoryGroup(uid, group2.getId(), "testCreatGroup 2", "cfx", 2, 6);
+        var group1 = mapPoolDao.createCategoryGroup(uid, pool.getId(), "testCreatGroup", "cf", 0, Optional.empty(), Optional.empty());
+        var group2 = mapPoolDao.createCategoryGroup(uid, pool.getId(), "testCreatGroup x", "cf2", 0, Optional.empty(), Optional.empty());
+        group2 = mapPoolService.updateCategoryGroup(uid, group2.getId(), "testCreatGroup 2", "cfx", 2, 6, Optional.empty(), Optional.empty());
 
         var c = mapPoolService.createCategory(uid, group1.getId(), "G1");
         var item = mapPoolService.createCategoryItem(uid, c.getId(), 16115, "ccc");

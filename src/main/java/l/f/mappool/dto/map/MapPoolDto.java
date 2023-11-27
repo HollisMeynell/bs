@@ -3,7 +3,9 @@ package l.f.mappool.dto.map;
 import l.f.mappool.dto.validator.mapPool.*;
 import lombok.Data;
 import org.hibernate.validator.constraints.Range;
-import javax.validation.constraints.*;
+
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 
 @Data
 public class MapPoolDto {
@@ -27,4 +29,7 @@ public class MapPoolDto {
     Integer color;
     @NotNull(message = "位序不能为空" , groups = {SetCategoryGroup.class})
     Integer sort;
+
+    Integer modOptional;
+    Integer modRequired;
 }

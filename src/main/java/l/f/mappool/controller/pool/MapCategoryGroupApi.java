@@ -13,6 +13,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Optional;
+
 @Controller
 public class MapCategoryGroupApi extends PoolApi {
     /**
@@ -30,14 +32,31 @@ public class MapCategoryGroupApi extends PoolApi {
     @PutMapping("categoryGroup")
     DataVo<PoolCategoryGroup> createCategoryGroup(@RequestBody @Validated(CreateCategoryGroup.class) MapPoolDto create) {
         var u = ContextUtil.getContextUser();
-        var group = mapPoolService.createCategoryGroup(u.getOsuId(), create.getPoolId(), create.getName(), create.getInfo(), create.getColor());
+        var group = mapPoolService.createCategoryGroup(
+                u.getOsuId(),
+                create.getPoolId(),
+                create.getName(),
+                create.getInfo(),
+                create.getColor(),
+                Optional.ofNullable(create.getModRequired()),
+                Optional.ofNullable(create.getModOptional())
+        );
         return new DataVo<>("创建成功", group);
     }
 
     @PatchMapping("categoryGroup")
     DataVo<PoolCategoryGroup> setCategoryGroup(@RequestBody @Validated(SetCategoryGroup.class) MapPoolDto group) {
         var u = ContextUtil.getContextUser();
-        var categoryGroup = mapPoolService.updateCategoryGroup(u.getOsuId(), group.getGroupId(), group.getName(), group.getInfo(), group.getColor(), group.getSort());
+        var categoryGroup = mapPoolService.updateCategoryGroup(
+                u.getOsuId(),
+                group.getGroupId(),
+                group.getName(),
+                group.getInfo(),
+                group.getColor(),
+                group.getSort(),
+                Optional.ofNullable(group.getModRequired()),
+                Optional.ofNullable(group.getModOptional())
+        );
         return new DataVo<>("修改成功", categoryGroup);
     }
 

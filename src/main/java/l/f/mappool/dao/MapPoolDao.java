@@ -308,13 +308,23 @@ public class MapPoolDao {
     /***
      *  创建分组 比如NM组
      */
-    public PoolCategoryGroup createCategoryGroup(long userId, int poolId, String name, String info, int color) {
+    public PoolCategoryGroup createCategoryGroup(
+            long userId,
+            int poolId,
+            String name,
+            String info,
+            int color,
+            Optional<Integer> modRequired,
+            Optional<Integer> modOptional
+    ) {
         var mg = new PoolCategoryGroup();
         mg.setPoolId(poolId);
         mg.setColor(color);
         mg.setName(name);
         mg.setInfo(info);
         mg.setSort(0);
+        modRequired.ifPresent(mg::setModsRequired);
+        modOptional.ifPresent(mg::setModsOptional);
         return categoryGroupRepository.save(mg);
     }
 

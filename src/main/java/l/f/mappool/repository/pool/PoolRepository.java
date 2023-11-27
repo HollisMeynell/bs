@@ -36,7 +36,7 @@ public interface PoolRepository extends JpaRepository<Pool, Integer> {
     @Query("select p from Pool p where (p.status=l.f.mappool.enums.PoolStatus.SHOW or p.id in (select distinct u.pool.id from PoolUser u where u.userId=:userId and u.pool.status != l.f.mappool.enums.PoolStatus.DELETE)) and p.name like %:name%")
     List<Pool> queryByName(String name, long userId, Pageable pageable);
 
-    @Query("select p from Pool p where p.id in (select m.pid from PoolMark4User m where m.uid=:uid)")
+    @Query("select p from Pool p where p.id in (select m.pid from PoolMark4User m where m.uid=:uid) and p.status != l.f.mappool.enums.PoolStatus.DELETE and p.status != l.f.mappool.enums.PoolStatus.SHOW")
     List<Pool> queryByUserMark(long uid);
 
     @Query("select count(p) from Pool p where p.status!=l.f.mappool.enums.PoolStatus.DELETE and p.name like :name")

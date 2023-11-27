@@ -22,16 +22,17 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @Slf4j
 public class MapPoolService {
     @Resource
-    MapPoolDao         mapPoolDao;
+    MapPoolDao mapPoolDao;
     @Resource
     PoolUserRepository poolUserRepository;
     @Resource
-    UserService        userService;
+    UserService userService;
 
     @Resource
     PoolMark4UserRepository poolMark4UserRepository;
@@ -94,6 +95,7 @@ public class MapPoolService {
             throw new HttpError(403, "图池仍有成员,请删掉所有其他成员.");
         }
         mapPoolDao.deletePool(userId, pool);
+        poolMark4UserRepository.deleteAllByPid(poolId);
     }
 
     public void removePool(long userId, int poolId) throws HttpError {
@@ -136,14 +138,31 @@ public class MapPoolService {
     /***
      * 创建一个分类组,比如 NM,HD 这种
      */
-    public PoolCategoryGroup createCategoryGroup(long uid, int poolId, String name, String info, int color) {
+    public PoolCategoryGroup createCategoryGroup(
+            long uid,
+            int poolId,
+            String name,
+            String info,
+            int color,
+            Optional<Integer> modRequired,
+            Optional<Integer> modOptional
+    ) {
         if (!mapPoolDao.isAdminByPool(poolId, uid)) {
             throw new PermissionException();
         }
-        return mapPoolDao.createCategoryGroup(uid, poolId, name, info, color);
+        return mapPoolDao.createCategoryGroup(uid, poolId, name, info, color, modRequired, modOptional);
     }
 
-    public PoolCategoryGroup updateCategoryGroup(long uid, int groupId, String name, String info, Integer color, Integer sort) {
+    public PoolCategoryGroup updateCategoryGroup(
+            long uid,
+            int groupId,
+            String name,
+            String info,
+            Integer color,
+            Integer sort,
+            Optional<Integer> modRequired,
+            Optional<Integer> modOptional
+    ) {
         if (!mapPoolDao.isAdminByGroup(groupId, uid)) {
             throw new PermissionException();
         }
@@ -166,6 +185,8 @@ public class MapPoolService {
         if (sort != null) {
             group.setSort(sort);
         }
+        modRequired.ifPresent(group::setModsRequired);
+        modOptional.ifPresent(group::setModsOptional);
 
         return mapPoolDao.saveMapCategoryGroup(group);
     }
