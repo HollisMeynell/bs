@@ -86,7 +86,7 @@ class PoolDaoTest {
         var pool = mapPoolDao.createPool(uid, "testCreat", "banner", "info");
         var group1 = mapPoolDao.createCategoryGroup(uid, pool.getId(), "testCreatGroup", "cf", 0, Optional.empty(), Optional.empty());
         var group2 = mapPoolDao.createCategoryGroup(uid, pool.getId(), "testCreatGroup x", "cf2", 0, Optional.empty(), Optional.empty());
-        group2 = mapPoolService.updateCategoryGroup(uid, group2.getId(), "testCreatGroup 2", "cfx", 2, 6, Optional.empty(), Optional.empty());
+        group2 = mapPoolService.updateCategoryGroup(uid, group2.getId(), "testCreatGroup 2", "cfx", Optional.of(2), Optional.of(6), Optional.empty(), Optional.empty());
 
         var c = mapPoolService.createCategory(uid, group1.getId(), "G1");
         var item = mapPoolService.createCategoryItem(uid, c.getId(), 16115, "ccc");

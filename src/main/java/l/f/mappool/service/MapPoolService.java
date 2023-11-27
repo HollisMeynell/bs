@@ -18,6 +18,7 @@ import l.f.mappool.vo.DataVo;
 import l.f.mappool.vo.PoolVo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -158,8 +159,8 @@ public class MapPoolService {
             int groupId,
             String name,
             String info,
-            Integer color,
-            Integer sort,
+            Optional<Integer> color,
+            Optional<Integer> sort,
             Optional<Integer> modRequired,
             Optional<Integer> modOptional
     ) {
@@ -173,18 +174,15 @@ public class MapPoolService {
         }
 
         var group = groupOpt.get();
-        if (name != null && !name.isBlank()) {
+        if (StringUtils.hasText(name)) {
             group.setName(name);
         }
-        if (info != null && !info.isBlank()) {
+        if (StringUtils.hasText(info)) {
             group.setInfo(info);
         }
-        if (color != null) {
-            group.setColor(color);
-        }
-        if (sort != null) {
-            group.setSort(sort);
-        }
+
+        color.ifPresent(group::setColor);
+        sort.ifPresent(group::setSort);
         modRequired.ifPresent(group::setModsRequired);
         modOptional.ifPresent(group::setModsOptional);
 

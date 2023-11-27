@@ -52,8 +52,8 @@ public class MapCategoryGroupApi extends PoolApi {
                 group.getGroupId(),
                 group.getName(),
                 group.getInfo(),
-                group.getColor(),
-                group.getSort(),
+                Optional.ofNullable(group.getColor()),
+                Optional.ofNullable(group.getSort()),
                 Optional.ofNullable(group.getModRequired()),
                 Optional.ofNullable(group.getModOptional())
         );
