@@ -1,7 +1,8 @@
 package l.f.mappool.entity.pool;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,7 +22,10 @@ public class PoolCategoryItem {
     Integer id;
 
     @ManyToOne()
-    @JsonIgnoreProperties({"items"})
+    @JsonIdentityInfo(
+            generator = ObjectIdGenerators.PropertyGenerator.class,
+            property = "id"
+    )
     @JoinColumn(name = "category_id")
     PoolCategory category;
 
@@ -41,7 +45,10 @@ public class PoolCategoryItem {
      */
     Long chous;
 
-    @JsonIgnoreProperties({"item"})
+    @JsonIdentityInfo(
+            generator = ObjectIdGenerators.PropertyGenerator.class,
+            property = "id"
+    )
     @OneToMany(mappedBy = "item", fetch = FetchType.EAGER)
     List<PoolFeedback> feedbacks;
 

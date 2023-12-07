@@ -1,6 +1,7 @@
 package l.f.mappool.entity.pool;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -22,7 +23,10 @@ public class PoolCategoryGroup {
 
     @ManyToOne()
     @JoinColumn(name = "pool_id")
-    @JsonIgnoreProperties(value = {"groups", "users"}, allowSetters = true)
+    @JsonIdentityInfo(
+            generator = ObjectIdGenerators.PropertyGenerator.class,
+            property = "id"
+    )
     Pool pool;
     @Column(name = "name", columnDefinition = "text")
     String name;
@@ -34,7 +38,10 @@ public class PoolCategoryGroup {
     @Column(name = "info", columnDefinition = "text")
     String info;
 
-    @JsonIgnoreProperties(value = {"group"}, allowSetters = true)
+    @JsonIdentityInfo(
+            generator = ObjectIdGenerators.PropertyGenerator.class,
+            property = "id"
+    )
     @OneToMany(mappedBy = "group", fetch = FetchType.EAGER)
     List<PoolCategory> categories;
     int sort = 0;

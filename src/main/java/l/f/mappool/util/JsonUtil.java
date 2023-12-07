@@ -3,6 +3,7 @@ package l.f.mappool.util;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.datatype.hibernate6.Hibernate6Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +14,10 @@ import java.util.List;
 @Slf4j
 @SuppressWarnings("unused")
 public class JsonUtil {
-    private static final ObjectMapper mapper = JsonMapper.builder().build().registerModules(new JavaTimeModule());
+    public static final ObjectMapper DEFAULT_MAPPER = JsonMapper.builder().build()
+            .registerModules(new Hibernate6Module())
+            .registerModules(new JavaTimeModule());
+
 
     public static <T>String objectToJsonPretty(T obj){
         if(obj == null){
@@ -24,7 +28,7 @@ public class JsonUtil {
                 return s;
             }
 
-            return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(obj);
+            return DEFAULT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(obj);
         } catch (Exception e) {
             log.warn("Parse Object to Json error",e);
             return "{error}";
@@ -39,7 +43,7 @@ public class JsonUtil {
                 return s;
             }
 
-            return  mapper.writeValueAsString(obj);
+            return DEFAULT_MAPPER.writeValueAsString(obj);
         } catch (Exception e) {
             log.warn("Parse Object to Json error",e);
             return "{error}";
@@ -49,7 +53,7 @@ public class JsonUtil {
     public static <T> T parseObject(String body, Class<T> clazz) {
         JsonNode node;
         try {
-            node = mapper.readTree(body);
+            node = DEFAULT_MAPPER.readTree(body);
             return parseObject(node, clazz);
         } catch (IOException e) {
             log.error(e.getMessage(), e);
@@ -59,13 +63,13 @@ public class JsonUtil {
 
     @SneakyThrows
     public static <T> T parseObject(JsonNode body, Class<T> clazz) {
-        return mapper.treeToValue(body, clazz);
+        return DEFAULT_MAPPER.treeToValue(body, clazz);
     }
 
     public static <T> List<T> parseObjectList(String body, Class<T> clazz) {
         JsonNode node;
         try {
-            node = mapper.readTree(body);
+            node = DEFAULT_MAPPER.readTree(body);
             return parseObjectList(node, clazz);
         } catch (IOException | RuntimeException e) {
             log.error(e.getMessage(), e);
@@ -77,9 +81,9 @@ public class JsonUtil {
         if (body == null || !body.isArray()) {
             throw new RuntimeException("不能为空或非数组");
         }
-        return mapper.convertValue(
+        return DEFAULT_MAPPER.convertValue(
                 body,
-                mapper.getTypeFactory().constructCollectionType(List.class, clazz)
+                DEFAULT_MAPPER.getTypeFactory().constructCollectionType(List.class, clazz)
         );
     }
 

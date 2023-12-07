@@ -1,9 +1,10 @@
 package l.f.mappool.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import l.f.mappool.util.JsonUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.http.codec.ServerCodecConfigurer;
@@ -29,6 +30,7 @@ import java.util.Collections;
 public class WebClientConfig implements WebFluxConfigurer {
 
     @Bean("osuApiWebClient")
+    @Primary
     public WebClient OsuApiWebClient(WebClient.Builder builder) {
         /*
          * Setting maxIdleTime as 30s, because servers usually have a keepAliveTimeout of 60s, after which the connection gets closed.
@@ -50,8 +52,8 @@ public class WebClientConfig implements WebFluxConfigurer {
         ExchangeStrategies strategies = ExchangeStrategies
                 .builder()
                 .codecs(clientDefaultCodecsConfigurer -> {
-                    clientDefaultCodecsConfigurer.defaultCodecs().jackson2JsonEncoder(new Jackson2JsonEncoder(new ObjectMapper(), MediaType.APPLICATION_JSON));
-                    clientDefaultCodecsConfigurer.defaultCodecs().jackson2JsonDecoder(new Jackson2JsonDecoder(new ObjectMapper(), MediaType.APPLICATION_JSON));
+                    clientDefaultCodecsConfigurer.defaultCodecs().jackson2JsonEncoder(new Jackson2JsonEncoder(JsonUtil.DEFAULT_MAPPER, MediaType.APPLICATION_JSON));
+                    clientDefaultCodecsConfigurer.defaultCodecs().jackson2JsonDecoder(new Jackson2JsonDecoder(JsonUtil.DEFAULT_MAPPER, MediaType.APPLICATION_JSON));
                 }).build();
 
         return builder
