@@ -23,7 +23,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -217,7 +217,7 @@ public class OsuApiService {
 
     public List<JsonNode> getAllUser(Collection<? extends Number> usersId) {
         return webClient.get()
-                .uri(b -> b.path("/users").queryParam("ids[]", usersId).build())
+                .uri(b -> b.pathSegment("users").queryParam("ids[]", usersId).build())
                 .headers(this::insertHeader)
                 .retrieve()
                 .bodyToMono(JsonNode.class)
@@ -243,15 +243,14 @@ public class OsuApiService {
     }
 
 
-    public JsonNode getMatchesInfo(long mid, Long before) {
+    public JsonNode getMatchesInfo(long mid, Optional<Long> before, Optional<Long> after, int limit) {
         return webClient.get()
-                .uri(p -> {
-                    var builder = p.pathSegment("matches", "{mid}");
-                    if (Objects.nonNull(before)) {
-                        builder.queryParam("before", before).queryParam("limit", 100);
-                    }
-                    return builder.build(mid);
-                })
+                .uri(p -> p
+                        .pathSegment("matches", "{mid}")
+                        .queryParam("limit", limit)
+                        .queryParamIfPresent("before", before)
+                        .queryParamIfPresent("after", after)
+                        .build(mid))
                 .headers(this::insertHeader)
                 .retrieve()
                 .bodyToMono(JsonNode.class)

@@ -76,7 +76,7 @@ public class BeatMap {
 
     @ManyToOne()
     @JsonProperty("beatmapset")
-    @JsonIgnoreProperties({"beatmaps"})
+    @JsonIgnoreProperties(value = {"beatmaps"}, allowSetters = true)
     @JoinColumn(name = "beatmapset_id")
     BeatMapSet beatMapSet;
 

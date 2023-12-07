@@ -23,7 +23,7 @@ public class PoolUser {
 
     @ManyToOne
     @JoinColumn(name = "pool_id")
-    @JsonIgnoreProperties("users")
+    @JsonIgnoreProperties(value = "users", allowSetters = true)
     Pool pool;
 
     /**

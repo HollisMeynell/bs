@@ -25,7 +25,7 @@ public class PoolCategory {
 
     @ManyToOne()
     @JoinColumn(name = "group_id")
-    @JsonIgnoreProperties({"categories"})
+    @JsonIgnoreProperties(value = {"categories"}, allowSetters = true)
     PoolCategoryGroup group;
 
     @Column(name = "name", columnDefinition = "text")
@@ -39,7 +39,7 @@ public class PoolCategory {
     /**
      * 防止加载到评论, 评论需要单独加载, 用于排除隐藏评论
      */
-    @JsonIgnoreProperties({"category", "feedbacks"})
+    @JsonIgnoreProperties(value = {"category", "feedbacks"}, allowSetters = true)
     @OneToMany(mappedBy = "category", fetch = FetchType.EAGER)
     List<PoolCategoryItem> items;
 

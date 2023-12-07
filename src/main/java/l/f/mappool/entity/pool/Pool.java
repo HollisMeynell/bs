@@ -1,8 +1,9 @@
 package l.f.mappool.entity.pool;
 
-import com.fasterxml.jackson.annotation.*;
-import l.f.mappool.enums.PoolStatus;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import l.f.mappool.enums.PoolStatus;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -31,6 +32,8 @@ public class Pool {
 
     @Column(name = "name", columnDefinition = "text")
     String name;
+
+    Integer mode = 0;
     /*
         @Type(IntArrayType.class)
         @Column(name = "category", columnDefinition = "integer[]")
@@ -43,12 +46,12 @@ public class Pool {
     @Enumerated(EnumType.STRING)
     PoolStatus status = PoolStatus.OPEN;
 
-    @JsonIgnoreProperties({"pool"})
+    @JsonIgnoreProperties(value = {"pool"}, allowSetters = true)
     @ToString.Exclude
     @OneToMany(mappedBy = "pool", fetch = FetchType.EAGER)
     List<PoolUser> users;
 
-    @JsonIgnoreProperties({"pool"})
+    @JsonIgnoreProperties(value = {"pool"}, allowSetters = true)
     @ToString.Exclude
     @OneToMany(mappedBy = "pool", fetch = FetchType.EAGER)
     List<PoolCategoryGroup> groups;

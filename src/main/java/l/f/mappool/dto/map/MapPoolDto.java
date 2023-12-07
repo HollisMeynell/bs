@@ -29,7 +29,9 @@ public class MapPoolDto {
     Integer color;
     @NotNull(message = "位序不能为空" , groups = {SetCategoryGroup.class})
     Integer sort;
-
+    @NotEmpty(message = "模式不能为空", groups = {CreatePool.class, SetPool.class})
+    @Range(min = 0, max = 4, message = "mode 只允许输入 0-3")
+    Integer mode;
     Integer modOptional;
     Integer modRequired;
 }

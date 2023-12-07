@@ -65,7 +65,11 @@ public class MapPoolApi extends PoolApi {
     @PutMapping("pool")
     DataVo<Pool> createPool(@RequestBody @Validated(CreatePool.class) MapPoolDto create) {
         var u = ContextUtil.getContextUser();
-        var pool = mapPoolService.createMapPool(u.getOsuId(), create.getName(), create.getBanner(), create.getInfo());
+        var pool = mapPoolService.createMapPool(u.getOsuId(),
+                create.getName(),
+                create.getBanner(),
+                create.getInfo(),
+                create.getMode());
         return new DataVo<>("创建成功", pool);
     }
 
@@ -76,7 +80,12 @@ public class MapPoolApi extends PoolApi {
     @PatchMapping("pool")
     DataVo<Pool> setPool(@RequestBody @Validated(SetPool.class) MapPoolDto poolDto) {
         var u = ContextUtil.getContextUser();
-        var pool = mapPoolService.updateMapPool(u.getOsuId(), poolDto.getPoolId(), poolDto.getName(), poolDto.getBanner(), poolDto.getInfo());
+        var pool = mapPoolService.updateMapPool(u.getOsuId(),
+                poolDto.getPoolId(),
+                poolDto.getName(),
+                poolDto.getBanner(),
+                poolDto.getInfo(),
+                poolDto.getMode());
         return new DataVo<>("创建成功", pool);
     }
 

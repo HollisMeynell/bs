@@ -11,6 +11,8 @@ public class CategoryGroupVo {
     String name;
     String info;
     Integer color;
+    Integer modsOptional;
+    Integer modsRequired;
     List<Category> category;
 
     public record Category(String name, Long bid, Long creater){}
@@ -18,6 +20,8 @@ public class CategoryGroupVo {
         name = m.getName();
         info = m.getInfo();
         color = m.getColor();
+        modsOptional = m.getModsOptional();
+        modsRequired = m.getModsRequired();
 
         category = m.getCategories()
                 .stream()
@@ -26,7 +30,7 @@ public class CategoryGroupVo {
                         .filter(i -> i.getChous().equals(c.getChosed()))
                         .map(PoolCategoryItem::getCreaterId)
                         .findAny()
-                        .get())
+                        .orElse(0L))
                 )
                 .toList();
     }

@@ -22,7 +22,7 @@ public class PoolCategoryGroup {
 
     @ManyToOne()
     @JoinColumn(name = "pool_id")
-    @JsonIgnoreProperties({"groups", "users"})
+    @JsonIgnoreProperties(value = {"groups", "users"}, allowSetters = true)
     Pool pool;
     @Column(name = "name", columnDefinition = "text")
     String name;
@@ -34,7 +34,7 @@ public class PoolCategoryGroup {
     @Column(name = "info", columnDefinition = "text")
     String info;
 
-    @JsonIgnoreProperties({"group"})
+    @JsonIgnoreProperties(value = {"group"}, allowSetters = true)
     @OneToMany(mappedBy = "group", fetch = FetchType.EAGER)
     List<PoolCategory> categories;
     int sort = 0;

@@ -8,6 +8,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.util.List;
+import java.util.Optional;
 
 @SpringBootTest
 @Slf4j
@@ -44,7 +45,10 @@ class OsuApiServiceTest {
 
     @Test
     void getMatchesInfo() {
-        var m = osuApiService.getMatchesInfo(111203621L, null);
+        var m = osuApiService.getMatchesInfo(111203621L,
+                Optional.empty(),
+                Optional.empty(),
+                100);
         log.info(JsonUtil.objectToJsonPretty(m));
     }
 }

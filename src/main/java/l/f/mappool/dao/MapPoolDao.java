@@ -58,11 +58,12 @@ public class MapPoolDao {
      * 创建
      * @return 新 MapPool
      */
-    public Pool createPool(long userId, String poolName, String banner, String info) {
+    public Pool createPool(long userId, String poolName, String banner, String info, int mode) {
         var map = new Pool();
         map.setName(poolName);
         map.setInfo(info);
         map.setBanner(banner);
+        map.setMode(mode);
         if (poolRepository.hasPool(poolName) == 0) {
             map = poolRepository.save(map);
             addUser(userId, map.getId(), PoolPermission.CREATE);

@@ -1,11 +1,9 @@
 package l.f.mappool.util;
 
-import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import l.f.mappool.config.interceptor.Open;
 import l.f.mappool.entity.LoginUser;
-import l.f.mappool.exception.HttpTipException;
 import l.f.mappool.exception.PermissionException;
 import l.f.mappool.service.UserService;
 import lombok.extern.slf4j.Slf4j;

@@ -9,6 +9,7 @@ import l.f.mappool.properties.BeatmapSelectionProperties;
 import l.f.mappool.repository.file.FileLogRepository;
 import l.f.mappool.repository.file.OsuFileLogRepository;
 import l.f.mappool.util.AsyncMethodExecutor;
+import l.f.mappool.util.JsonUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -362,6 +363,8 @@ public class FileService {
 
     private boolean doDownload(long sid) throws IOException {
         BeatMapSet mapSet = osuApiService.getMapsetInfo(sid);
+        log.info("------------------info------------------");
+        log.info(JsonUtil.objectToJsonPretty(mapSet));
         Path tmp;
         // 对应 ranked / loved
         boolean isArchive = mapSet.getStatus() == 1 || mapSet.getStatus() == 4;

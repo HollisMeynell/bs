@@ -29,9 +29,9 @@ class PoolDaoTest {
     void testCreatePoolAndGetPool() {
         long u1 = 114514;
         long u2 = 1919810;
-        var p1 = mapPoolDao.createPool(u1, "u1", "xxxx", "xxx");
+        var p1 = mapPoolDao.createPool(u1, "u1", "xxxx", "xxx", 0);
         mapPoolDao.addAdminUser(u1, u2, p1.getId());
-        var p2 = mapPoolDao.createPool(u2, "u2", "xxxx", "xxx");
+        var p2 = mapPoolDao.createPool(u2, "u2", "xxxx", "xxx", 0);
         var l = mapPoolDao.getAllPool(u2);
         log.info(String.valueOf(l.size()));
         log.info("ok");
@@ -83,7 +83,7 @@ class PoolDaoTest {
     @Test
     void createALl() {
         var uid = 17064371L;
-        var pool = mapPoolDao.createPool(uid, "testCreat", "banner", "info");
+        var pool = mapPoolDao.createPool(uid, "testCreat", "banner", "info", 0);
         var group1 = mapPoolDao.createCategoryGroup(uid, pool.getId(), "testCreatGroup", "cf", 0, Optional.empty(), Optional.empty());
         var group2 = mapPoolDao.createCategoryGroup(uid, pool.getId(), "testCreatGroup x", "cf2", 0, Optional.empty(), Optional.empty());
         group2 = mapPoolService.updateCategoryGroup(uid, group2.getId(), "testCreatGroup 2", "cfx", Optional.of(2), Optional.of(6), Optional.empty(), Optional.empty());

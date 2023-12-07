@@ -57,7 +57,7 @@ public class BeatMapSet {
     String titleUTF8;
 
     @JsonProperty("beatmaps")
-    @JsonIgnoreProperties({"beatmapset"})
+    @JsonIgnoreProperties(value = {"beatmapset"}, allowSetters = true)
     @OneToMany(mappedBy = "beatMapSet",cascade = {CascadeType.REFRESH}, orphanRemoval = true)
     List<BeatMap> beatMaps;
 }

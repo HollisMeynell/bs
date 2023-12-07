@@ -48,15 +48,15 @@ public class MapPoolService {
         return count > user.getMaxPoolSize();
     }
 
-    public Pool createMapPool(long userId, String name, String banner, String info) {
+    public Pool createMapPool(long userId, String name, String banner, String info, int mode) {
         var user = userService.getOsuUser(userId);
         if (this.isMax(user)) {
             throw new RuntimeException("to many");
         }
-        return mapPoolDao.createPool(user.getOsuId(), name, banner, info);
+        return mapPoolDao.createPool(user.getOsuId(), name, banner, info, mode);
     }
 
-    public Pool updateMapPool(long userId, int poolId, String name, String banner, String info) {
+    public Pool updateMapPool(long userId, int poolId, String name, String banner, String info, int mode) {
         if (!mapPoolDao.isAdminByPool(poolId, userId)) {
             throw new PermissionException();
         }
@@ -67,13 +67,14 @@ public class MapPoolService {
         }
 
         var pool = poolOpt.get();
-        if (name != null && !name.isBlank()) {
+        pool.setMode(mode);
+        if (StringUtils.hasText(name)) {
             pool.setName(name);
         }
-        if (banner != null && !banner.isBlank()) {
+        if (StringUtils.hasText(banner)) {
             pool.setBanner(banner);
         }
-        if (info != null && !info.isBlank()) {
+        if (StringUtils.hasText(info)) {
             pool.setInfo(info);
         }
 
