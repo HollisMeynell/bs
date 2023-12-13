@@ -1,6 +1,7 @@
 package l.f.mappool.service;
 
 import jakarta.annotation.Resource;
+import jakarta.transaction.Transactional;
 import l.f.mappool.dao.MapPoolDao;
 import l.f.mappool.dto.map.QueryMapPoolDto;
 import l.f.mappool.entity.osu.OsuOauthUser;
@@ -26,8 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-@Service
 @Slf4j
+@Service
 public class MapPoolService {
     @Resource
     MapPoolDao mapPoolDao;
@@ -423,6 +424,7 @@ public class MapPoolService {
         return new PoolVo(newPool);
     }
 
+    @Transactional
     public void deletePoolAdmin(int poolId) {
         poolMark4UserRepository.deleteAllByPid(poolId);
         mapPoolDao

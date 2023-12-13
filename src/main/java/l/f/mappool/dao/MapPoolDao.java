@@ -87,8 +87,15 @@ public class MapPoolDao {
         return poolRepository.getByIdNotDelete(id);
     }
 
-    public Page<Pool> getPublicPool(Pageable pageable) {
-        return poolRepository.getAllOpenPool(pageable);
+    public Page<Pool> getPublicPool(Pageable pageable, Optional<String> name) {
+        if (name.isEmpty()) {
+            return poolRepository.getAllOpenPool(pageable);
+        }
+        return name.map(n -> poolRepository.queryByName(n, pageable)).orElseGet(Page::empty);
+    }
+
+    public Optional<Pool> getPublicPool(int id) {
+        return poolRepository.getOpenById(id);
     }
 
     /***

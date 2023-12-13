@@ -12,6 +12,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -31,11 +32,19 @@ public class PoolVo extends Pool {
     List<CategoryGroupVo> categoryList;
     List<BeatMap> mapinfo;
 
-    public void parseMapInfo(OsuApiService apiService) {
+    public PoolVo parseMapInfo(OsuApiService apiService) {
         mapinfo = categoryList.stream()
                 .flatMap(c -> c.getCategory().stream())
                 .map(CategoryGroupVo.Category::bid)
-                .map(apiService::getMapInfoByDB)
+                .map(bid -> {
+                    try {
+                        return apiService.getMapInfoByDB(bid);
+                    } catch (Exception e) {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
                 .toList();
+        return this;
     }
 }

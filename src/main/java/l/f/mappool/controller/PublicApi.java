@@ -6,13 +6,14 @@ import l.f.mappool.config.interceptor.Open;
 import l.f.mappool.dao.MapPoolDao;
 import l.f.mappool.dto.ProxyDto;
 import l.f.mappool.dto.map.QueryMapPoolDto;
-import l.f.mappool.entity.pool.Pool;
 import l.f.mappool.entity.pool.PoolFeedback;
 import l.f.mappool.exception.HttpError;
+import l.f.mappool.exception.NotFoundException;
 import l.f.mappool.service.MapPoolService;
 import l.f.mappool.service.OsuApiService;
 import l.f.mappool.vo.DataListVo;
 import l.f.mappool.vo.DataVo;
+import l.f.mappool.vo.PoolVo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpMethod;
@@ -23,6 +24,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.validation.constraints.NotNull;
+import java.util.Objects;
+import java.util.Optional;
 
 @Open
 @Slf4j
@@ -45,10 +48,19 @@ public class PublicApi {
      * 获取公开图池
      */
     @GetMapping("getAllPool")
-    DataListVo<Pool> getAllPool(QueryMapPoolDto query) {
+    Object getAllPool(QueryMapPoolDto query) {
+        if (Objects.nonNull(query.getPoolId())) {
+            var p = mapPoolDao.getPublicPool(query.getPoolId());
+            return p.map(DataVo::new).orElseThrow(NotFoundException::new);
+        }
         var p = PageRequest.of(query.getPageNum() - 1, query.getPageSize());
-        var data = mapPoolDao.getPublicPool(p);
-        return new DataListVo<Pool>().setData(data.getContent())
+        var data = mapPoolDao.getPublicPool(
+                p,
+                Optional.ofNullable(query.getPoolName())
+        );
+        return new DataListVo<PoolVo>().setData(data
+                        .map(pool -> new PoolVo(pool).parseMapInfo(osuService))
+                        .getContent())
                 .setCurrentPage(data.getNumber())
                 .setPageSize(data.getSize())
                 .setTotalPages(data.getTotalPages())

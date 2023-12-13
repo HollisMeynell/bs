@@ -23,6 +23,12 @@ public interface PoolRepository extends JpaRepository<Pool, Integer> {
     @Query("select p from Pool p where p.status = l.f.mappool.enums.PoolStatus.SHOW")
     List<Pool> getAllOpenPool();
 
+    @Query("select p from Pool p where p.status = l.f.mappool.enums.PoolStatus.SHOW and p.name like %:name%")
+    Page<Pool> queryByName(String name, Pageable pageable);
+
+    @Query("select p from Pool p where p.id=:id and p.status = l.f.mappool.enums.PoolStatus.SHOW")
+    Optional<Pool> getOpenById(int id);
+
     @Transactional
     @Query("select p from Pool p where p.status = l.f.mappool.enums.PoolStatus.SHOW")
     Page<Pool> getAllOpenPool(Pageable pageable);
