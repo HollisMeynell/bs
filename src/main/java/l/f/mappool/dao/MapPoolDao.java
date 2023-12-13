@@ -230,20 +230,15 @@ public class MapPoolDao {
         poolUserRepository.delete(u.get());
     }
 
-    private boolean testBef(Optional<PoolPermission> permission, PoolPermission... poolPermissions) {
-        if (permission.isEmpty()) {
-            return false;
-        }
-        if (poolPermissions.length == PoolPermission.values().length) {
-            return true;
-        }
-        var user = permission.get();
-        for (var p : poolPermissions) {
-            if (p.equals(user)) {
-                return true;
-            }
-        }
-        return false;
+    /**
+     * 查询权限 pool
+     *
+     * @param poolPermissions 包含
+     * @return yes or no
+     */
+    public boolean isNotPermissionByPool(int poolId, long userId, PoolPermission... poolPermissions) {
+        var permission = poolUserRepository.getMapPoolUserPermission(poolId, userId);
+        return isNotBef(permission, poolPermissions);
     }
 
     public void deleteMapCategoryGroup(PoolCategoryGroup group) {
@@ -272,19 +267,30 @@ public class MapPoolDao {
     }
 
     /**
-     * 查询权限 pool
+     * 反转方法
      *
-     * @param poolPermissions 包含
-     * @return yes or no
+     * @param permission      权限
+     * @param poolPermissions 检测是否包含
+     * @return true则为不符合权限, false则是符合权限
      */
-    public boolean isNotPermissionByPool(int poolId, long userId, PoolPermission... poolPermissions) {
-        var permission = poolUserRepository.getMapPoolUserPermission(poolId, userId);
-        return ! testBef(permission, poolPermissions);
+    private boolean isNotBef(Optional<PoolPermission> permission, PoolPermission... poolPermissions) {
+        if (permission.isEmpty()) {
+            return true;
+        }
+        if (poolPermissions.length == PoolPermission.values().length) {
+            return false;
+        }
+        var user = permission.get();
+        for (var p : poolPermissions) {
+            if (p.equals(user)) {
+                return false;
+            }
+        }
+        return true;
     }
 
-    public boolean testPermissionByCategoryGroup(int groupId, long userId, PoolPermission... poolPermissions) {
-        var permission = poolUserRepository.getMapPoolUserPermissionByGroupIdAndUserId(groupId, userId);
-        return testBef(permission, poolPermissions);
+    public boolean notCreaterByGroup(int groupId, long userId) {
+        return isNotPermissionByCategoryGroup(groupId, userId, PoolPermission.CREATE);
     }
 
     public boolean notChooserByPool(int poolId, long userId) {
@@ -295,17 +301,18 @@ public class MapPoolDao {
         return isNotPermissionByPool(poolId, userId, PoolPermission.values());
     }
 
-    public boolean notCreaterByGroup(int groupId, long userId) {
-        return ! testPermissionByCategoryGroup(groupId, userId, PoolPermission.CREATE);
+    public boolean isNotPermissionByCategoryGroup(int groupId, long userId, PoolPermission... poolPermissions) {
+        var permission = poolUserRepository.getMapPoolUserPermissionByGroupIdAndUserId(groupId, userId);
+        return isNotBef(permission, poolPermissions);
     }
 
     public boolean notChooserByGroup(int groupId, long userId) {
-        return ! testPermissionByCategoryGroup(groupId, userId, PoolPermission.CREATE, PoolPermission.ADMIN, PoolPermission.CHOOSER);
+        return isNotPermissionByCategoryGroup(groupId, userId, PoolPermission.CREATE, PoolPermission.ADMIN, PoolPermission.CHOOSER);
     }
 
     public boolean notChooserByCategory(int categoryId, long userId) {
         var permission = poolUserRepository.getMapPoolUserPermission(categoryId, userId);
-        return ! testBef(permission, PoolPermission.CREATE, PoolPermission.ADMIN, PoolPermission.CHOOSER);
+        return isNotBef(permission, PoolPermission.CREATE, PoolPermission.ADMIN, PoolPermission.CHOOSER);
     }
 
     public PoolUser addUser(long addUserId, int poolId, PoolPermission permission) {
@@ -425,7 +432,7 @@ public class MapPoolDao {
     }
 
     public boolean notAdminByGroup(int groupId, long userId) {
-        return ! testPermissionByCategoryGroup(groupId, userId, PoolPermission.CREATE, PoolPermission.ADMIN);
+        return isNotPermissionByCategoryGroup(groupId, userId, PoolPermission.CREATE, PoolPermission.ADMIN);
     }
 
     public PoolFeedback createFeedback(long userId, int categoryItemId, @Nullable Boolean agree, String msg) {
@@ -446,7 +453,7 @@ public class MapPoolDao {
     }
 
     public boolean notUserByGroup(int groupId, long userId) {
-        return ! testPermissionByCategoryGroup(groupId, userId, PoolPermission.values());
+        return isNotPermissionByCategoryGroup(groupId, userId, PoolPermission.values());
     }
 
     public Optional<PoolCategoryItem> getMapCategoryItemById(int itemId) {
