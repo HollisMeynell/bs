@@ -1,7 +1,8 @@
 package l.f.mappool.entity.pool;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -26,8 +27,11 @@ public class PoolFeedback {
     Long createrId;
 
     @ManyToOne()
-    @JsonIgnore
     @JoinColumn(name = "category_item_id")
+    @JsonIdentityInfo(
+            generator = ObjectIdGenerators.PropertyGenerator.class,
+            property = "id"
+    )
     PoolCategoryItem item;
 
     @Column(name = "deleted", columnDefinition = "boolean default false")

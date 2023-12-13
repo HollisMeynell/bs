@@ -160,8 +160,8 @@ public class MapPoolApi extends PoolApi {
     }
 
     @GetMapping("export")
-    Object exportPool(@RequestParam int poolId) {
-
-        return new String("a");
+    Object exportPool(@RequestParam int poolId) throws HttpError {
+        var u = ContextUtil.getContextUser();
+        return mapPoolService.exportPool(u.getOsuId(), poolId);
     }
 }

@@ -1,5 +1,6 @@
 package l.f.mappool.util;
 
+import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -14,7 +15,28 @@ import java.util.List;
 @Slf4j
 @SuppressWarnings("unused")
 public class JsonUtil {
-    public static final ObjectMapper DEFAULT_MAPPER = JsonMapper.builder().build()
+    public static final ObjectMapper DEFAULT_MAPPER = JsonMapper.builder()
+            // 空 val 不报错
+            .enable(JsonReadFeature.ALLOW_MISSING_VALUES)
+            // 允许 key 是任意字符
+            .enable(JsonReadFeature.ALLOW_UNQUOTED_FIELD_NAMES)
+            // 支持尾随逗号
+            .enable(JsonReadFeature.ALLOW_TRAILING_COMMA)
+            // 支持单引号
+            .enable(JsonReadFeature.ALLOW_SINGLE_QUOTES)
+            // 支持字符串转义以及多行处理
+            .enable(JsonReadFeature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER)
+            // 数字支持 无穷大, NaN
+            .enable(JsonReadFeature.ALLOW_NON_NUMERIC_NUMBERS)
+            // 允许注释
+            .enable(JsonReadFeature.ALLOW_JAVA_COMMENTS)
+            // 允许数字小数点在两端
+            .enable(JsonReadFeature.ALLOW_LEADING_DECIMAL_POINT_FOR_NUMBERS)
+            .enable(JsonReadFeature.ALLOW_TRAILING_DECIMAL_POINT_FOR_NUMBERS)
+            // 允许数字前置加号
+            .enable(JsonReadFeature.ALLOW_LEADING_PLUS_SIGN_FOR_NUMBERS)
+
+            .build()
             .registerModules(new Hibernate6Module())
             .registerModules(new JavaTimeModule());
 

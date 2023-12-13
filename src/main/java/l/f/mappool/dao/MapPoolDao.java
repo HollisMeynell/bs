@@ -15,6 +15,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -155,6 +156,16 @@ public class MapPoolDao {
         poolRepository.save(pool);
     }
 
+    public void removePoolForce(Pool pool) {
+        if (! CollectionUtils.isEmpty(pool.getGroups())) {
+            pool.getGroups().forEach(this::deleteMapCategoryGroup);
+        }
+        if (! CollectionUtils.isEmpty(pool.getUsers())) {
+            poolUserRepository.deleteByPool(pool);
+        }
+        poolRepository.delete(pool);
+    }
+
     public PoolVo exportPool(Pool pool) throws HttpError {
         for (var group : pool.getGroups()) {
             for (var category : group.getCategories()) {
@@ -235,32 +246,40 @@ public class MapPoolDao {
         return false;
     }
 
+    public void deleteMapCategoryGroup(PoolCategoryGroup group) {
+        if (! CollectionUtils.isEmpty(group.getCategories())) {
+            group.getCategories().forEach(this::deleteCategory);
+        }
+        categoryGroupRepository.delete(group);
+    }
+
+    public void deleteCategory(PoolCategory category) {
+        if (! CollectionUtils.isEmpty(category.getItems())) {
+            category.getItems().forEach(this::deleteCategoryItem);
+        }
+        categoryRepository.delete(category);
+    }
+
+    public void deleteCategoryItem(PoolCategoryItem item) {
+        if (! CollectionUtils.isEmpty(item.getFeedbacks())) {
+            feedbackRepository.deleteAllByPoolCategoryItemId(item.getId());
+        }
+        categoryItemRepository.delete(item);
+    }
+
+    public boolean notCreaterByPool(int poolId, long userId) {
+        return isNotPermissionByPool(poolId, userId, PoolPermission.CREATE);
+    }
+
     /**
      * 查询权限 pool
      *
      * @param poolPermissions 包含
      * @return yes or no
      */
-    public boolean testPermissionByPool(int poolId, long userId, PoolPermission... poolPermissions) {
+    public boolean isNotPermissionByPool(int poolId, long userId, PoolPermission... poolPermissions) {
         var permission = poolUserRepository.getMapPoolUserPermission(poolId, userId);
-        return testBef(permission, poolPermissions);
-    }
-
-
-    public boolean isCreaterByPool(int poolId, long userId) {
-        return testPermissionByPool(poolId, userId, PoolPermission.CREATE);
-    }
-
-    public boolean isAdminByPool(int poolId, long userId) {
-        return testPermissionByPool(poolId, userId, PoolPermission.CREATE, PoolPermission.ADMIN);
-    }
-
-    public boolean isChooserByPool(int poolId, long userId) {
-        return testPermissionByPool(poolId, userId, PoolPermission.CREATE, PoolPermission.ADMIN, PoolPermission.CHOOSER);
-    }
-
-    public boolean isUserByPool(int poolId, long userId) {
-        return testPermissionByPool(poolId, userId, PoolPermission.values());
+        return ! testBef(permission, poolPermissions);
     }
 
     public boolean testPermissionByCategoryGroup(int groupId, long userId, PoolPermission... poolPermissions) {
@@ -268,25 +287,25 @@ public class MapPoolDao {
         return testBef(permission, poolPermissions);
     }
 
-    public boolean isCreaterByGroup(int groupId, long userId) {
-        return testPermissionByCategoryGroup(groupId, userId, PoolPermission.CREATE);
+    public boolean notChooserByPool(int poolId, long userId) {
+        return isNotPermissionByPool(poolId, userId, PoolPermission.CREATE, PoolPermission.ADMIN, PoolPermission.CHOOSER);
     }
 
-    public boolean isAdminByGroup(int groupId, long userId) {
-        return testPermissionByCategoryGroup(groupId, userId, PoolPermission.CREATE, PoolPermission.ADMIN);
+    public boolean notUserByPool(int poolId, long userId) {
+        return isNotPermissionByPool(poolId, userId, PoolPermission.values());
     }
 
-    public boolean isChooserByGroup(int groupId, long userId) {
-        return testPermissionByCategoryGroup(groupId, userId, PoolPermission.CREATE, PoolPermission.ADMIN, PoolPermission.CHOOSER);
+    public boolean notCreaterByGroup(int groupId, long userId) {
+        return ! testPermissionByCategoryGroup(groupId, userId, PoolPermission.CREATE);
     }
 
-    public boolean isChooserByCategory(int categoryId, long userId) {
+    public boolean notChooserByGroup(int groupId, long userId) {
+        return ! testPermissionByCategoryGroup(groupId, userId, PoolPermission.CREATE, PoolPermission.ADMIN, PoolPermission.CHOOSER);
+    }
+
+    public boolean notChooserByCategory(int categoryId, long userId) {
         var permission = poolUserRepository.getMapPoolUserPermission(categoryId, userId);
-        return testBef(permission, PoolPermission.CREATE, PoolPermission.ADMIN, PoolPermission.CHOOSER);
-    }
-
-    public boolean isUserByGroup(int groupId, long userId) {
-        return testPermissionByCategoryGroup(groupId, userId, PoolPermission.values());
+        return ! testBef(permission, PoolPermission.CREATE, PoolPermission.ADMIN, PoolPermission.CHOOSER);
     }
 
     public PoolUser addUser(long addUserId, int poolId, PoolPermission permission) {
@@ -341,8 +360,13 @@ public class MapPoolDao {
         return categoryRepository.getAllCategory(poolId);
     }
 
-    public void deleteMapCategoryGroup(PoolCategoryGroup group) {
-        categoryGroupRepository.delete(group);
+    public PoolCategoryItem updateCategoryItem(PoolCategoryItem item, long bid, String info, int sort) {
+
+        item.setChous(bid);
+        item.setSort(sort);
+        item.setInfo(info);
+
+        return categoryItemRepository.save(item);
     }
 
     /* ************************************************* Category **************************************************************** */
@@ -363,25 +387,12 @@ public class MapPoolDao {
         return categoryRepository.saveAndFlush(category);
     }
 
-    public void deleteCategory(PoolCategory category) {
-        for (var item : category.getItems()) {
-            deleteCategoryItem(item);
-        }
-        categoryRepository.delete(category);
-    }
-
-    public Optional<PoolCategory> getMapCategoryById(int categoryId) {
-        return categoryRepository.findById(categoryId);
-    }
-
-    /* ************************************************* Item **************************************************************** */
-
     /***
      * 加一张图
      * @return 包含推荐人id, bid, 描述信息的结构
      */
-    public PoolCategoryItem createCategoryItem(long userId, int itemId, long bid, String info) {
-        var categoryOpt = categoryRepository.findById(itemId);
+    public PoolCategoryItem createCategoryItem(long userId, int categoryId, long bid, String info) {
+        var categoryOpt = categoryRepository.findById(categoryId);
         if (categoryOpt.isEmpty()) {
             throw new NotFoundException();
         }
@@ -391,36 +402,51 @@ public class MapPoolDao {
         categoryItem.setInfo(info);
         categoryItem.setChous(bid);
         categoryItem.setCreaterId(userId);
-        categoryItem.setCategoryId(itemId);
+        categoryItem.setCategoryId(categoryId);
         return categoryItemRepository.save(categoryItem);
     }
 
-    public PoolCategoryItem updateCategoryItem(PoolCategoryItem item, long bid, String info, int sort) {
-
-        item.setChous(bid);
-        item.setSort(sort);
-        item.setInfo(info);
-
-        return categoryItemRepository.save(item);
+    public Optional<PoolCategory> getMapCategoryById(int categoryId) {
+        return categoryRepository.findById(categoryId);
     }
 
-    public void deleteCategoryItem(PoolCategoryItem item) {
-        if (item.getFeedbacks().size() != 0) {
-            feedbackRepository.deleteAll(item.getFeedbacks());
-        }
-        categoryItemRepository.delete(item);
-    }
+    /* ************************************************* Item **************************************************************** */
 
     public PoolCategoryItem checkItem(long userId, int itemId) {
         var categoryItemOpt = categoryItemRepository.findById(itemId);
         if (categoryItemOpt.isEmpty()) throw new NotFoundException();
         var item = categoryItemOpt.get();
 
-        if (!isAdminByGroup(item.getCategory().getGroupId(), userId) && !item.getCreaterId().equals(userId)) {
+        if (notAdminByGroup(item.getCategory().getGroupId(), userId) && ! item.getCreaterId().equals(userId)) {
             throw new PermissionException("非创建者无法操作");
         }
 
         return item;
+    }
+
+    public boolean notAdminByGroup(int groupId, long userId) {
+        return ! testPermissionByCategoryGroup(groupId, userId, PoolPermission.CREATE, PoolPermission.ADMIN);
+    }
+
+    public PoolFeedback createFeedback(long userId, int categoryItemId, @Nullable Boolean agree, String msg) {
+        var categoryItem = categoryItemRepository.findById(categoryItemId);
+        if (categoryItem.isEmpty()) {
+            throw new NotFoundException();
+        }
+        var category = categoryItem.get().getCategory();
+        if (! notUserByGroup(category.getGroupId(), userId)) {
+            throw new PermissionException();
+        }
+        var feedback = new PoolFeedback();
+        feedback.setAgree(agree);
+        feedback.setFeedback(msg);
+        feedback.setCreaterId(userId);
+        feedback.setItemId(categoryItemId);
+        return feedbackRepository.save(feedback);
+    }
+
+    public boolean notUserByGroup(int groupId, long userId) {
+        return ! testPermissionByCategoryGroup(groupId, userId, PoolPermission.values());
     }
 
     public Optional<PoolCategoryItem> getMapCategoryItemById(int itemId) {
@@ -435,21 +461,17 @@ public class MapPoolDao {
 
     /* ************************************************* Other **************************************************************** */
 
-    public PoolFeedback createFeedback(long userId, int categoryItemId, @Nullable Boolean agree, String msg) {
-        var categoryItem = categoryItemRepository.findById(categoryItemId);
-        if (categoryItem.isEmpty()) {
+    public PoolFeedback checkFeedback(long userId, int FeedbackId) {
+        var feedbackOptional = feedbackRepository.findById(FeedbackId);
+        if (feedbackOptional.isEmpty()) {
             throw new NotFoundException();
         }
-        var category = categoryItem.get().getCategory();
-        if (!isUserByGroup(category.getGroupId(), userId)) {
-            throw new PermissionException();
+        var feedback = feedbackOptional.get();
+
+        if (notAdminByPool(feedback.getItem().getCategory().getGroupId(), userId) && ! feedback.getCreaterId().equals(userId)) {
+            throw new PermissionException("非本人禁止修改/删除");
         }
-        var feedback = new PoolFeedback();
-        feedback.setAgree(agree);
-        feedback.setFeedback(msg);
-        feedback.setCreaterId(userId);
-        feedback.setItemId(categoryItemId);
-        return feedbackRepository.save(feedback);
+        return feedback;
     }
 
     public PoolFeedback updateFeedback(PoolFeedback feedback, @Nullable Boolean agree, String msg) {
@@ -467,16 +489,7 @@ public class MapPoolDao {
         return feedbackRepository.save(feedback);
     }
 
-    public PoolFeedback checkFeedback(long userId, int FeedbackId) {
-        var feedbackOptional = feedbackRepository.findById(FeedbackId);
-        if (feedbackOptional.isEmpty()) {
-            throw new NotFoundException();
-        }
-        var feedback = feedbackOptional.get();
-
-        if (!isAdminByPool(feedback.getItem().getCategory().getGroupId(), userId) && !feedback.getCreaterId().equals(userId)) {
-            throw new PermissionException("非本人禁止修改/删除");
-        }
-        return feedback;
+    public boolean notAdminByPool(int poolId, long userId) {
+        return isNotPermissionByPool(poolId, userId, PoolPermission.CREATE, PoolPermission.ADMIN);
     }
 }

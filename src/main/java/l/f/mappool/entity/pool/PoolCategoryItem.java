@@ -45,10 +45,6 @@ public class PoolCategoryItem {
      */
     Long chous;
 
-    @JsonIdentityInfo(
-            generator = ObjectIdGenerators.PropertyGenerator.class,
-            property = "id"
-    )
     @OneToMany(mappedBy = "item", fetch = FetchType.EAGER)
     List<PoolFeedback> feedbacks;
 

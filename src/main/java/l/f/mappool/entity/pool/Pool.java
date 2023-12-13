@@ -1,9 +1,7 @@
 package l.f.mappool.entity.pool;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import l.f.mappool.enums.PoolStatus;
 import lombok.Getter;
@@ -48,18 +46,10 @@ public class Pool {
     @Enumerated(EnumType.STRING)
     PoolStatus status = PoolStatus.OPEN;
 
-    @JsonIdentityInfo(
-            generator = ObjectIdGenerators.PropertyGenerator.class,
-            property = "userId"
-    )
     @ToString.Exclude
     @OneToMany(mappedBy = "pool", fetch = FetchType.EAGER)
     List<PoolUser> users;
 
-    @JsonIdentityInfo(
-            generator = ObjectIdGenerators.PropertyGenerator.class,
-            property = "id"
-    )
     @ToString.Exclude
     @OneToMany(mappedBy = "pool", fetch = FetchType.EAGER)
     List<PoolCategoryGroup> groups;

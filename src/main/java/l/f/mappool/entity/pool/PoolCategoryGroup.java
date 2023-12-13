@@ -38,10 +38,6 @@ public class PoolCategoryGroup {
     @Column(name = "info", columnDefinition = "text")
     String info;
 
-    @JsonIdentityInfo(
-            generator = ObjectIdGenerators.PropertyGenerator.class,
-            property = "id"
-    )
     @OneToMany(mappedBy = "group", fetch = FetchType.EAGER)
     List<PoolCategory> categories;
     int sort = 0;

@@ -2,16 +2,11 @@ package l.f.mappool.config.interceptor;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import l.f.mappool.entity.LoginUser;
 import l.f.mappool.exception.HttpTipException;
-import l.f.mappool.exception.PermissionException;
 import l.f.mappool.service.UserService;
 import l.f.mappool.util.ContextUtil;
-import l.f.mappool.util.JwtUtil;
-import l.f.mappool.util.TokenBucketUtil;
 import l.f.mappool.util.WebUtil;
 import org.springframework.lang.NonNull;
-import org.springframework.util.ObjectUtils;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -39,7 +34,7 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
     }
 
     @Override
-    public boolean preHandle(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull Object handler) throws Exception {
+    public boolean preHandle(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull Object handler) {
         if (handler instanceof HandlerMethod handlerMethod) {
             Open methodAnnotation = getAnnotation(handlerMethod);
             if (WebUtil.checkBot(methodAnnotation, request)) {
@@ -58,6 +53,7 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
                 return true;
             }
 
+            // 权限检查
             WebUtil.permission(request, userService, methodAnnotation);
         }
         return true;

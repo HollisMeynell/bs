@@ -2,14 +2,19 @@ package l.f.mappool.util;
 
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Function;
 
 @Slf4j
+@SuppressWarnings("unused")
 public class AsyncMethodExecutor {
     public interface Supplier<T>{
         T get()throws Exception;
@@ -160,4 +165,64 @@ public class AsyncMethodExecutor {
             locks.remove(key);
         }
     }
+
+    /**
+     * 同时进行多个任务
+     */
+    public static void asyncRunnable(Collection<Runnable> works) {
+        asyncRunnable(works, e -> log.error("Async error", e));
+    }
+
+    public static void asyncRunnable(Collection<Runnable> works, java.util.function.Consumer<Exception> errHandler) {
+        works.stream()
+                .<java.lang.Runnable>map(w -> (() -> {
+                    try {
+                        w.run();
+                    } catch (Exception e) {
+                        errHandler.accept(e);
+                    }
+                }))
+                .forEach(Thread::startVirtualThread);
+    }
+
+    /**
+     * 同时进行多个带返回值的任务
+     * 结果不固定
+     */
+    public static <T> List<T> asyncSupplier(Collection<Supplier<T>> works, Function<Exception, T> errHandler) {
+        int size = works.size();
+        var lock = new CountDownLatch(size);
+        final List<T> results = new LinkedList<>();
+        works.stream()
+                .<java.lang.Runnable>map(w -> () -> {
+                    try {
+                        T result = w.get();
+                        results.add(result);
+                    } catch (Exception e) {
+                        results.add(errHandler.apply(e));
+                    } finally {
+                        lock.countDown();
+                    }
+                })
+                .forEach(Thread::startVirtualThread);
+        try {
+            lock.await(120, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            log.error("lock error", e);
+        }
+        return results;
+    }
+
+/*
+    public static <T> Optional<T> anyWork(Collection<Callable<T>> works){
+        try (var scope = new StructuredTaskScope.ShutdownOnSuccess<T>()) {
+            works.forEach(scope::fork);
+            var result = scope.join().result();
+            return Optional.ofNullable(result);
+        } catch (Exception e) {
+            log.error("work err: ", e);
+        }
+        return Optional.empty();
+    }
+*/
 }

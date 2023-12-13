@@ -8,14 +8,20 @@ import l.f.mappool.entity.LoginUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class JwtUtil {
-    private static Logger log = LoggerFactory.getLogger(JwtUtil.class);
-    private static final String SECRET = "6*x?ata%sd6";
+    private static final Logger log = LoggerFactory.getLogger(JwtUtil.class);
+    private static final String SECRET;
+
+    static {
+        String secret;
+        if (Objects.nonNull(secret = System.getenv(""))) {
+            SECRET = secret;
+        } else {
+            SECRET = "6*x?ata%sd6";
+        }
+    }
     private static final Algorithm ALGORITHM = Algorithm.HMAC512(SECRET);
     private static final JWTVerifier VERIFIER = JWT.require(ALGORITHM).build();
     private static final Set<Long> ADMIN_USER_SET = new HashSet<>();

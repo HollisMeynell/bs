@@ -18,6 +18,7 @@ import l.f.mappool.vo.DataVo;
 import l.f.mappool.vo.PoolVo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
@@ -57,7 +58,7 @@ public class MapPoolService {
     }
 
     public Pool updateMapPool(long userId, int poolId, String name, String banner, String info, int mode) {
-        if (!mapPoolDao.isAdminByPool(poolId, userId)) {
+        if (mapPoolDao.notAdminByPool(poolId, userId)) {
             throw new PermissionException();
         }
 
@@ -82,7 +83,7 @@ public class MapPoolService {
     }
 
     public void deleteMapPool(long userId, int poolId) throws HttpError {
-        if (!mapPoolDao.isAdminByPool(poolId, userId)) {
+        if (mapPoolDao.notAdminByPool(poolId, userId)) {
             throw new PermissionException();
         }
         var poolOpt = mapPoolDao.getMapPoolById(poolId);
@@ -90,7 +91,7 @@ public class MapPoolService {
             throw new HttpError(403, "已被删除");
         }
         var pool = poolOpt.get();
-        if (!pool.getGroups().isEmpty()) {
+        if (! pool.getGroups().isEmpty()) {
             throw new HttpError(403, "图池不为空,请删掉全部内容.");
         }
         if (pool.getUsers().size() > 1) {
@@ -101,7 +102,7 @@ public class MapPoolService {
     }
 
     public void removePool(long userId, int poolId) throws HttpError {
-        if (!mapPoolDao.isAdminByPool(poolId, userId)) {
+        if (mapPoolDao.notAdminByPool(poolId, userId)) {
             throw new PermissionException();
         }
         var poolOpt = mapPoolDao.getMapPoolById(poolId);
@@ -116,7 +117,7 @@ public class MapPoolService {
     }
 
     public PoolVo exportPool(long userId, int poolId) throws HttpError {
-        if (!mapPoolDao.isAdminByPool(poolId, userId)) {
+        if (mapPoolDao.notAdminByPool(poolId, userId)) {
             throw new PermissionException();
         }
 
@@ -126,7 +127,7 @@ public class MapPoolService {
         }
 
         var pool = poolOptional.get();
-        if (!pool.getStatus().equals(PoolStatus.OPEN)) {
+        if (! pool.getStatus().equals(PoolStatus.OPEN)) {
             throw new HttpError(403, "无法导出非编辑中的图池");
         }
 
@@ -149,7 +150,7 @@ public class MapPoolService {
             Optional<Integer> modRequired,
             Optional<Integer> modOptional
     ) {
-        if (!mapPoolDao.isAdminByPool(poolId, uid)) {
+        if (mapPoolDao.notAdminByPool(poolId, uid)) {
             throw new PermissionException();
         }
         return mapPoolDao.createCategoryGroup(uid, poolId, name, info, color, modRequired, modOptional);
@@ -165,7 +166,7 @@ public class MapPoolService {
             Optional<Integer> modRequired,
             Optional<Integer> modOptional
     ) {
-        if (!mapPoolDao.isAdminByGroup(groupId, uid)) {
+        if (mapPoolDao.notAdminByGroup(groupId, uid)) {
             throw new PermissionException();
         }
 
@@ -191,7 +192,7 @@ public class MapPoolService {
     }
 
     public void deleteCategoryGroup(long uid, int groupId) {
-        if (!mapPoolDao.isAdminByGroup(groupId, uid)) {
+        if (mapPoolDao.notAdminByGroup(groupId, uid)) {
             throw new PermissionException();
         }
 
@@ -201,7 +202,7 @@ public class MapPoolService {
         }
 
         var group = groupOpt.get();
-        if (group.getCategories().size() > 0) {
+        if (CollectionUtils.isEmpty(group.getCategories())) {
             throw new RuntimeException("类别不为空,请删掉全部内容.");
         }
 
@@ -212,7 +213,7 @@ public class MapPoolService {
      * 具体分类 比如 NM1,NM2 这种
      */
     public PoolCategory createCategory(long uid, int groupId, String name) {
-        if (!mapPoolDao.isAdminByGroup(groupId, uid)) {
+        if (mapPoolDao.notAdminByGroup(groupId, uid)) {
             throw new PermissionException();
         }
         return mapPoolDao.createCategory(uid, groupId, name);
@@ -225,11 +226,11 @@ public class MapPoolService {
         }
 
         var category = categoryOpt.get();
-        if (!mapPoolDao.isAdminByGroup(category.getGroupId(), uid)) {
+        if (mapPoolDao.notAdminByGroup(category.getGroupId(), uid)) {
             throw new PermissionException();
         }
 
-        if (name != null && !name.isBlank()) {
+        if (name != null && ! name.isBlank()) {
             category.setName(name);
         }
 
@@ -243,7 +244,7 @@ public class MapPoolService {
         }
 
         var category = categoryOpt.get();
-        if (!mapPoolDao.isAdminByGroup(category.getGroupId(), uid)) {
+        if (mapPoolDao.notAdminByGroup(category.getGroupId(), uid)) {
             throw new PermissionException();
         }
         mapPoolDao.deleteCategory(category);
@@ -256,7 +257,7 @@ public class MapPoolService {
         }
 
         var category = categoryOpt.get();
-        if (!mapPoolDao.isAdminByGroup(category.getGroupId(), uid)) {
+        if (mapPoolDao.notAdminByGroup(category.getGroupId(), uid)) {
             throw new PermissionException();
         }
 
@@ -270,7 +271,7 @@ public class MapPoolService {
     }
 
     public PoolCategoryItem createCategoryItem(long uid, int categoryId, long bid, String info) {
-        if (!mapPoolDao.isChooserByCategory(categoryId, uid)) {
+        if (! mapPoolDao.notChooserByCategory(categoryId, uid)) {
             throw new PermissionException();
         }
         return mapPoolDao.createCategoryItem(uid, categoryId, bid, info);
@@ -357,7 +358,7 @@ public class MapPoolService {
     }
 
     public DataVo<PoolUser> addAdminUser(long userId, long addUserId, int poolId) {
-        if (!mapPoolDao.isCreaterByPool(poolId, userId)) {
+        if (mapPoolDao.notCreaterByPool(poolId, userId)) {
             throw new PermissionException();
         }
         var u = mapPoolDao.addAdminUser(userId, addUserId, poolId);
@@ -365,7 +366,7 @@ public class MapPoolService {
     }
 
     public DataVo<PoolUser> addChooserUser(long userId, long addUserId, int poolId) {
-        if (!mapPoolDao.isAdminByPool(poolId, userId)) {
+        if (mapPoolDao.notAdminByPool(poolId, userId)) {
             throw new PermissionException();
         }
         var u = mapPoolDao.addChooserUser(userId, addUserId, poolId);
@@ -373,7 +374,7 @@ public class MapPoolService {
     }
 
     public DataVo<PoolUser> addTesterUser(long userId, long addUserId, int poolId) {
-        if (!mapPoolDao.isAdminByPool(poolId, userId)) {
+        if (mapPoolDao.notAdminByPool(poolId, userId)) {
             throw new PermissionException();
         }
         var u = mapPoolDao.addTesterUser(userId, addUserId, poolId);
@@ -381,12 +382,51 @@ public class MapPoolService {
     }
 
     public void deleteUser(long userId, long deleteUserId, int poolId) {
-        if (!mapPoolDao.isCreaterByPool(poolId, userId)) {
+        if (mapPoolDao.notCreaterByPool(poolId, userId)) {
             throw new PermissionException();
         }
         if (userId == deleteUserId) {
             throw new HttpTipException(401, "不能删除自己");
         }
         mapPoolDao.deleteUser(userId, deleteUserId, poolId);
+    }
+
+    /***********************************  ADMIN  ******************************************/
+    public PoolVo exportPoolAdmin(long userId, PoolVo pool) {
+        var p = mapPoolDao.createPool(userId, pool.getName(), pool.getBanner(), pool.getInfo(), pool.getMode());
+        for (var categoryGroupVo : pool.getCategoryList()) {
+            var group = mapPoolDao.createCategoryGroup(userId,
+                    p.getId(),
+                    categoryGroupVo.getName(),
+                    categoryGroupVo.getInfo(),
+                    categoryGroupVo.getColor(),
+                    Optional.ofNullable(categoryGroupVo.getModsOptional()),
+                    Optional.ofNullable(categoryGroupVo.getModsRequired())
+            );
+
+            for (var categoryVo : categoryGroupVo.getCategory()) {
+                var category = new PoolCategory();
+                category.setGroupId(group.getId());
+                category.setName(categoryVo.name());
+                category.setChosed(categoryVo.bid());
+                category = mapPoolDao.saveCategory(category);
+                if (categoryVo.creater() != null) {
+                    mapPoolDao.createCategoryItem(categoryVo.creater(), category.getId(), categoryVo.bid(), null);
+                }
+            }
+        }
+
+        p.setStatus(PoolStatus.SHOW);
+        mapPoolDao.saveMapPool(p);
+        var newPool = mapPoolDao.getMapPoolById(p.getId()).orElseThrow(() -> new HttpTipException("出现了不可能出现的异常, 查查日志"));
+
+        return new PoolVo(newPool);
+    }
+
+    public void deletePoolAdmin(int poolId) {
+        poolMark4UserRepository.deleteAllByPid(poolId);
+        mapPoolDao
+                .removePoolForce(mapPoolDao.getMapPoolById(poolId)
+                        .orElseThrow(() -> new HttpTipException("不存在或者已删除")));
     }
 }

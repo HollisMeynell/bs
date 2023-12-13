@@ -4,12 +4,11 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import l.f.mappool.entity.osu.BeatMap;
 import l.f.mappool.entity.pool.Pool;
 import l.f.mappool.entity.pool.PoolCategoryGroup;
-import l.f.mappool.enums.PoolStatus;
-import l.f.mappool.exception.HttpError;
 import l.f.mappool.service.OsuApiService;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.beans.BeanUtils;
+import org.springframework.util.CollectionUtils;
 
 import java.util.Comparator;
 import java.util.List;
@@ -22,6 +21,7 @@ public class PoolVo extends Pool {
     public PoolVo(){}
     public PoolVo(Pool p) {
         BeanUtils.copyProperties(p, this, "users", "groups");
+        if (CollectionUtils.isEmpty(p.getGroups())) return;
         categoryList = p.getGroups()
                 .stream()
                 .sorted(Comparator.comparing(PoolCategoryGroup::getSort))

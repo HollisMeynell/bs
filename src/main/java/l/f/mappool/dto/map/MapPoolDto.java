@@ -4,12 +4,13 @@ import l.f.mappool.dto.validator.mapPool.*;
 import lombok.Data;
 import org.hibernate.validator.constraints.Range;
 
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 @Data
 public class MapPoolDto {
-    @NotEmpty(message = "名称不能为空",
+    @NotBlank(message = "名称不能为空",
             groups = {CreatePool.class, CreateCategoryGroup.class, CreateCategory.class, SetPool.class, SetCategoryGroup.class, SetCategory.class})
     String name;
     @NotEmpty(message = "横幅背景不能为空", groups = {CreatePool.class, SetPool.class})
@@ -29,8 +30,8 @@ public class MapPoolDto {
     Integer color;
     @NotNull(message = "位序不能为空" , groups = {SetCategoryGroup.class})
     Integer sort;
-    @NotEmpty(message = "模式不能为空", groups = {CreatePool.class, SetPool.class})
     @Range(min = 0, max = 4, message = "mode 只允许输入 0-3")
+    @NotEmpty(message = "模式不能为空", groups = {CreatePool.class, SetPool.class})
     Integer mode;
     Integer modOptional;
     Integer modRequired;

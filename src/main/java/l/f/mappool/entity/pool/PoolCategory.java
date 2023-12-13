@@ -44,11 +44,7 @@ public class PoolCategory {
     /**
      * 防止加载到评论, 评论需要单独加载, 用于排除隐藏评论
      */
-    @JsonIdentityInfo(
-            generator = ObjectIdGenerators.PropertyGenerator.class,
-            property = "id"
-    )
-    @JsonIgnoreProperties(value = {"category", "feedbacks"}, allowSetters = true)
+    @JsonIgnoreProperties(value = {"feedbacks"}, allowSetters = true)
     @OneToMany(mappedBy = "category", fetch = FetchType.EAGER)
     List<PoolCategoryItem> items;
 
