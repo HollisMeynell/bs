@@ -47,7 +47,7 @@ public class PublicApi {
     /**
      * 获取公开图池
      */
-    @GetMapping("getAllPool")
+    @GetMapping(value = {"getAllPool", "searchPool"})
     Object getAllPool(QueryMapPoolDto query) {
         if (Objects.nonNull(query.getPoolId())) {
             var p = mapPoolDao.getPublicPool(query.getPoolId());
