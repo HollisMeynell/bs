@@ -51,7 +51,7 @@ public class PublicApi {
     Object getAllPool(QueryMapPoolDto query) {
         if (Objects.nonNull(query.getPoolId())) {
             var p = mapPoolDao.getPublicPool(query.getPoolId());
-            return p.map(DataVo::new).orElseThrow(NotFoundException::new);
+            return p.map(PoolVo::new).map(DataVo::new).orElseThrow(NotFoundException::new);
         }
         var p = PageRequest.of(query.getPageNum() - 1, query.getPageSize());
         var data = mapPoolDao.getPublicPool(
