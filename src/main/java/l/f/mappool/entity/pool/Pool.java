@@ -16,7 +16,7 @@ import java.util.List;
 @Getter
 @ToString
 @Accessors(chain = true)
-@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonIgnoreProperties(ignoreUnknown = true, allowSetters = true)
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 @Entity
 @DynamicUpdate

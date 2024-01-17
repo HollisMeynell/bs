@@ -104,4 +104,12 @@ public class WebClientConfig implements WebFluxConfigurer {
     public void configureHttpMessageCodecs(ServerCodecConfigurer configurer) {
         configurer.defaultCodecs().maxInMemorySize(20 * 1024 * 1024);
     }
+/* todo
+    @Resource
+    AsyncTaskExecutor applicationTaskExecutor;
+
+    public void configureBlockingExecution(BlockingExecutionConfigurer configurer) {
+        configurer.setExecutor(applicationTaskExecutor);
+    }
+ */
 }

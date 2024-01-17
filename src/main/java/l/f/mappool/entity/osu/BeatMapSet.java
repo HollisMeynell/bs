@@ -12,14 +12,14 @@ import java.util.List;
 //import javax.persistence.Convert;
 
 
-@JsonIgnoreProperties(ignoreUnknown = true)
-@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
-@JsonInclude(JsonInclude.Include.NON_NULL)
 @Entity
 @Getter
 @Setter
 @DynamicUpdate
 @Table(name = "beatmapset")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public class BeatMapSet {
     @JsonProperty("id")
     @Id
@@ -60,4 +60,9 @@ public class BeatMapSet {
     )
     @OneToMany(mappedBy = "beatMapSet",cascade = {CascadeType.REFRESH}, orphanRemoval = true)
     List<BeatMap> beatMaps;
+//
+//    @JsonSetter("beatmaps")
+//    public void setBeatMaps(List<BeatMap> beatMaps) {
+//        this.beatMaps = beatMaps;
+//    }
 }

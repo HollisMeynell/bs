@@ -1,7 +1,6 @@
 package l.f.mappool.config;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.web.embedded.tomcat.TomcatProtocolHandlerCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.AsyncTaskExecutor;
@@ -20,8 +19,9 @@ import java.util.concurrent.ThreadFactory;
 @Configuration
 @EnableScheduling
 public class ThreadPoolConfig {
+    private static final String        THREAD_NAME_PREFIX     = "v-thread-";
     private static final ThreadFactory VIRTUAL_THREAD_FACTORY = Thread.ofVirtual()
-            .name("v-thread-",0)
+            .name(THREAD_NAME_PREFIX, 0)
             .uncaughtExceptionHandler((thread, exception) -> {
                 log.error("thread [{}] throw error:",thread.getName(), exception);
             })
@@ -44,8 +44,7 @@ public class ThreadPoolConfig {
         return (TaskExecutorAdapter)taskExecutor();
     }
 
-    @Bean
-    public TomcatProtocolHandlerCustomizer<?> protocolHandlerCustomizer() {
-        return protocolHandler -> protocolHandler.setExecutor(virtualThreadPerTaskExecutor);
+    public static ExecutorService getExecutorService() {
+        return virtualThreadPerTaskExecutor;
     }
 }

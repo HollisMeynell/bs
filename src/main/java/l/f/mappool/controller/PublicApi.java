@@ -141,4 +141,10 @@ public class PublicApi {
                 .setPageSize(feedbacks.size())
                 .setData(feedbacks);
     }
+
+    @GetMapping("test")
+    Object aaa() {
+        return osuService.getMapsetInfo(725853);
+    }
+
 }

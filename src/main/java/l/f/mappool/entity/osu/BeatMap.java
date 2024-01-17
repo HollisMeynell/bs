@@ -9,13 +9,13 @@ import lombok.Setter;
 import org.hibernate.annotations.DynamicUpdate;
 
 
-@JsonIgnoreProperties(ignoreUnknown = true)
-@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
+@Entity
 @Getter
 @Setter
 @DynamicUpdate
-@Entity
 @Table(name = "beatmap")
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public class BeatMap {
     @JsonProperty("id")
     @Id

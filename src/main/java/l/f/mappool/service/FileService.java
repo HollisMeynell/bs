@@ -228,6 +228,7 @@ public class FileService {
         Path basePath = getPath(sid);
         var fOpt = osuFileLogRepository.findById(bid);
         if (fOpt.isEmpty()) {
+            FileSystemUtils.deleteRecursively(basePath);
             throw new HttpTipException("下载/解析文件出错");
         }
         var fLog = fOpt.get();
