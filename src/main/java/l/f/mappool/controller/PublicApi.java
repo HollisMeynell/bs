@@ -1,11 +1,13 @@
 package l.f.mappool.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import l.f.mappool.config.interceptor.Open;
 import l.f.mappool.dao.MapPoolDao;
 import l.f.mappool.dto.ProxyDto;
 import l.f.mappool.dto.map.QueryMapPoolDto;
+import l.f.mappool.entity.osu.BeatMapSet;
 import l.f.mappool.entity.pool.PoolFeedback;
 import l.f.mappool.exception.HttpError;
 import l.f.mappool.exception.NotFoundException;
@@ -24,6 +26,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.validation.constraints.NotNull;
+import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -43,6 +46,22 @@ public class PublicApi {
     WebClient webClient;
     @Resource
     WebClient osuApiWebClient;
+
+    @PostConstruct
+    public void getAMap() {
+        // 用于临时解决mapSet 的json反序列化问题, 触发原因未知
+        Thread.startVirtualThread(() -> {
+            BeatMapSet date = null;
+            try {
+                Thread.sleep(Duration.ofSeconds(3));
+                date = osuService.getMapsetInfo(725853);
+            } catch (Exception ignore) {
+            }
+            if (Objects.isNull(date)) {
+                log.error("get mapset service error");
+            }
+        });
+    }
 
     /**
      * 获取公开图池
@@ -141,10 +160,4 @@ public class PublicApi {
                 .setPageSize(feedbacks.size())
                 .setData(feedbacks);
     }
-
-    @GetMapping("test")
-    Object aaa() {
-        return osuService.getMapsetInfo(725853);
-    }
-
 }
