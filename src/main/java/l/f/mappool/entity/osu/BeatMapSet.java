@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.DynamicUpdate;
+import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 //import org.hibernate.type.TextType;
@@ -60,9 +61,10 @@ public class BeatMapSet {
     )
     @OneToMany(mappedBy = "beatMapSet",cascade = {CascadeType.REFRESH}, orphanRemoval = true)
     List<BeatMap> beatMaps;
-//
-//    @JsonSetter("beatmaps")
-//    public void setBeatMaps(List<BeatMap> beatMaps) {
-//        this.beatMaps = beatMaps;
-//    }
+
+    @JsonSetter("beatmaps")
+    public void setBeatMaps(List<BeatMap> beatMaps) {
+        if (CollectionUtils.isEmpty(beatMaps)) return;
+        this.beatMaps = beatMaps;
+    }
 }
