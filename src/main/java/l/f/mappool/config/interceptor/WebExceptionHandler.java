@@ -12,6 +12,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
  * 异常处理
@@ -27,6 +28,14 @@ public class WebExceptionHandler {
         log.warn("接口异常[{}] : {}", request.getRequestURI(), exception.getMessage(), exception);
         response.setStatus(HttpServletResponse.SC_BAD_GATEWAY);
         return new DataVo<>(500, "请求出现错误", exception.getMessage());
+    }
+
+    @ResponseBody
+    @ExceptionHandler(value = NoResourceFoundException.class)
+    public Object resourceNotFoundHandler(HttpServletRequest request, HttpServletResponse response, NoResourceFoundException exception) {
+        log.warn("资源/接口无效[{}] : {}", request.getRequestURI(), exception.getMessage());
+        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        return new DataVo<>(404, "访问路径不存在", exception.getMessage());
     }
 
     @ResponseBody

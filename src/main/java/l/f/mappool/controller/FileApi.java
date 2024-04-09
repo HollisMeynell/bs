@@ -1,5 +1,6 @@
 package l.f.mappool.controller;
 
+import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import l.f.mappool.config.interceptor.Open;
@@ -8,22 +9,26 @@ import l.f.mappool.exception.HttpError;
 import l.f.mappool.exception.HttpTipException;
 import l.f.mappool.service.BeatmapFileService;
 import l.f.mappool.service.FileService;
+import l.f.mappool.service.OsuApiService;
 import l.f.mappool.util.WebUtil;
 import l.f.mappool.vo.DataVo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,6 +41,8 @@ import java.util.Optional;
 @ResponseBody
 @RequestMapping(value = "/api/file", produces = "application/json;charset=UTF-8")
 public class FileApi {
+    @Resource
+    OsuApiService osuApiService;
     /**
      * 上传文件
      *
@@ -128,7 +135,7 @@ public class FileApi {
      * 下载素材
      *
      * @param name 位于 static 的路径
-     * @return
+     * @return 素材内容
      */
     @GetMapping(value = "/static/{name}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public byte[] getStaticFile(@PathVariable("name") String name) throws HttpError {
@@ -187,7 +194,7 @@ public class FileApi {
                 bytesEnd = Long.parseLong(f[1]);
             } else if (f.length == 1) {
                 bytesStart = Long.parseLong(f[0]);
-                bytesEnd = Math.min(bytesStart + 1048576, size - 1);
+                bytesEnd = Math.min(bytesStart + 1 << 20, size - 1);
             } else {
                 throw new HttpTipException(400, "Range error");
             }
@@ -215,21 +222,22 @@ public class FileApi {
         response.setHeader(HttpHeaders.CONTENT_DISPOSITION, String.format("attachment; filename=\"%s\"", bid));
         try (in;
              var out = response.getOutputStream()) {
-
             log.debug("下载文件:range[{}] type[{}] id[{}]", range, atype, bid);
             int i;
             // 已写入输出流的字节数
             int alreadyWriteSize = 0;
-            byte[] data = new byte[1024];
-            while ((i = in.read(data)) != -1 && alreadyWriteSize < needWriteSize) {
+            byte[] data = new byte[1 << 10];
+            while (true) {
+                int read = Math.min(1 << 10, (int) (needWriteSize - alreadyWriteSize));
+                i = in.read(data, 0, read);
+                if (i <= 0) break;
                 out.write(data, 0, i);
                 alreadyWriteSize += i;
-                out.flush();
             }
+            out.flush();
         } catch (Exception e) {
-            log.error("下载出现异常", e);
+            log.error("下载出现异常 bid[{}]", bid, e);
         }
-
     }
 
 
@@ -271,14 +279,12 @@ public class FileApi {
      * @return 响应输出流
      * @throws IOException 打开失败
      */
-    private OutputStream getResponseOut(@NotNull HttpServletResponse response, String name) throws IOException {
+    private OutputStream getResponseOut(@NotNull HttpServletResponse response, @Nullable String name) throws IOException {
         response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
         response.setCharacterEncoding("utf-8");
-        if (name != null && !name.isBlank()) {
-            response.setHeader("Content-Disposition", "attachment;filename=" + name);
-        } else {
-            response.setHeader("Content-Disposition", "attachment;filename=file");
-        }
+        if (! StringUtils.hasText(name)) name = "file";
+        name = URLEncoder.encode(name, StandardCharsets.UTF_8).replaceAll("\\+", "%20");
+        response.setHeader("Content-Disposition", "attachment;filename=" + name);
         return response.getOutputStream();
     }
 
@@ -302,21 +308,30 @@ public class FileApi {
 
     @Open(bot = true, pub = false)
     @GetMapping("local/async/{bid}")
-    public String getLocalPathAsync(@PathVariable Long bid, @RequestHeader("SET_ID") Long sid) throws IOException {
+    public ResponseEntity<String> getLocalPathAsync(@PathVariable Long bid, @RequestHeader("SET_ID") Long sid) {
+        if (Objects.isNull(sid)) {
+            sid = osuApiService.getMapInfoByDB(bid).getMapsetId();
+        }
         log.info("异步任务: 开始下载 [{}]", sid);
         if (SUM < 50) {
+            Long finalSid = sid;
             Thread.startVirtualThread(() -> {
                 try {
-                    fileService.outOsuZipFile(sid, null);
+                    fileService.outOsuZipFile(finalSid, null);
                 } catch (IOException e) {
                     log.error("Async download osu file error", e);
                 }
             });
             SUM++;
         }
-        return "ok";
+        return ResponseEntity.ok("ok");
     }
 
+    @DeleteMapping("map/{sid}")
+    public DataVo<Boolean> delete(@PathVariable Long sid) throws IOException {
+        fileService.removeTemp(sid);
+        return new DataVo<>(Boolean.FALSE);
+    }
 
     private final FileService fileService;
 

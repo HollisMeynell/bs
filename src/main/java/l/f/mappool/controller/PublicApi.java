@@ -51,13 +51,13 @@ public class PublicApi {
     public void getAMap() {
         // 用于临时解决mapSet 的json反序列化问题, 触发原因未知
         Thread.startVirtualThread(() -> {
-            BeatMapSet date = null;
+            BeatMapSet data = null;
             try {
                 Thread.sleep(Duration.ofSeconds(3));
-                date = osuService.getMapsetInfo(725853);
+                data = osuService.getMapsetInfo(725853);
             } catch (Exception ignore) {
             }
-            if (Objects.isNull(date)) {
+            if (Objects.isNull(data)) {
                 log.error("get mapset service error");
             }
         });
@@ -108,7 +108,7 @@ public class PublicApi {
         var method = HttpMethod.valueOf(config.getMethod().toUpperCase());
 
         UriComponentsBuilder uri = UriComponentsBuilder.fromHttpUrl(config.getUrl());
-        if (config.getParameter() != null && config.getParameter().size() > 0) {
+        if (config.getParameter() != null && ! config.getParameter().isEmpty()) {
             for (var i : config.getParameter().entrySet()) {
                 uri.queryParam(i.getKey(), i.getValue());
             }
@@ -123,7 +123,7 @@ public class PublicApi {
         var res = client.method(method)
                 .uri((r) -> uri.build().toUri())
                 .headers(headers -> {
-                    if (config.getHeaders() != null && config.getHeaders().size() > 0) {
+                    if (config.getHeaders() != null && ! config.getHeaders().isEmpty()) {
                         headers.setAll(config.getHeaders());
                     }
                 });

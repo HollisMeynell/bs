@@ -39,8 +39,11 @@ public class FileService {
     private final BeatmapFileService beatmapFileService;
     public static final String SET_CATCH = "SET_CATCH";
 
-    public interface FileOut {
-        public void write(OutputStream out) throws IOException;
+    @SuppressWarnings("unused")
+    public long sizeOfOsuFile(long bid, BeatmapFileService.Type type) throws IOException {
+        long sid = osuApiService.getMapInfoByDB(bid).getMapsetId();
+        var file = getPath(sid, bid, type);
+        return Files.size(file);
     }
 
     /**
@@ -208,10 +211,40 @@ public class FileService {
         return new FileInputStream(getPathByBid(bid, type).toFile());
     }
 
-    public long sizeOfOsuFile(long bid, BeatmapFileService.Type type) throws IOException {
-        long sid = osuApiService.getMapInfoByDB(bid).getMapsetId();
-        var file = getPath(sid, bid, type);
-        return Files.size(file);
+    private boolean doDownload(long sid) throws IOException {
+        BeatMapSet mapSet = osuApiService.getMapsetInfo(sid);
+        Path tmp;
+        // 对应 ranked / loved
+        boolean isArchive = mapSet.getStatus() == 1 || mapSet.getStatus() == 4;
+        if (isArchive) {
+            tmp = Path.of(OSU_FILE_PATH, String.valueOf(sid));
+        } else {
+            tmp = Path.of(OSU_FILE_PATH_TMP, String.valueOf(sid));
+        }
+        HashMap<String, Path> fileMap = new HashMap<>();
+        int writeFile = 0;
+        try (var in = beatmapFileService.downloadOsz(sid, beatmapFileService.getRandomAccount())) {
+            Files.createDirectories(tmp);
+            var zip = new ZipInputStream(in);
+            writeFile = loopWriteFile(zip, tmp.toString(), fileMap);
+        } finally {
+            if (writeFile == 0 && Files.isDirectory(tmp)) {
+                FileSystemUtils.deleteRecursively(tmp);
+            }
+        }
+        // 解析数据 并记录
+        fileMap.entrySet().stream().filter(e -> e.getKey().endsWith(".osu")).forEach(e -> {
+            var path = e.getValue();
+            try (var read = Files.newBufferedReader(path)) {
+                var log = OsuFileRecord.parse(read, mapSet);
+                log.setFile(path.getFileName().toString());
+                osuFileLogRepository.saveAndFlush(log);
+            } catch (IOException | RuntimeException err) {
+                log.error("解析数据时出错", err);
+                // 不处理, 跳过
+            }
+        });
+        return isArchive;
     }
 
     public Path getPathByBid(long bid, BeatmapFileService.Type type) throws IOException {
@@ -361,42 +394,8 @@ public class FileService {
         }
     }
 
-    private boolean doDownload(long sid) throws IOException {
-        BeatMapSet mapSet = osuApiService.getMapsetInfo(sid);
-        Path tmp;
-        // 对应 ranked / loved
-        boolean isArchive = mapSet.getStatus() == 1 || mapSet.getStatus() == 4;
-        if (isArchive) {
-            tmp = Path.of(OSU_FILE_PATH, String.valueOf(sid));
-        } else {
-            tmp = Path.of(OSU_FILE_PATH_TMP, String.valueOf(sid));
-        }
-        HashMap<String, Path> fileMap = new HashMap<>();
-        int writeFile = 0;
-        try (var in = beatmapFileService.downloadOsz(sid, beatmapFileService.getRandomAccount());) {
-            Files.createDirectories(tmp);
-            var zip = new ZipInputStream(in);
-            writeFile = loopWriteFile(zip, tmp.toString(), fileMap);
-        } catch (HttpTipException e) {
-            throw new IOException(e);
-        } finally {
-            if (writeFile == 0 && Files.isDirectory(tmp)) {
-                FileSystemUtils.deleteRecursively(tmp);
-            }
-        }
-        // 解析数据 并记录
-        fileMap.entrySet().stream().filter(e -> e.getKey().endsWith(".osu")).forEach(e -> {
-            var path = e.getValue();
-            try (var read = Files.newBufferedReader(path)) {
-                var log = OsuFileRecord.parse(read, mapSet);
-                log.setFile(path.getFileName().toString());
-                osuFileLogRepository.saveAndFlush(log);
-            } catch (IOException | RuntimeException err) {
-                log.error("解析数据时出错", err);
-                // 不处理, 跳过
-            }
-        });
-        return isArchive;
+    public interface FileOut {
+        void write(OutputStream out) throws IOException;
     }
 
     private int loopWriteFile(ZipInputStream zip, String basePath, HashMap<String, Path> fileMap) throws IOException {

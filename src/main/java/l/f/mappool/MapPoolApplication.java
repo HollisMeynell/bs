@@ -3,12 +3,10 @@ package l.f.mappool;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.Banner;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.web.reactive.WebFluxAutoConfiguration;
 
-@SpringBootApplication
-@EnableAutoConfiguration(exclude = {WebFluxAutoConfiguration.class})
+@SpringBootApplication(exclude = {WebFluxAutoConfiguration.class})
 public class MapPoolApplication {
     public static org.slf4j.Logger log = LoggerFactory.getLogger("Main-log");
 

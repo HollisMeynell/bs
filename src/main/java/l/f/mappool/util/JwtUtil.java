@@ -16,7 +16,7 @@ public class JwtUtil {
 
     static {
         String secret;
-        if (Objects.nonNull(secret = System.getenv(""))) {
+        if (Objects.nonNull(secret = System.getenv("JWT"))) {
             SECRET = secret;
         } else {
             SECRET = "6*x?ata%sd6";
