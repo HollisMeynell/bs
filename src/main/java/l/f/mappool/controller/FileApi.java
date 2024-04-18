@@ -43,6 +43,7 @@ import java.util.Optional;
 public class FileApi {
     @Resource
     OsuApiService osuApiService;
+
     /**
      * 上传文件
      *
@@ -147,9 +148,10 @@ public class FileApi {
      */
     @Open
     @GetMapping(value = "/map/{type}/{bid}")
-    public void downloadMapBGFile(@PathVariable Long bid, @PathVariable String type,
-                                  @RequestHeader(value = "Range", required = false) String range,
-                                  HttpServletRequest request, HttpServletResponse response) throws IOException, HttpError {
+    public void downloadMapBGFile(
+            @PathVariable Long bid, @PathVariable String type,
+            @RequestHeader(value = "Range", required = false) String range,
+            HttpServletRequest request, HttpServletResponse response) throws IOException, HttpError {
         String mediaType;
         var atype = switch (type) {
             case "bg" -> {
@@ -220,8 +222,7 @@ public class FileApi {
 
         response.setHeader(HttpHeaders.CONTENT_TYPE, mediaType);
         response.setHeader(HttpHeaders.CONTENT_DISPOSITION, String.format("attachment; filename=\"%s\"", bid));
-        try (in;
-             var out = response.getOutputStream()) {
+        try (in; var out = response.getOutputStream()) {
             log.debug("下载文件:range[{}] type[{}] id[{}]", range, atype, bid);
             int i;
             // 已写入输出流的字节数

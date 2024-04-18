@@ -30,6 +30,7 @@ public class WebUtil {
         ORIGIN_ALLOW.add("https://docs.365246692.xyz");
         ORIGIN_ALLOW.add("https://docs.v6.365246692.xyz:88");
         ORIGIN_ALLOW.add("http://localhost:5173");
+        ORIGIN_ALLOW.add("https://siyuyuko.github.io");
     }
 
     public static boolean checkBot(Open annotation, HttpServletRequest request) {
