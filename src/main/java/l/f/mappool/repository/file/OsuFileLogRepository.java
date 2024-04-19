@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Component;
 
+import java.beans.Transient;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,6 +17,7 @@ public interface OsuFileLogRepository extends JpaRepository<OsuFileRecord, Long>
 
     Optional<OsuFileRecord> findOsuFileRecordByBid(Long bid);
 
+    @Transient
     void deleteAllBySid(long sid);
 
     @Query("select count(osu)from OsuFileRecord osu")
