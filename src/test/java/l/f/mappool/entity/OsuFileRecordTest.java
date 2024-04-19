@@ -1,7 +1,7 @@
 package l.f.mappool.entity;
 
 import jakarta.annotation.Resource;
-import l.f.mappool.service.FileService;
+import l.f.mappool.service.OsuFileService;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,18 +14,18 @@ import java.nio.file.Path;
 @SpringBootTest
 class OsuFileRecordTest {
     @Resource
-    FileService fileService;
+    OsuFileService osuFileService;
 
     @Test
     void testWriteZipFiles() throws IOException {
         try(var out = new FileOutputStream(Path.of("D:\\file\\test\\x.zip").toFile());) {
-            fileService.zipOsuFiles(out, 1456709, 503213, 382400);
+            osuFileService.zipOsuFiles(out, 1456709, 503213, 382400);
         }
     }
     @Test
     void testWriteOneZipFile() throws IOException {
         try(var out = new FileOutputStream(Path.of("D:\\file\\test\\x2.zip").toFile());) {
-            fileService.outOsuZipFile( 382400, out);
+            osuFileService.outOsuZipFile(382400, out);
         }
     }
 }

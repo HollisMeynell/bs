@@ -8,12 +8,12 @@ import l.f.mappool.entity.file.FileRecord;
 import l.f.mappool.exception.HttpError;
 import l.f.mappool.exception.HttpTipException;
 import l.f.mappool.service.BeatmapFileService;
-import l.f.mappool.service.FileService;
+import l.f.mappool.service.LocalFileService;
 import l.f.mappool.service.OsuApiService;
+import l.f.mappool.service.OsuFileService;
 import l.f.mappool.util.WebUtil;
 import l.f.mappool.vo.DataVo;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.StringUtils;
@@ -44,6 +44,11 @@ public class FileApi {
     @Resource
     OsuApiService osuApiService;
 
+    @Resource
+    private OsuFileService   osuFileService;
+    @Resource
+    private LocalFileService localFileService;
+
     /**
      * 上传文件
      *
@@ -55,7 +60,7 @@ public class FileApi {
         final Map<String, String> files = new HashMap<>();
         file.getFileMap().forEach((key, value) -> {
             try {
-                String fileKey = fileService.writeFile(value.getName(), value.getBytes());
+                String fileKey = localFileService.writeFile(value.getName(), value.getBytes());
                 files.put(value.getName(), fileKey);
             } catch (IOException ex) {
                 log.error("文件写入错误", ex);
@@ -74,7 +79,7 @@ public class FileApi {
     @PostMapping(value = "/stream/{name}", consumes = {MediaType.APPLICATION_OCTET_STREAM_VALUE, MediaType.IMAGE_PNG_VALUE, MediaType.IMAGE_JPEG_VALUE})
     public DataVo<String> upload(@PathVariable("name") String name, HttpServletRequest request) throws IOException {
         String fileName = URLDecoder.decode(name, StandardCharsets.UTF_8);
-        String fileKey = fileService.writeFile(fileName, request.getInputStream());
+        String fileKey = localFileService.writeFile(fileName, request.getInputStream());
         return new DataVo<>("ok", fileKey);
     }
 
@@ -86,14 +91,14 @@ public class FileApi {
     @GetMapping(value = "/image/{key}", produces = MediaType.IMAGE_PNG_VALUE)
     public ResponseEntity<byte[]> getImage(@PathVariable("key") String key) {
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentDisposition(ContentDisposition.inline().filename(fileService.getFileName(key)).build());
+        headers.setContentDisposition(ContentDisposition.inline().filename(localFileService.getFileName(key)).build());
         headers.setContentType(MediaType.IMAGE_PNG);
         try {
-            Optional<FileRecord> fileLog = fileService.getFileRecord(key);
+            Optional<FileRecord> fileLog = localFileService.getFileRecord(key);
             if (fileLog.isEmpty()) {
                 throw new IOException();
             }
-            byte[] data = fileService.getData(fileLog.get());
+            byte[] data = localFileService.getData(fileLog.get());
             headers.setContentLength(data.length);
             return new ResponseEntity<>(data, headers, HttpStatus.OK);
         } catch (IOException e) {
@@ -107,7 +112,7 @@ public class FileApi {
     @DeleteMapping(value = "/delete")
     public DataVo<Boolean> deleteFile(@RequestParam("key") String key) {
         try {
-            fileService.deleteFile(key);
+            localFileService.deleteFile(key);
         } catch (IOException e) {
             return new DataVo<>(Boolean.FALSE).setMessage("删除失败: " + e.getMessage()).setCode(500);
         }
@@ -122,11 +127,11 @@ public class FileApi {
     @GetMapping(value = "/download/{key}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public byte[] getFile(@PathVariable("key") String key) {
         try {
-            Optional<FileRecord> fileLog = fileService.getFileRecord(key);
+            Optional<FileRecord> fileLog = localFileService.getFileRecord(key);
             if (fileLog.isEmpty()) {
                 throw new IOException();
             }
-            return fileService.getData(fileLog.get());
+            return localFileService.getData(fileLog.get());
         } catch (IOException e) {
             throw new HttpTipException(400, "文件已失效...");
         }
@@ -140,7 +145,7 @@ public class FileApi {
      */
     @GetMapping(value = "/static/{name}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public byte[] getStaticFile(@PathVariable("name") String name) throws HttpError {
-        return fileService.getStaticFile(name);
+        return localFileService.getStaticFile(name);
     }
 
     /**
@@ -172,12 +177,12 @@ public class FileApi {
         WebUtil.setOriginAllow(request, response);
         File localFile;
         try {
-            localFile = fileService.getPathByBid(bid, atype).toFile();
+            localFile = osuFileService.getPathByBid(bid, atype).toFile();
         } catch (IOException | WebClientResponseException e) {
             localFile = switch (atype) {
-                case BACKGROUND -> fileService.getStaticFilePath("default/bg.png").toFile();
-                case AUDIO -> fileService.getStaticFilePath("default/audio.mp3").toFile();
-                case FILE -> fileService.getStaticFilePath("default/file.osu").toFile();
+                case BACKGROUND -> localFileService.getStaticFilePath("default/bg.png").toFile();
+                case AUDIO -> localFileService.getStaticFilePath("default/audio.mp3").toFile();
+                case FILE -> localFileService.getStaticFilePath("default/file.osu").toFile();
             };
         }
         var in = new RandomAccessFile(localFile, "r");
@@ -241,37 +246,6 @@ public class FileApi {
         }
     }
 
-
-    @Open
-    @GetMapping("/map/{sid}")
-    public void downloadMapFile(@PathVariable Long sid, HttpServletResponse response) throws IOException {
-        var fileOut = fileService.outOsuZipFile(sid);
-        try (var out = getResponseOut(response, sid + ".osz")) {
-            fileOut.write(out);
-        } catch (IOException e) {
-            log.error("导出 map 出错: ");
-            throw new HttpTipException(500, "写入流出错");
-        }
-    }
-
-    @Open
-    @GetMapping("/maps/{sidStr}")
-    public void downloadMapPackage(@PathVariable String sidStr, HttpServletResponse response) throws IOException {
-        var s = sidStr.split("-");
-        var ids = new long[s.length];
-        for (int i = 0; i < s.length; i++) {
-            ids[i] = Long.parseLong(s[i]);
-        }
-        var fileOut = fileService.zipOsuFiles(ids);
-
-        try (var out = getResponseOut(response, "package.zip")) {
-            fileOut.write(out);
-        } catch (IOException e) {
-            log.error("导出 maps 出错: ", e);
-            throw new HttpTipException(500, "写入流出错");
-        }
-    }
-
     /**
      * 获取 http 响应的输出流
      *
@@ -289,6 +263,38 @@ public class FileApi {
         return response.getOutputStream();
     }
 
+    @Open
+    @GetMapping("/map/{sid}")
+    public void downloadMapFile(@PathVariable Long sid, HttpServletResponse response) throws IOException {
+        var fileOut = osuFileService.outOsuZipFile(sid);
+        try (var out = getResponseOut(response, sid + ".osz")) {
+            fileOut.write(out);
+        } catch (IOException e) {
+            log.error("导出 map 出错: ");
+            throw new HttpTipException(500, "写入流出错");
+        }
+    }
+
+    static int SUM = 0;
+
+    @Open
+    @GetMapping("/maps/{sidStr}")
+    public void downloadMapPackage(@PathVariable String sidStr, HttpServletResponse response) throws IOException {
+        var s = sidStr.split("-");
+        var ids = new long[s.length];
+        for (int i = 0; i < s.length; i++) {
+            ids[i] = Long.parseLong(s[i]);
+        }
+        var fileOut = osuFileService.zipOsuFiles(ids);
+
+        try (var out = getResponseOut(response, "package.zip")) {
+            fileOut.write(out);
+        } catch (IOException e) {
+            log.error("导出 maps 出错: ", e);
+            throw new HttpTipException(500, "写入流出错");
+        }
+    }
+
     @Open(bot = true)
     @GetMapping("local/{type}/{bid}")
     public String getLocalPath(@PathVariable Long bid, @PathVariable String type) throws IOException {
@@ -299,13 +305,11 @@ public class FileApi {
             default -> throw new HttpTipException(400, "未知类型");
         };
         try {
-            return fileService.getPathByBid(bid, atype).toString();
+            return osuFileService.getPathByBid(bid, atype).toString();
         } catch (WebClientResponseException e) {
             throw new HttpTipException(400, e.getMessage());
         }
     }
-
-    static int SUM = 0;
 
     @Open(bot = true, pub = false)
     @GetMapping("local/async/{bid}")
@@ -318,7 +322,7 @@ public class FileApi {
             Long finalSid = sid;
             Thread.startVirtualThread(() -> {
                 try {
-                    fileService.outOsuZipFile(finalSid, null);
+                    osuFileService.outOsuZipFile(finalSid, null);
                 } catch (IOException e) {
                     log.error("Async download osu file error", e);
                 }
@@ -330,14 +334,30 @@ public class FileApi {
 
     @DeleteMapping("map/{sid}")
     public DataVo<Boolean> delete(@PathVariable Long sid) throws IOException {
-        fileService.removeTemp(sid);
+        osuFileService.removeTemp(sid);
         return new DataVo<>(Boolean.FALSE);
     }
 
-    private final FileService fileService;
-
-    @Autowired
-    public FileApi(FileService fileService) {
-        this.fileService = fileService;
+    @Open
+    @GetMapping("count")
+    public DataVo<Object> getBeatmapCount() {
+        return new DataVo<>(osuFileService.getCount());
     }
+
+    @Open(bot = true)
+    @GetMapping("remove/bid/{bid}")
+    public DataVo<String> removeFileByBid(@PathVariable Long bid) {
+        var mapinfo = osuApiService.getMapInfo(bid);
+        var sid = mapinfo.getMapsetId();
+        osuFileService.removeTemp(sid);
+        return new DataVo<>("删除成功");
+    }
+
+    @Open(bot = true)
+    @GetMapping("remove/sid/{sid}")
+    public DataVo<String> removeFileBySid(@PathVariable Long sid) {
+        osuFileService.removeTemp(sid);
+        return new DataVo<>("删除成功");
+    }
+
 }

@@ -31,7 +31,7 @@ import java.util.regex.Pattern;
 @Service
 @SuppressWarnings("unused")
 public class BeatmapFileService {
-    public static enum Type {
+    public enum Type {
         BACKGROUND, AUDIO, FILE,
     }
 

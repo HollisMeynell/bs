@@ -1,7 +1,8 @@
 package l.f.mappool.config;
 
 import jakarta.annotation.Resource;
-import l.f.mappool.service.FileService;
+import l.f.mappool.service.LocalFileService;
+import l.f.mappool.service.OsuFileService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -14,7 +15,9 @@ import java.io.IOException;
 @EnableScheduling
 public class SchedulingTasks {
     @Resource
-    FileService fileService;
+    OsuFileService   osuFileService;
+    @Resource
+    LocalFileService localFileService;
 
     //@Scheduled(cron = "0(秒) 0(分) 0(时) *(日) *(月) *(周) *(年,可选)")
 
@@ -22,7 +25,7 @@ public class SchedulingTasks {
     @Scheduled(cron = "0 0 3 1 * *")
     public void cleanFile() {
         log.info("开始清理文件");
-        int deleteCount = fileService.deleteAllOldFile();
+        int deleteCount = localFileService.deleteAllOldFile();
         log.info("清理文件完成, 删除文件数: {}", deleteCount);
     }
 
@@ -30,7 +33,7 @@ public class SchedulingTasks {
     public void scanOsuFile() {
         log.info("开始扫描osu文件");
         try {
-            fileService.removeTemp();
+            osuFileService.removeTemp();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

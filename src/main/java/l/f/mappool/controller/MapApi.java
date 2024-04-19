@@ -3,9 +3,9 @@ package l.f.mappool.controller;
 import jakarta.annotation.Resource;
 import l.f.mappool.config.interceptor.Open;
 import l.f.mappool.entity.osu.BeatMap;
-import l.f.mappool.service.FileService;
 import l.f.mappool.service.MapPoolService;
 import l.f.mappool.service.OsuApiService;
+import l.f.mappool.service.OsuFileService;
 import l.f.mappool.vo.DataVo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -25,7 +25,7 @@ public class MapApi {
     @Resource
     protected MapPoolService mapPoolService;
     @Resource
-    protected FileService fileService;
+    protected OsuFileService osuFileService;
 
     @Open
     @GetMapping("/getBeatMapInfo/{bid}")

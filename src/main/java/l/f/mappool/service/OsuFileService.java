@@ -1,12 +1,9 @@
 package l.f.mappool.service;
 
-import l.f.mappool.entity.file.FileRecord;
 import l.f.mappool.entity.file.OsuFileRecord;
 import l.f.mappool.entity.osu.BeatMapSet;
-import l.f.mappool.exception.HttpError;
 import l.f.mappool.exception.HttpTipException;
 import l.f.mappool.properties.BeatmapSelectionProperties;
-import l.f.mappool.repository.file.FileLogRepository;
 import l.f.mappool.repository.file.OsuFileLogRepository;
 import l.f.mappool.util.AsyncMethodExecutor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,59 +14,45 @@ import org.springframework.util.FileSystemUtils;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.HashMap;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 /**
- * 所有文件操作的工具集合类
+ * 所有Osu相关文件操作的工具集合类
  */
 @Slf4j
 @Component
-public class FileService {
+public class OsuFileService {
     private final OsuApiService osuApiService;
-    private final FileLogRepository fileLogRepository;
     private final OsuFileLogRepository osuFileLogRepository;
     private final BeatmapFileService beatmapFileService;
-    public static final String SET_CATCH = "SET_CATCH";
-
-    @SuppressWarnings("unused")
-    public long sizeOfOsuFile(long bid, BeatmapFileService.Type type) throws IOException {
-        long sid = osuApiService.getMapInfoByDB(bid).getMapsetId();
-        var file = getPath(sid, bid, type);
-        return Files.size(file);
-    }
-
-    /**
-     * 文件上传时的保存路径
-     */
-    private final String UPLOAD_PATH;
 
     /**
      * 下载 .osz 的缓存路径, 最终保存格式为 OSU_FILE_PATH/sid/*
      */
     private final String OSU_FILE_PATH;
+
     /**
      * 非最终状态下的 .osz 的缓存路径, 最终保存格式为 OSU_FILE_PATH_TMP/sid/*
      */
     private final String OSU_FILE_PATH_TMP;
-    private final String STATIC_PATH;
 
 
     @Autowired
-    public FileService(OsuApiService osuApiService, BeatmapSelectionProperties properties, FileLogRepository fileLogRepository, OsuFileLogRepository osuFileLogRepository, BeatmapFileService beatmapFileService) throws IOException {
+    public OsuFileService(
+            OsuApiService osuApiService,
+            BeatmapSelectionProperties properties,
+            OsuFileLogRepository osuFileLogRepository,
+            BeatmapFileService beatmapFileService
+    ) throws IOException {
         this.osuApiService = osuApiService;
         String SAVE_PATH = properties.getFilePath();
-        UPLOAD_PATH = properties.getFilePath() + "/upload";
         OSU_FILE_PATH = properties.getFilePath() + "/osu";
         OSU_FILE_PATH_TMP = OSU_FILE_PATH + "/tmp";
-        STATIC_PATH = properties.getFilePath() + "/static";
         this.osuFileLogRepository = osuFileLogRepository;
         this.beatmapFileService = beatmapFileService;
         Path p = Path.of(SAVE_PATH);
@@ -80,113 +63,14 @@ public class FileService {
         if (!Files.isDirectory(p)) {
             Files.createDirectories(p);
         }
-        p = Path.of(UPLOAD_PATH);
-        if (!Files.isDirectory(p)) {
-            Files.createDirectories(p);
-        }
-        p = Path.of(STATIC_PATH);
-        if (!Files.isDirectory(p)) {
-            Files.createDirectories(p);
-        }
-        this.fileLogRepository = fileLogRepository;
     }
 
-    /**
-     * 通过文件记录 key 来获得上传时提供的文件名
-     *
-     * @return 记录中的文件名
-     */
-    public String getFileName(String key) {
-        var fileLog = fileLogRepository.getFileLogByLocalName(key);
-        if (fileLog.isPresent()) {
-            return fileLog.get().getFileName();
-        } else {
-            return "unknown";
-        }
-    }
 
-    /**
-     * 通过文件记录 key 来获得上传时的记录信息
-     *
-     * @return 记录信息
-     */
-    public Optional<FileRecord> getFileRecord(String key) {
-        return fileLogRepository.getFileLogByLocalName(key);
-    }
-
-    /**
-     * 获取文件 二进制数据
-     */
-    public byte[] getData(FileRecord fileRecord) throws IOException {
-        var path = Path.of(UPLOAD_PATH, fileRecord.getLocalName());
-
-        if (Files.isRegularFile(path) && Files.isReadable(path)) {
-            var fileData = Files.readAllBytes(path);
-            fileRecord.update();
-            fileLogRepository.save(fileRecord);
-            return fileData;
-        } else {
-            fileLogRepository.delete(fileRecord);
-        }
-        throw new IOException("file not in file");
-    }
-
-    public String writeFile(String name, InputStream in) throws IOException {
-        var key = UUID.randomUUID().toString();
-        Path path = Path.of(UPLOAD_PATH, key);
-        while (true) {
-            try {
-                Files.createFile(path);
-                break;
-            } catch (IOException e) {
-                key = UUID.randomUUID().toString();
-                path = Path.of(UPLOAD_PATH, key);
-            }
-        }
-        Files.copy(in, path, StandardCopyOption.REPLACE_EXISTING);
-        fileLogRepository.save(name, key);
-        return key;
-    }
-
-    public String writeFile(String name, byte[] in) throws IOException {
-        var key = UUID.randomUUID().toString();
-        Path path = Path.of(UPLOAD_PATH, key);
-        Files.write(path, in, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
-        fileLogRepository.save(name, key);
-        return key;
-    }
-
-    public void deleteFile(String key) throws IOException {
-        Path path = Path.of(UPLOAD_PATH, key);
-        if (Files.isRegularFile(path) && Files.isWritable(path)) {
-            Files.delete(path);
-            fileLogRepository.deleteByLocalName(key);
-        }
-    }
-
-    /**
-     * 删除超过30天未被访问的文件, 防止硬盘空间被无限占用
-     *
-     * @return 被删除文件的数量
-     */
-    public int deleteAllOldFile() {
-        // when a file not visited for 30 days, delete it
-        LocalDateTime before = LocalDateTime.now().minusDays(31);
-        List<String> files = fileLogRepository.getLocalNamesByUpdateTimeBefore(before);
-        if (files.isEmpty()) {
-            return 0;
-        }
-        AtomicInteger deleteCount = new AtomicInteger(0);
-        files.forEach(f -> {
-            try {
-                Files.delete(Path.of(UPLOAD_PATH, f));
-                deleteCount.addAndGet(1);
-            } catch (IOException e) {
-                // ignore
-            }
-        });
-        fileLogRepository.deleteByLocalName(files);
-        return deleteCount.get();
+    @SuppressWarnings("unused")
+    public long sizeOfOsuFile(long bid, BeatmapFileService.Type type) throws IOException {
+        long sid = osuApiService.getMapInfoByDB(bid).getMapsetId();
+        var file = getPath(sid, bid, type);
+        return Files.size(file);
     }
 
     /**
@@ -431,33 +315,29 @@ public class FileService {
         }
     }
 
-    public byte[] getStaticFile(String fileName) throws HttpError {
-        var path = Path.of(STATIC_PATH, fileName);
-        if (!Files.isRegularFile(path)) {
-            throw new HttpError(400, "file not found");
-        }
-        try {
-            return Files.readAllBytes(path);
-        } catch (IOException e) {
-            throw new HttpError(500, "file read error");
-        }
-    }
+    public void removeFile(long delSid) throws IOException {
+        Path path = Path.of(OSU_FILE_PATH, String.valueOf(delSid));
 
-    public Path getStaticFilePath(String fileName) throws HttpError {
-        var path = Path.of(STATIC_PATH, fileName);
-        if (!Files.isRegularFile(path)) {
-            throw new HttpError(400, "file not found");
+        if (Files.isDirectory(path)) {
+            FileSystemUtils.deleteRecursively(path);
         }
-        return path;
+
+        path = Path.of(OSU_FILE_PATH_TMP, String.valueOf(delSid));
+        if (Files.isDirectory(path)) {
+            osuFileLogRepository.deleteAllBySid(delSid);
+        }
+
+        osuFileLogRepository.deleteAllBySid(delSid);
     }
 
     public void removeTemp() throws IOException {
         Consumer<Path> consumer = p -> {
             var sid = Long.parseLong(p.getFileName().toString());
             try {
-                osuFileLogRepository.deleteAllBySid(sid);
                 FileSystemUtils.deleteRecursively(p);
-            } catch (IOException ignored) {
+                osuFileLogRepository.deleteAllBySid(sid);
+            } catch (IOException e) {
+                log.error("清空 tmp map 文件夹出错", e);
             }
         };
         try (var stream = Files.list(Path.of(OSU_FILE_PATH_TMP))) {
@@ -465,17 +345,28 @@ public class FileService {
         }
     }
 
-    public void removeTemp(long delSid) throws IOException {
+    public void removeTemp(long delSid) {
         Consumer<Path> consumer = p -> {
             var sid = Long.parseLong(p.getFileName().toString());
             try {
-                osuFileLogRepository.deleteAllBySid(sid);
                 FileSystemUtils.deleteRecursively(p);
-            } catch (IOException ignored) {
+                osuFileLogRepository.deleteAllBySid(sid);
+            } catch (IOException e) {
+                log.error("删除 tmp map 文件出错", e);
             }
         };
-        try (var stream = Files.list(Path.of(OSU_FILE_PATH_TMP))) {
-            stream.filter(p -> p.getFileName().endsWith(Long.toString(delSid))).forEach(consumer);
+        Path path = Path.of(OSU_FILE_PATH_TMP, String.valueOf(delSid));
+        if (Files.isDirectory(path)) {
+            consumer.accept(path);
         }
+    }
+
+    public BeatmapSetCount getCount() {
+        int all = osuFileLogRepository.countAll();
+        int allSet = osuFileLogRepository.countBySid();
+        return new BeatmapSetCount(allSet, all);
+    }
+
+    public record BeatmapSetCount(int countMapSet, int countBeatmap) {
     }
 }
