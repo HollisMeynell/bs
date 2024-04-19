@@ -315,16 +315,20 @@ public class OsuFileService {
         }
     }
 
-    public void removeFile(long delSid) throws IOException {
-        Path path = Path.of(OSU_FILE_PATH, String.valueOf(delSid));
+    public void removeFile(long delSid) {
+        try {
+            Path path = Path.of(OSU_FILE_PATH, String.valueOf(delSid));
 
-        if (Files.isDirectory(path)) {
-            FileSystemUtils.deleteRecursively(path);
-        }
+            if (Files.isDirectory(path)) {
+                FileSystemUtils.deleteRecursively(path);
+            }
 
-        path = Path.of(OSU_FILE_PATH_TMP, String.valueOf(delSid));
-        if (Files.isDirectory(path)) {
-            osuFileLogRepository.deleteAllBySid(delSid);
+            path = Path.of(OSU_FILE_PATH_TMP, String.valueOf(delSid));
+            if (Files.isDirectory(path)) {
+                FileSystemUtils.deleteRecursively(path);
+            }
+        } catch (IOException e) {
+            log.error("清空 tmp map 文件夹出错", e);
         }
 
         osuFileLogRepository.deleteAllBySid(delSid);

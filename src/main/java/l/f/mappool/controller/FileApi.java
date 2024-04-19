@@ -349,7 +349,7 @@ public class FileApi {
     public DataVo<String> removeFileByBid(@PathVariable Long bid) {
         var mapinfo = osuApiService.getMapInfo(bid);
         var sid = mapinfo.getMapsetId();
-        osuFileService.removeTemp(sid);
+        osuFileService.removeFile(sid);
         return new DataVo<>("删除成功");
     }
 
