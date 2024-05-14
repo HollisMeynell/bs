@@ -201,7 +201,7 @@ public class FileApi {
                 bytesEnd = Long.parseLong(f[1]);
             } else if (f.length == 1) {
                 bytesStart = Long.parseLong(f[0]);
-                bytesEnd = Math.min(bytesStart + 1 << 20, size - 1);
+                bytesEnd = Math.min(bytesStart + (1 << 20), size - 1);
             } else {
                 throw new HttpTipException(400, "Range error");
             }
@@ -226,7 +226,7 @@ public class FileApi {
         }
 
         response.setHeader(HttpHeaders.CONTENT_TYPE, mediaType);
-        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, String.format("attachment; filename=\"%s\"", bid));
+        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, String.format("attachment; filename=%s", bid));
         try (in; var out = response.getOutputStream()) {
             log.debug("下载文件:range[{}] type[{}] id[{}]", range, atype, bid);
             int i;
@@ -278,8 +278,8 @@ public class FileApi {
     static int SUM = 0;
 
     @Open
-    @GetMapping("/maps/{sidStr}")
-    public void downloadMapPackage(@PathVariable String sidStr, HttpServletResponse response) throws IOException {
+    @GetMapping("/maps")
+    public void downloadMapPackage(@RequestParam("sid") String sidStr, HttpServletResponse response) throws IOException {
         var s = sidStr.split("-");
         var ids = new long[s.length];
         for (int i = 0; i < s.length; i++) {

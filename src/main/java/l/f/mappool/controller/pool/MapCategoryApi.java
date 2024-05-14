@@ -34,7 +34,7 @@ public class MapCategoryApi extends PoolApi {
     }
 
     @DeleteMapping("category")
-    DataVo<String> getCategory(@Validated(DeleteCategory.class) MapPoolDto create) {
+    DataVo<String> deleteCategory(@Validated(DeleteCategory.class) MapPoolDto create) {
         var u = ContextUtil.getContextUser();
         mapPoolService.deleteCategory(u.getOsuId(), create.getCategoryId());
         return new DataVo<>("删除成功", null);
