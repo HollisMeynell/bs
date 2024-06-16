@@ -257,6 +257,7 @@ public class OsuFileService {
         var firstBeatmap = list.getFirst();
         // rank/approved/loved 直接不用更新
         if (
+                Objects.nonNull(firstBeatmap.getStatus()) &&
                 (firstBeatmap.getStatus() == 1
                 || firstBeatmap.getStatus() == 2
                 || firstBeatmap.getStatus() == 4)
