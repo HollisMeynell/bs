@@ -46,6 +46,7 @@ public class UserApi {
                 .setData(new LoginUserVo()
                         .setName(user.getName())
                         .setUid(uid)
+                        .setAdmin(JwtUtil.isAdmin(uid))
                         .setToken(token))
                 .setMessage("登陆成功");
     }

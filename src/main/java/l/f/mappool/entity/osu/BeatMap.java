@@ -74,6 +74,9 @@ public class BeatMap {
     @JsonProperty("count_spinners")
     Integer spinners;
 
+    @Transient
+    String checksum;
+
     @ManyToOne()
     @JsonProperty("beatmapset")
     @JsonIdentityInfo(
@@ -102,5 +105,10 @@ public class BeatMap {
             case 3 -> "mania";
             default -> "unknown";
         };
+    }
+
+    @JsonSetter("checksum")
+    public void setChecksum(String checksum) {
+        this.checksum = checksum;
     }
 }

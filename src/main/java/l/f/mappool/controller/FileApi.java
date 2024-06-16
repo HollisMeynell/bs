@@ -257,7 +257,7 @@ public class FileApi {
     private OutputStream getResponseOut(@NotNull HttpServletResponse response, @Nullable String name) throws IOException {
         response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
         response.setCharacterEncoding("utf-8");
-        if (! StringUtils.hasText(name)) name = "file";
+        if (!StringUtils.hasText(name)) name = "file";
         name = URLEncoder.encode(name, StandardCharsets.UTF_8).replaceAll("\\+", "%20");
         response.setHeader("Content-Disposition", "attachment;filename=" + name);
         return response.getOutputStream();
@@ -318,17 +318,16 @@ public class FileApi {
             sid = osuApiService.getMapInfoByDB(bid).getMapsetId();
         }
         log.info("异步任务: 开始下载 [{}]", sid);
-        if (SUM < 50) {
-            Long finalSid = sid;
-            Thread.startVirtualThread(() -> {
-                try {
-                    osuFileService.outOsuZipFile(finalSid, null);
-                } catch (IOException e) {
-                    log.error("Async download osu file error", e);
-                }
-            });
-            SUM++;
-        }
+
+        Long finalSid = sid;
+        Thread.startVirtualThread(() -> {
+            try {
+                osuFileService.outOsuZipFile(finalSid, null);
+            } catch (IOException e) {
+                log.error("Async download osu file error", e);
+            }
+        });
+
         return ResponseEntity.ok("ok");
     }
 

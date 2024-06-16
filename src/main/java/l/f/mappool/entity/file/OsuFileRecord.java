@@ -12,6 +12,7 @@ import org.hibernate.annotations.DynamicUpdate;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,12 +30,23 @@ public class OsuFileRecord {
     @Id
     Long bid;
     Long sid;
-    @Column(name = "file_name")
+    @Column(name = "file_name", columnDefinition = "text")
     String file;
+    @Column(columnDefinition = "text")
     String background;
+    @Column(columnDefinition = "text")
     String audio;
+    @Column(columnDefinition = "text")
     String version;
     Integer mode;
+
+
+    @Column(name = "`check`", columnDefinition = "text")
+    String check;
+    @Column(columnDefinition = "int4")
+    Integer status;
+    @Column(name = "last_time", columnDefinition = "TIMESTAMP")
+    LocalDateTime last;
 
     public static OsuFileRecord parse(BufferedReader read, BeatMapSet set) throws IOException {
         OsuFileRecord obj = new OsuFileRecord();

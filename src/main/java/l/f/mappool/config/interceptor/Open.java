@@ -9,6 +9,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Open {
     boolean pub() default true;
+
     boolean admin() default false;
 
     boolean bot() default false;

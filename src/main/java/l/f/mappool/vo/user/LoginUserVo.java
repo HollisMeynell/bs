@@ -9,4 +9,5 @@ public class LoginUserVo {
     String name;
     String token;
     Long uid;
+    boolean admin;
 }

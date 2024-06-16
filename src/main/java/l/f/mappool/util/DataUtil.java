@@ -1,6 +1,12 @@
 package l.f.mappool.util;
 
 import l.f.mappool.enums.Mod;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.util.DigestUtils;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class DataUtil {
     private static int AR2MS(float ar){
@@ -83,4 +89,25 @@ public class DataUtil {
         }
         return hp;
     }
+
+    @NotNull
+    public static String getFileMd5(Path file) {
+        if (!Files.exists(file)) {
+            return "";
+        }
+        try {
+            long size = Files.size(file);
+            if (size < 512000) {
+                var all = Files.readAllBytes(file);
+                return DigestUtils.md5DigestAsHex(all);
+            }
+
+            try (var input = Files.newInputStream(file)) {
+                return DigestUtils.md5DigestAsHex(input);
+            }
+        } catch (IOException e) {
+            return "";
+        }
+    }
+
 }

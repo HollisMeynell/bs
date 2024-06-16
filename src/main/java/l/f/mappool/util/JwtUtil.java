@@ -56,4 +56,8 @@ public class JwtUtil {
         return null;
     }
 
+    public static boolean isAdmin(long osuId) {
+        return ADMIN_USER_SET.contains(osuId);
+    }
+
 }

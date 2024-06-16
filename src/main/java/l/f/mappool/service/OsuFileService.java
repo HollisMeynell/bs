@@ -1,19 +1,25 @@
 package l.f.mappool.service;
 
 import l.f.mappool.entity.file.OsuFileRecord;
+import l.f.mappool.entity.osu.BeatMap;
 import l.f.mappool.entity.osu.BeatMapSet;
 import l.f.mappool.exception.HttpTipException;
 import l.f.mappool.properties.BeatmapSelectionProperties;
 import l.f.mappool.repository.file.OsuFileLogRepository;
 import l.f.mappool.util.AsyncMethodExecutor;
+import l.f.mappool.util.DataUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.FileSystemUtils;
+import org.springframework.util.StringUtils;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -95,25 +101,22 @@ public class OsuFileService {
         return new FileInputStream(getPathByBid(bid, type).toFile());
     }
 
-    private boolean doDownload(long sid) throws IOException {
-        BeatMapSet mapSet = osuApiService.getMapsetInfo(sid);
-        Path tmp;
-        // 对应 ranked / loved
-        boolean isArchive = mapSet.getStatus() == 1 || mapSet.getStatus() == 4;
-        if (isArchive) {
-            tmp = Path.of(OSU_FILE_PATH, String.valueOf(sid));
-        } else {
-            tmp = Path.of(OSU_FILE_PATH_TMP, String.valueOf(sid));
+    private boolean doDownload(long sid, BeatMapSet mapSet) throws IOException {
+
+        var maps = new HashMap<Long, BeatMap>(mapSet.getBeatMaps().size());
+        for (var m : mapSet.getBeatMaps()) {
+            maps.put(m.getId(), m);
         }
+        Path osuPath = Path.of(OSU_FILE_PATH, String.valueOf(sid));
         HashMap<String, Path> fileMap = new HashMap<>();
         int writeFile = 0;
         try (var in = beatmapFileService.downloadOsz(sid, beatmapFileService.getRandomAccount())) {
-            Files.createDirectories(tmp);
+            Files.createDirectories(osuPath);
             var zip = new ZipInputStream(in);
-            writeFile = loopWriteFile(zip, tmp.toString(), fileMap);
+            writeFile = loopWriteFile(zip, osuPath.toString(), fileMap);
         } finally {
-            if (writeFile == 0 && Files.isDirectory(tmp)) {
-                FileSystemUtils.deleteRecursively(tmp);
+            if (writeFile == 0 && Files.isDirectory(osuPath)) {
+                FileSystemUtils.deleteRecursively(osuPath);
             }
         }
         // 解析数据 并记录
@@ -121,6 +124,16 @@ public class OsuFileService {
             var path = e.getValue();
             try (var read = Files.newBufferedReader(path)) {
                 var log = OsuFileRecord.parse(read, mapSet);
+                var info = maps.get(log.getBid());
+                String md5;
+                if (Objects.isNull(info) || !StringUtils.hasText(info.getChecksum())) {
+                    md5 = DataUtil.getFileMd5(path);
+                } else {
+                    md5 = info.getChecksum();
+                }
+                log.setCheck(md5);
+                log.setStatus(mapSet.getStatus());
+                log.setLast(mapSet.getLastUpdated().toLocalDateTime());
                 log.setFile(path.getFileName().toString());
                 osuFileLogRepository.saveAndFlush(log);
             } catch (IOException | RuntimeException err) {
@@ -128,7 +141,7 @@ public class OsuFileService {
                 // 不处理, 跳过
             }
         });
-        return isArchive;
+        return true;
     }
 
     public Path getPathByBid(long bid, BeatmapFileService.Type type) throws IOException {
@@ -141,11 +154,22 @@ public class OsuFileService {
      * 获得谱面文件在本地缓存中的文件名, 支持获取 音频/背景图片/谱面.osu文件
      */
     public Path getPath(long sid, long bid, BeatmapFileService.Type type) throws IOException {
-        Path basePath = getPath(sid);
-        var fOpt = osuFileLogRepository.findById(bid);
-        if (fOpt.isEmpty()) {
-            FileSystemUtils.deleteRecursively(basePath);
+        Path basePath = null;
+        try {
+            basePath = AsyncMethodExecutor.<Path>execute(
+                    () -> getPath(sid),
+                    sid,
+                    () -> Path.of(OSU_FILE_PATH, String.valueOf(sid)));
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("download error", e);
             throw new HttpTipException("下载/解析文件出错");
+        }
+        var fOpt = osuFileLogRepository.findById(bid);
+        if (fOpt.isEmpty() || !Files.isDirectory(basePath)) {
+            FileSystemUtils.deleteRecursively(basePath);
+            throw new HttpTipException("文件缓存失效, 正在更新, 请稍候尝试");
         }
         var fLog = fOpt.get();
         String fileLocal = switch (type) {
@@ -170,7 +194,18 @@ public class OsuFileService {
      * 将 .osz 文件写入到输出流, 优先从本地缓存中读取
      */
     public void outOsuZipFile(long sid, OutputStream out) throws IOException {
-        Path dir = getPath(sid);
+        Path dir;
+        try {
+            dir = AsyncMethodExecutor.<Path>execute(
+                    () -> getPath(sid),
+                    sid,
+                    () -> Path.of(OSU_FILE_PATH, String.valueOf(sid)));
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("download error", e);
+            throw new HttpTipException("下载/解析文件出错");
+        }
         if (Objects.isNull(out)) return;
         var zipOut = new ZipOutputStream(out);
         try {
@@ -182,7 +217,18 @@ public class OsuFileService {
     }
 
     public FileOut outOsuZipFile(long sid) throws IOException {
-        Path dir = getPath(sid);
+        Path dir;
+        try {
+            dir = AsyncMethodExecutor.<Path>execute(
+                    () -> getPath(sid),
+                    sid,
+                    () -> Path.of(OSU_FILE_PATH, String.valueOf(sid)));
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("download error", e);
+            throw new HttpTipException("下载/解析文件出错");
+        }
         return outStream -> {
             var zipOut = new ZipOutputStream(outStream);
             try {
@@ -196,17 +242,40 @@ public class OsuFileService {
 
     private Path getPath(long sid) throws IOException {
         final Path path = Path.of(OSU_FILE_PATH, String.valueOf(sid));
-        final Path path_tmp = Path.of(OSU_FILE_PATH_TMP, String.valueOf(sid));
-        boolean isArchive = true;
-        if (!Files.isDirectory(path)
-                && (isArchive = !Files.isDirectory(path_tmp))) {
-            isArchive = downloadOsuFile(sid);
+        boolean needDownload = false;
+
+        if (!Files.isDirectory(path)) {
+            needDownload = true;
         }
-        if (isArchive) {
+
+        var list = osuFileLogRepository.findOsuFileLogBySid(sid);
+
+        if (!needDownload && list.isEmpty()) {
+            needDownload = true;
+        }
+
+        var firstBeatmap = list.getFirst();
+        // rank/approved/loved 直接不用更新
+        if (
+                (firstBeatmap.getStatus() == 1
+                || firstBeatmap.getStatus() == 2
+                || firstBeatmap.getStatus() == 4)
+                && !needDownload
+        ) {
             return path;
-        } else {
-            return path_tmp;
         }
+
+        BeatMapSet mapSet = osuApiService.getMapsetInfo(sid);
+        if (mapSet.getLastUpdated().toLocalDateTime()
+                .isAfter(firstBeatmap.getLast().plusMinutes(2))) {
+            needDownload = true;
+        }
+
+        if (needDownload) {
+            doDownload(sid, mapSet);
+        }
+
+        return path;
     }
 
     /**
@@ -263,10 +332,10 @@ public class OsuFileService {
     /**
      * 下载单个 .osz 并解包写入到缓存目录中, 并将相关文件信息记录到数据库里.
      */
-    private boolean downloadOsuFile(long sid) throws IOException {
+    private void downloadOsuFile(long sid, BeatMapSet mapSet) throws IOException {
         try {
-            return AsyncMethodExecutor.<Boolean>execute(
-                    () -> doDownload(sid),
+            AsyncMethodExecutor.<Boolean>execute(
+                    () -> doDownload(sid, mapSet),
                     sid,
                     () -> Files.isDirectory(Path.of(OSU_FILE_PATH, String.valueOf(sid))));
 
@@ -363,6 +432,10 @@ public class OsuFileService {
         if (Files.isDirectory(path)) {
             consumer.accept(path);
         }
+    }
+
+    public void queryById() {
+//        osuFileLogRepository.findOsuFileLogBySid()
     }
 
     public BeatmapSetCount getCount() {

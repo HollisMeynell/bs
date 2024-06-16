@@ -7,6 +7,7 @@ import lombok.Setter;
 import org.hibernate.annotations.DynamicUpdate;
 import org.springframework.util.CollectionUtils;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 //import org.hibernate.type.TextType;
 
@@ -67,4 +68,8 @@ public class BeatMapSet {
         if (CollectionUtils.isEmpty(beatMaps)) return;
         this.beatMaps = beatMaps;
     }
+
+    @JsonProperty("last_updated")
+    @Column(name = "last_updated", columnDefinition = "TIMESTAMP")
+    OffsetDateTime lastUpdated;
 }
