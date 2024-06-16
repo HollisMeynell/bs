@@ -267,6 +267,13 @@ public class OsuFileService {
         }
 
         BeatMapSet mapSet = osuApiService.getMapsetInfo(sid);
+        if (Objects.isNull(firstBeatmap.getStatus())) {
+            list.forEach(s -> {
+                s.setStatus(mapSet.getStatus());
+                s.setLast(mapSet.getLastUpdated().toLocalDateTime());
+            });
+            osuFileLogRepository.saveAll(list);
+        }
         if (mapSet.getLastUpdated().toLocalDateTime()
                 .isAfter(firstBeatmap.getLast().plusMinutes(2))) {
             needDownload = true;
