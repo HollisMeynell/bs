@@ -333,7 +333,7 @@ public class FileApi {
 
     @DeleteMapping("map/{sid}")
     public DataVo<Boolean> delete(@PathVariable Long sid) throws IOException {
-        osuFileService.removeTemp(sid);
+        osuFileService.removeFile(sid);
         return new DataVo<>(Boolean.FALSE);
     }
 
@@ -355,7 +355,7 @@ public class FileApi {
     @Open(bot = true)
     @GetMapping("remove/sid/{sid}")
     public DataVo<String> removeFileBySid(@PathVariable Long sid) {
-        osuFileService.removeTemp(sid);
+        osuFileService.removeFile(sid);
         return new DataVo<>("删除成功");
     }
 

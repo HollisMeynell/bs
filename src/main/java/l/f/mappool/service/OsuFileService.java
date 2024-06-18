@@ -16,13 +16,11 @@ import org.springframework.util.StringUtils;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Objects;
-import java.util.function.Consumer;
+import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -42,11 +40,7 @@ public class OsuFileService {
      */
     private final String OSU_FILE_PATH;
 
-    /**
-     * 非最终状态下的 .osz 的缓存路径, 最终保存格式为 OSU_FILE_PATH_TMP/sid/*
-     */
-    private final String OSU_FILE_PATH_TMP;
-
+    private final Optional<Path> OSU_COPY_DIR;
 
     @Autowired
     public OsuFileService(
@@ -58,7 +52,6 @@ public class OsuFileService {
         this.osuApiService = osuApiService;
         String SAVE_PATH = properties.getFilePath();
         OSU_FILE_PATH = properties.getFilePath() + "/osu";
-        OSU_FILE_PATH_TMP = OSU_FILE_PATH + "/tmp";
         this.osuFileLogRepository = osuFileLogRepository;
         this.beatmapFileService = beatmapFileService;
         Path p = Path.of(SAVE_PATH);
@@ -69,8 +62,15 @@ public class OsuFileService {
         if (!Files.isDirectory(p)) {
             Files.createDirectories(p);
         }
-    }
 
+        var pathOpt = properties.getLocalOsuDirectory()
+                .map(Path::of);
+        if (pathOpt.map(Files::isDirectory).orElse(false)) {
+            OSU_COPY_DIR = pathOpt;
+        } else {
+            OSU_COPY_DIR = Optional.empty();
+        }
+    }
 
     @SuppressWarnings("unused")
     public long sizeOfOsuFile(long bid, BeatmapFileService.Type type) throws IOException {
@@ -101,7 +101,7 @@ public class OsuFileService {
         return new FileInputStream(getPathByBid(bid, type).toFile());
     }
 
-    private boolean doDownload(long sid, BeatMapSet mapSet) throws IOException {
+    private void doDownload(long sid, BeatMapSet mapSet) throws IOException {
 
         var maps = new HashMap<Long, BeatMap>(mapSet.getBeatMaps().size());
         for (var m : mapSet.getBeatMaps()) {
@@ -135,13 +135,13 @@ public class OsuFileService {
                 log.setStatus(mapSet.getStatus());
                 log.setLast(mapSet.getLastUpdated().toLocalDateTime());
                 log.setFile(path.getFileName().toString());
+                copyLink(log.getBid(), path);
                 osuFileLogRepository.saveAndFlush(log);
             } catch (IOException | RuntimeException err) {
                 log.error("解析数据时出错", err);
                 // 不处理, 跳过
             }
         });
-        return true;
     }
 
     public Path getPathByBid(long bid, BeatmapFileService.Type type) throws IOException {
@@ -245,13 +245,17 @@ public class OsuFileService {
         boolean needDownload = false;
 
         if (!Files.isDirectory(path)) {
-            needDownload = true;
+            BeatMapSet mapSet = osuApiService.getMapsetInfo(sid);
+            doDownload(sid, mapSet);
+            return path;
         }
 
         var list = osuFileLogRepository.findOsuFileLogBySid(sid);
 
-        if (!needDownload && list.isEmpty()) {
-            needDownload = true;
+        if (list.isEmpty()) {
+            BeatMapSet mapSet = osuApiService.getMapsetInfo(sid);
+            doDownload(sid, mapSet);
+            return path;
         }
 
         var firstBeatmap = list.getFirst();
@@ -267,6 +271,8 @@ public class OsuFileService {
         }
 
         BeatMapSet mapSet = osuApiService.getMapsetInfo(sid);
+
+        // 修补以前的 rank 图, 补上日期
         if (Objects.isNull(firstBeatmap.getStatus())) {
             list.forEach(s -> {
                 s.setStatus(mapSet.getStatus());
@@ -274,12 +280,9 @@ public class OsuFileService {
             });
             osuFileLogRepository.saveAll(list);
         }
+
         if (mapSet.getLastUpdated().toLocalDateTime()
                 .isAfter(firstBeatmap.getLast().plusMinutes(2))) {
-            needDownload = true;
-        }
-
-        if (needDownload) {
             doDownload(sid, mapSet);
         }
 
@@ -337,28 +340,14 @@ public class OsuFileService {
         };
     }
 
-    /**
-     * 下载单个 .osz 并解包写入到缓存目录中, 并将相关文件信息记录到数据库里.
-     */
-    private void downloadOsuFile(long sid, BeatMapSet mapSet) throws IOException {
-        try {
-            AsyncMethodExecutor.<Boolean>execute(
-                    () -> doDownload(sid, mapSet),
-                    sid,
-                    () -> Files.isDirectory(Path.of(OSU_FILE_PATH, String.valueOf(sid))));
-
-        } catch (IOException ioException) {
-            throw ioException;
-        } catch (Exception e) {
-            log.error("执行出现其他异常", e);
-            throw new RuntimeException(e);
-        }
-    }
-
     public interface FileOut {
         void write(OutputStream out) throws IOException;
     }
 
+    /**
+     * 下载时通过 zip 流 写入所有文件, 包括音效/背景
+     * @throws IOException 写入异常
+     */
     private int loopWriteFile(ZipInputStream zip, String basePath, HashMap<String, Path> fileMap) throws IOException {
         ZipEntry zipFile;
         int count = 0;
@@ -399,47 +388,11 @@ public class OsuFileService {
             if (Files.isDirectory(path)) {
                 FileSystemUtils.deleteRecursively(path);
             }
-
-            path = Path.of(OSU_FILE_PATH_TMP, String.valueOf(delSid));
-            if (Files.isDirectory(path)) {
-                FileSystemUtils.deleteRecursively(path);
-            }
         } catch (IOException e) {
-            log.error("清空 tmp map 文件夹出错", e);
+            log.error("清空 map 文件夹出错", e);
         }
 
         osuFileLogRepository.deleteAllBySid(delSid);
-    }
-
-    public void removeTemp() throws IOException {
-        Consumer<Path> consumer = p -> {
-            var sid = Long.parseLong(p.getFileName().toString());
-            try {
-                FileSystemUtils.deleteRecursively(p);
-                osuFileLogRepository.deleteAllBySid(sid);
-            } catch (IOException e) {
-                log.error("清空 tmp map 文件夹出错", e);
-            }
-        };
-        try (var stream = Files.list(Path.of(OSU_FILE_PATH_TMP))) {
-            stream.forEach(consumer);
-        }
-    }
-
-    public void removeTemp(long delSid) {
-        Consumer<Path> consumer = p -> {
-            var sid = Long.parseLong(p.getFileName().toString());
-            try {
-                FileSystemUtils.deleteRecursively(p);
-                osuFileLogRepository.deleteAllBySid(sid);
-            } catch (IOException e) {
-                log.error("删除 tmp map 文件出错", e);
-            }
-        };
-        Path path = Path.of(OSU_FILE_PATH_TMP, String.valueOf(delSid));
-        if (Files.isDirectory(path)) {
-            consumer.accept(path);
-        }
     }
 
     public void queryById() {
@@ -453,5 +406,28 @@ public class OsuFileService {
     }
 
     public record BeatmapSetCount(int countMapSet, int countBeatmap) {
+    }
+
+    /**
+     * 将创建符号链接到 复制文件夹里
+     * @param bid bid
+     * @param source 源文件路径
+     */
+    public void copyLink(long bid, Path source) {
+        if (OSU_COPY_DIR.isEmpty()) return;
+
+        var target = OSU_COPY_DIR.map(p->p.resolve(bid+".osu")).get();
+        if (Files.isRegularFile(target, LinkOption.NOFOLLOW_LINKS)) {
+            try {
+                Files.deleteIfExists(target);
+            } catch (IOException e) {
+                log.error("删除原文件出错", e);
+            }
+        }
+        if (Files.isRegularFile(source)) try {
+            Files.createSymbolicLink(target, source);
+        } catch (IOException e) {
+            log.error("创建符号连接出错", e);
+        }
     }
 }

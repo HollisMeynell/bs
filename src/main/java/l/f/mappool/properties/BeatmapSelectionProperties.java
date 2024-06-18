@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Data
 @Component
@@ -24,6 +25,8 @@ public class BeatmapSelectionProperties {
      * 是否为https
      */
     Boolean ssl = false;
+
+    Optional<String> localOsuDirectory = Optional.empty();
     /**
      * 管理员
      */

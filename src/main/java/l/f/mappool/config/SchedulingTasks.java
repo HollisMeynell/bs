@@ -28,14 +28,4 @@ public class SchedulingTasks {
         int deleteCount = localFileService.deleteAllOldFile();
         log.info("清理文件完成, 删除文件数: {}", deleteCount);
     }
-
-    @Scheduled(cron = "0 0 0 1/5 * *")
-    public void scanOsuFile() {
-        log.info("开始扫描osu文件");
-        try {
-            osuFileService.removeTemp();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
 }
