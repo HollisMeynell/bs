@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Configuration
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "SameReturnValue"})
 public class ApplicationConfig {
 
     @Bean

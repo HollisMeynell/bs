@@ -3,7 +3,6 @@ package l.f.mappool.service;
 import jakarta.annotation.Resource;
 import l.f.mappool.exception.HttpError;
 import l.f.mappool.util.JsonUtil;
-import l.f.mappool.vo.CategoryGroupVo;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -23,8 +22,8 @@ class PoolServiceTest {
         // 查
         var data = mapPoolService.getAllMarkPool(17064371L);
         assertEquals(1, data.getPageSize());
-        assertEquals(1, data.getData().get(0).getId());
-        assertEquals("name1", data.getData().get(0).getName());
+        assertEquals(1, data.getData().getFirst().getId());
+        assertEquals("name1", data.getData().getFirst().getName());
         // 删
         var i = mapPoolService.deleteMarkPool(17064371L, 1);
         assertEquals(1, i);

@@ -6,7 +6,6 @@ import org.junit.platform.commons.logging.Logger;
 import org.junit.platform.commons.logging.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.domain.PageRequest;
 
 @SpringBootTest
 class FavoriteRepositoryTest {
@@ -43,7 +42,7 @@ class FavoriteRepositoryTest {
         log.info(()-> {
             if (ts.isEmpty())
                 return "empty";
-            return ts.get(0).getId() + ts.get(0).getInfo();
+            return ts.getFirst().getId() + ts.getFirst().getInfo();
         });
 
     }

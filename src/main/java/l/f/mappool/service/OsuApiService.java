@@ -37,10 +37,10 @@ public class OsuApiService {
      */
     long time = System.currentTimeMillis();
     private String accessToken;
-    private WebClient webClient;
-    private OsuUserRepository osuUserRepository;
-    private BeatMapRepository beatMapRepository;
-    private BeatMapSetRepository beatMapSetRepository;
+    private final WebClient webClient;
+    private final OsuUserRepository osuUserRepository;
+    private final BeatMapRepository beatMapRepository;
+    private final BeatMapSetRepository beatMapSetRepository;
     private final String redirectUrl;
     private final int oauthId;
     private final String oauthToken;

@@ -17,10 +17,10 @@ import java.util.function.Function;
 @SuppressWarnings("unused")
 public class AsyncMethodExecutor {
     public interface Supplier<T>{
-        T get()throws Exception;
+        T get() throws Exception;
     }
     public interface Runnable{
-        void run()throws Exception;
+        void run() throws Exception;
     }
 
     @SuppressWarnings("unchecked")
@@ -48,7 +48,7 @@ public class AsyncMethodExecutor {
     private static final ConcurrentHashMap<Object, Condition> locks = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Object, Object> results = new ConcurrentHashMap<>();
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"unused", "DuplicatedCode"})
     public static<T> T execute(Supplier<T> supplier, Object key, T defaultValue) throws Exception {
         boolean hasLock;
         Condition lock;
@@ -62,6 +62,7 @@ public class AsyncMethodExecutor {
             return getResult(lock,key,supplier);
         }
     }
+    @SuppressWarnings("DuplicatedCode")
     public static<T> T execute(Supplier<T> supplier, Object key, Supplier<T> getDefault) throws Exception {
         boolean hasLock;
         Condition lock;
@@ -124,7 +125,7 @@ public class AsyncMethodExecutor {
     }
 
     private static class Util {
-        static ConcurrentHashMap<Condition, Integer> conditionCount = new ConcurrentHashMap<>();
+        static final ConcurrentHashMap<Condition, Integer> conditionCount = new ConcurrentHashMap<>();
 
         static void add(Condition lock) {
             conditionCount.putIfAbsent(lock, 0);
@@ -206,6 +207,7 @@ public class AsyncMethodExecutor {
                 })
                 .forEach(Thread::startVirtualThread);
         try {
+            //noinspection ResultOfMethodCallIgnored
             lock.await(120, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             log.error("lock error", e);

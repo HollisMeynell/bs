@@ -6,6 +6,7 @@ import l.f.mappool.util.JsonUtil;
 import l.f.mappool.util.JwtUtil;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
@@ -27,8 +28,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class WebSocketService extends TextWebSocketHandler {
     private static final String USER_KEY = "user";
     private static final ConcurrentHashMap<Long, List<WebSocketSession>> SESSIONS_MAP = new ConcurrentHashMap<>();
-    public static String PATH = "/api/websocket";
-    private final UserService userService;
+    public static final  String                                          PATH         = "/api/websocket";
+    private final        UserService                                     userService;
 
     public WebSocketService(UserService userService) {
         this.userService = userService;
@@ -91,7 +92,7 @@ public class WebSocketService extends TextWebSocketHandler {
     }
 
     @Override
-    protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
+    protected void handleTextMessage(WebSocketSession session, @NotNull TextMessage message) {
         session.getAttributes().computeIfAbsent(USER_KEY, (s) -> {
             String jwt = message.getPayload();
             if (ObjectUtils.isEmpty(jwt) || !jwt.startsWith("Bearer ")) {
@@ -114,7 +115,7 @@ public class WebSocketService extends TextWebSocketHandler {
     }
 
     @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
+    public void afterConnectionClosed(WebSocketSession session, @NotNull CloseStatus status) throws Exception {
         var userId = ((LoginUser) session.getAttributes().get(USER_KEY)).getOsuId();
         var webSocketSessions = SESSIONS_MAP.get(userId);
         if (!CollectionUtils.isEmpty(webSocketSessions)) {

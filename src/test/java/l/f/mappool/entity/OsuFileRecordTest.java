@@ -18,13 +18,13 @@ class OsuFileRecordTest {
 
     @Test
     void testWriteZipFiles() throws IOException {
-        try(var out = new FileOutputStream(Path.of("D:\\file\\test\\x.zip").toFile());) {
+        try(var out = new FileOutputStream(Path.of("D:\\file\\test\\x.zip").toFile())) {
             osuFileService.zipOsuFiles(out, 1456709, 503213, 382400);
         }
     }
     @Test
     void testWriteOneZipFile() throws IOException {
-        try(var out = new FileOutputStream(Path.of("D:\\file\\test\\x2.zip").toFile());) {
+        try(var out = new FileOutputStream(Path.of("D:\\file\\test\\x2.zip").toFile())) {
             osuFileService.outOsuZipFile(382400, out);
         }
     }

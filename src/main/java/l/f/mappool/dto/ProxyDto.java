@@ -2,7 +2,6 @@ package l.f.mappool.dto;
 
 import lombok.Data;
 import lombok.experimental.Accessors;
-import org.springframework.util.MultiValueMap;
 
 import javax.validation.constraints.NotEmpty;
 import java.util.Map;

@@ -14,6 +14,7 @@ public interface PoolMark4UserRepository extends JpaRepository<PoolMark4User, Lo
     @Query("delete from PoolMark4User b where b.uid=:uid and b.pid=:pid")
     int deleteAllByUidaAndPid(long uid, int pid);
 
+    @SuppressWarnings("UnusedReturnValue")
     @Transactional
     @Modifying
     @Query("delete from PoolMark4User b where b.pid=:pid")

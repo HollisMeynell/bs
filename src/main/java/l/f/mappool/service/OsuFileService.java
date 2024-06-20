@@ -11,6 +11,7 @@ import l.f.mappool.util.DataUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.FileSystemUtils;
 import org.springframework.util.StringUtils;
 
@@ -18,9 +19,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -154,7 +153,7 @@ public class OsuFileService {
      * 获得谱面文件在本地缓存中的文件名, 支持获取 音频/背景图片/谱面.osu文件
      */
     public Path getPath(long sid, long bid, BeatmapFileService.Type type) throws IOException {
-        Path basePath = null;
+        Path basePath;
         try {
             basePath = AsyncMethodExecutor.<Path>execute(
                     () -> getPath(sid),
@@ -382,16 +381,27 @@ public class OsuFileService {
     }
 
     public void removeFile(long delSid) {
+        List<OsuFileRecord> files;
         try {
             Path path = Path.of(OSU_FILE_PATH, String.valueOf(delSid));
 
+            files = osuFileLogRepository.findOsuFileLogBySid(delSid);
+            if (!CollectionUtils.isEmpty(files) && OSU_COPY_DIR.isPresent()) {
+                var directory = OSU_COPY_DIR.get();
+                files.stream()
+                        .map(f -> directory.resolve(f.getBid() + ".osu"))
+                        .forEach(path1 -> {
+                            try {
+                                Files.deleteIfExists(path1);
+                            } catch (IOException ignore) { }
+                        });
+            }
             if (Files.isDirectory(path)) {
                 FileSystemUtils.deleteRecursively(path);
             }
         } catch (IOException e) {
             log.error("清空 map 文件夹出错", e);
         }
-
         osuFileLogRepository.deleteAllBySid(delSid);
     }
 

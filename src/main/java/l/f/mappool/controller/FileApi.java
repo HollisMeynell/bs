@@ -275,8 +275,6 @@ public class FileApi {
         }
     }
 
-    static int SUM = 0;
-
     @Open
     @GetMapping("/maps")
     public void downloadMapPackage(@RequestParam("sid") String sidStr, HttpServletResponse response) throws IOException {
@@ -332,7 +330,7 @@ public class FileApi {
     }
 
     @DeleteMapping("map/{sid}")
-    public DataVo<Boolean> delete(@PathVariable Long sid) throws IOException {
+    public DataVo<Boolean> delete(@PathVariable Long sid) {
         osuFileService.removeFile(sid);
         return new DataVo<>(Boolean.FALSE);
     }

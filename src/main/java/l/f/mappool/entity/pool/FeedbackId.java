@@ -2,12 +2,16 @@ package l.f.mappool.entity.pool;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serializable;
 
 /***
  * 回复表
  */
+@Setter
+@Getter
 @Embeddable
 public class FeedbackId implements Serializable {
     @Column(name = "beatmap_id")
@@ -15,19 +19,4 @@ public class FeedbackId implements Serializable {
     @Column(name = "creater_id")
     Integer createrId;
 
-    public Integer getMapId() {
-        return mapId;
-    }
-
-    public void setMapId(Integer mapId) {
-        this.mapId = mapId;
-    }
-
-    public Integer getCreaterId() {
-        return createrId;
-    }
-
-    public void setCreaterId(Integer createrId) {
-        this.createrId = createrId;
-    }
 }

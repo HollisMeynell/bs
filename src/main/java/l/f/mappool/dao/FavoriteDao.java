@@ -4,17 +4,14 @@ import l.f.mappool.entity.Favorite;
 import l.f.mappool.exception.HttpError;
 import l.f.mappool.exception.NotFoundException;
 import l.f.mappool.repository.FavoriteRepository;
-import l.f.mappool.vo.DataVo;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
 
 @Component
 public class FavoriteDao {
-    private FavoriteRepository favoriteRepository;
+    private final FavoriteRepository favoriteRepository;
 
     @Autowired
     public FavoriteDao(FavoriteRepository favoriteRepository) {
@@ -59,14 +56,12 @@ public class FavoriteDao {
     }
 
     public Favorite delTag(Favorite favorite, String tag) {
-        // 删除标签
 //        favorite.setTags(setTags(favorite.getTags(), tag, false));
         favoriteRepository.deleteTags(favorite.getId(), tag);
         return favorite;
     }
 
     public Favorite replaceTag(Favorite favorite, String oldTag, String newTag) {
-        // 删除标签
         favoriteRepository.replaceTags(favorite.getId(), oldTag, newTag);
         return favorite;
     }
@@ -105,7 +100,7 @@ public class FavoriteDao {
         } else {
             tagSet.remove(tag);
         }
-        return tagSet.toArray(new String[tagSet.size()]);
+        return tagSet.toArray(new String[0]);
     }
 
     private String[] setTags(String[] tags, boolean add, String... newTags) {
@@ -119,6 +114,6 @@ public class FavoriteDao {
             }
         }
 
-        return tagSet.toArray(new String[tagSet.size()]);
+        return tagSet.toArray(new String[0]);
     }
 }

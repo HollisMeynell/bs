@@ -60,7 +60,7 @@ public class FavoriteApi {
     }
 
     @PatchMapping
-    public FavoritesVo updateFavorite(@RequestBody @Validated(UpdateFavorite.class) FavoriteDto favorite) throws HttpError {
+    public FavoritesVo updateFavorite(@RequestBody @Validated(UpdateFavorite.class) FavoriteDto favorite) {
         LoginUser loginUser = ContextUtil.getContextUser();
         return favoriteService.setFavorite(loginUser, favorite);
     }

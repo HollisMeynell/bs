@@ -15,6 +15,7 @@ import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.transport.ProxyProvider;
@@ -184,7 +185,7 @@ public class BeatmapFileService {
                         token = matcher.group("token");
                     else if (matcher.group("session") != null) session = matcher.group("session");
                 }
-                if (!token.equals("") && !session.equals("")) break;
+                if (StringUtils.hasText(token) && StringUtils.hasText(token)) break;
             }
         }
         if (!token.isBlank()) {

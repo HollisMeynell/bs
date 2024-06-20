@@ -22,9 +22,7 @@ public class ThreadPoolConfig {
     private static final String        THREAD_NAME_PREFIX     = "v-thread-";
     private static final ThreadFactory VIRTUAL_THREAD_FACTORY = Thread.ofVirtual()
             .name(THREAD_NAME_PREFIX, 0)
-            .uncaughtExceptionHandler((thread, exception) -> {
-                log.error("thread [{}] throw error:",thread.getName(), exception);
-            })
+            .uncaughtExceptionHandler((thread, exception) -> log.error("thread [{}] throw error:",thread.getName(), exception))
             .factory();
     private static final ExecutorService virtualThreadPerTaskExecutor = Executors.newThreadPerTaskExecutor(VIRTUAL_THREAD_FACTORY);
 

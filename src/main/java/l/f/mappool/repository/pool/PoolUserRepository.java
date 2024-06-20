@@ -13,6 +13,7 @@ import java.util.Optional;
 
 @Component
 public interface PoolUserRepository extends JpaRepository<PoolUser, Integer> {
+    @SuppressWarnings("UnusedReturnValue")
     long deleteByPool(Pool pool);
 
     @Transactional

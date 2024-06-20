@@ -14,8 +14,8 @@ import java.util.List;
 
 @Service
 public class FavoriteService {
-    OsuApiService osuApiService;
-    FavoriteDao   favoriteDao;
+    final OsuApiService osuApiService;
+    final FavoriteDao   favoriteDao;
 
     @Autowired
     public FavoriteService(
@@ -50,7 +50,7 @@ public class FavoriteService {
 
     public DataVo<String[]> getAllTags(LoginUser loginUser) {
         var tagList = favoriteDao.getTags(loginUser.getOsuId());
-        return new DataVo<>(tagList.toArray(new String[tagList.size()]));
+        return new DataVo<>(tagList.toArray(new String[0]));
     }
 
     public DataVo<List<Favorite>> getByTags(LoginUser loginUser, FavoriteDto data) {

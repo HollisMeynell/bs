@@ -44,7 +44,7 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addInterceptor(new AuthenticationInterceptor(userService));
     }
 
-    UndertowServletWebServerFactory undertowServletWebServerFactory = new UndertowServletWebServerFactory() {
+    final UndertowServletWebServerFactory undertowServletWebServerFactory = new UndertowServletWebServerFactory() {
         @Override
         public WebServer getWebServer(ServletContextInitializer... initializers) {
             var server = (UndertowServletWebServer) super.getWebServer(initializers);

@@ -49,7 +49,7 @@ class PoolDaoTest {
 
     @Test
     void testAll() {
-        var p = mapPoolDao.getAllPool(uid).get(PoolPermission.CREATE).get(0);
+        var p = mapPoolDao.getAllPool(uid).get(PoolPermission.CREATE).getFirst();
         var g = mapPoolDao.createCategoryGroup(uid, p.getId(), "e name", "# e info", 0x000, Optional.empty(), Optional.empty());
         var c = mapPoolDao.createCategory(uid, g.getId(), "eeeffff");
         var map0 = mapPoolDao.createCategoryItem(uid, c.getId(), 1155, "dsa");
@@ -65,10 +65,10 @@ class PoolDaoTest {
     void testGetAll() {
         var p1 = mapPoolDao.getAllPool(uid1);
         var p2 = mapPoolDao.getAllPool(uid);
-        var p = p2.get(PoolPermission.CREATE).get(0);
+        var p = p2.get(PoolPermission.CREATE).getFirst();
         var gs = mapPoolDao.getAllCategotys(p.getId());
-        log.info(gs.get(0).getName());
-        log.info(gs.get(0).getCategories().get(0).getName());
+        log.info(gs.getFirst().getName());
+        log.info(gs.getFirst().getCategories().getFirst().getName());
         log.info("ok");
     }
 

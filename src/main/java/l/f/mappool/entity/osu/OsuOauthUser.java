@@ -46,9 +46,8 @@ public class OsuOauthUser {
         return accessToken;
     }
 
-    public Long nextTime(Long addTime) {
+    public void nextTime(Long addTime) {
         time = System.currentTimeMillis() + addTime * 1000;
-        return time;
     }
 
     public boolean isPassed() {

@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @Aspect
 @Component
 public class AspectConfig {
-    public static AtomicLong ERROR_COUNT = new AtomicLong();
+    public static final AtomicLong ERROR_COUNT = new AtomicLong();
 
     @Pointcut("execution(* l.f.mappool.config.interceptor.WebExceptionHandler.*(jakarta.servlet.http.HttpServletRequest, ..))")
     public void errorHandle() {

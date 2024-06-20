@@ -43,6 +43,7 @@ public class UserService {
         return userRepository.findByOsuId(osuId);
     }
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public boolean loginCheck(LoginUser loginUser) {
         return userRepository.countByOsuIdAndCode(loginUser.getOsuId(), loginUser.getCode()) > 0;
     }

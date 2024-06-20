@@ -11,10 +11,12 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+@SuppressWarnings("UnusedReturnValue")
 @Component
 public interface FileLogRepository extends JpaRepository<FileRecord, Integer> {
 
     Optional<FileRecord> getFileLogByLocalName(String localName);
+    @SuppressWarnings("UnusedReturnValue")
     default FileRecord save(String name, String local) {
         var f = new FileRecord();
         f.setFileName(name);

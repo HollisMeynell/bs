@@ -33,15 +33,20 @@ public class AfterRun implements CommandLineRunner {
             TokenBucketUtil.closeTask();
             log.info("error count: [{}], shutdown!", ERROR_COUNT);
         };
+        delete();
         Runtime.getRuntime().addShutdownHook(new Thread(run,"endThread"));
-        try {
-            initCopyDir();
-        } catch (IOException e) {
-            log.error("初始化失败", e);
-        }
-        log.info("成功");
     }
 
+    void delete() {
+        var p = Path.of(properties.getFilePath(), "copy");
+        try {
+            Files.deleteIfExists(p);
+        } catch (IOException e) {
+            log.error("-", e);
+        }
+    }
+
+    @SuppressWarnings("unused")
     void initCopyDir() throws IOException {
         var p = Path.of(properties.getFilePath(), "copy");
         var directory = Path.of(properties.getFilePath(), "osu");

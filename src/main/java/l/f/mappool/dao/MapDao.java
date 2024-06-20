@@ -12,8 +12,8 @@ import java.util.Optional;
 @Component
 @SuppressWarnings("unused")
 public class MapDao {
-    BeatMapRepository beatMapRepository;
-    BeatMapSetRepository beatMapSetRepository;
+    final BeatMapRepository    beatMapRepository;
+    final BeatMapSetRepository beatMapSetRepository;
     @Autowired
     public MapDao(BeatMapRepository beatMapRepository, BeatMapSetRepository beatMapSetRepository) {
         this.beatMapRepository = beatMapRepository;

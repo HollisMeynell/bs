@@ -28,11 +28,12 @@ public class DataUtil {
         }
     }
 
+    @SuppressWarnings("lossy-conversions")
     public static float AR(float ar, int mod){
         int ms;
 //      1800  -  1200  -  450  -  300
         if (Mod.hasHr(mod)){
-            ar *= 1.4;
+            ar *= 1.4f;
         } else if (Mod.hasEz(mod)) {
             ar /= 2;
         }
@@ -55,6 +56,7 @@ public class DataUtil {
         return (80 - ms) / 6f;
     }
 
+    @SuppressWarnings("lossy-conversions")
     public static float OD(float od, int mod){
         float ms;
         if (Mod.hasHr(mod)){

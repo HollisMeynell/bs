@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarFile;
 
 public class ContextUtil {
-    static ThreadLocal<Map<String, Object>> threadLocalService = new ThreadLocal<>();
+    static final ThreadLocal<Map<String, Object>> threadLocalService = new ThreadLocal<>();
     private static final String USER_KEY = "**USER";
 
     public static <T> T getContext(String name, Class<T> tClass) {
