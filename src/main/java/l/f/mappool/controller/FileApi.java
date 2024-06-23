@@ -295,16 +295,23 @@ public class FileApi {
 
     @Open(bot = true)
     @RequestMapping(value = "local/{type}/{bid}", method = {RequestMethod.GET, RequestMethod.POST})
-    public String getLocalPath(@PathVariable Long bid, @PathVariable String type) throws IOException {
+    public String getLocalPath(@PathVariable Long bid,
+                               @PathVariable String type,
+                               @RequestHeader(value = "SET_ID", required = false) Long sid
+    ) throws IOException {
         var atype = switch (type) {
             case "bg" -> BeatmapFileService.Type.BACKGROUND;
             case "song" -> BeatmapFileService.Type.AUDIO;
             case "osufile" -> BeatmapFileService.Type.FILE;
             default -> throw new HttpTipException(400, "未知类型");
         };
+        if (Objects.isNull(sid)) {
+            sid = osuApiService.getMapInfoByDB(bid).getMapsetId();
+        }
         try {
-            return osuFileService.getPathByBid(bid, atype).toString();
+            return osuFileService.getPath(sid, bid, atype).toString();
         } catch (WebClientResponseException e) {
+            log.error("bot 下载出现异常:", e);
             throw new HttpTipException(400, e.getMessage());
         }
     }
@@ -315,6 +322,10 @@ public class FileApi {
         if (Objects.isNull(sid)) {
             sid = osuApiService.getMapInfoByDB(bid).getMapsetId();
         }
+        if (osuFileService.hasOsuFileCache(bid, sid)) {
+            return ResponseEntity.ok("ok");
+        }
+
         log.info("异步任务: 开始下载 [{}]", sid);
 
         Long finalSid = sid;

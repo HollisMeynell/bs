@@ -239,6 +239,19 @@ public class OsuFileService {
         };
     }
 
+    public boolean hasOsuFileCache(long bid, long sid) {
+        final Path path = Path.of(OSU_FILE_PATH, String.valueOf(sid));
+        if (!Files.isDirectory(path)) {
+            return false;
+        }
+
+        if (OSU_COPY_DIR.isEmpty()) return true;
+
+        var dotOsu = OSU_COPY_DIR.map(p->p.resolve(bid+".osu")).get();
+
+        return Files.isRegularFile(dotOsu);
+    }
+
     private Path getPath(long sid) throws IOException {
         final Path path = Path.of(OSU_FILE_PATH, String.valueOf(sid));
         boolean needDownload = false;
