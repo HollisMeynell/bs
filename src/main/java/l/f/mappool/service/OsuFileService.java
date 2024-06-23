@@ -30,9 +30,9 @@ import java.util.zip.ZipOutputStream;
 @Slf4j
 @Component
 public class OsuFileService {
-    private final OsuApiService osuApiService;
+    private final OsuApiService        osuApiService;
     private final OsuFileLogRepository osuFileLogRepository;
-    private final BeatmapFileService beatmapFileService;
+    private final BeatmapFileService   beatmapFileService;
 
     /**
      * 下载 .osz 的缓存路径, 最终保存格式为 OSU_FILE_PATH/sid/*
@@ -107,6 +107,7 @@ public class OsuFileService {
             maps.put(m.getId(), m);
         }
         Path osuPath = Path.of(OSU_FILE_PATH, String.valueOf(sid));
+        if (Files.isDirectory(osuPath)) FileSystemUtils.deleteRecursively(osuPath);
         HashMap<String, Path> fileMap = new HashMap<>();
         int writeFile = 0;
         try (var in = beatmapFileService.downloadOsz(sid, beatmapFileService.getRandomAccount())) {
@@ -153,23 +154,18 @@ public class OsuFileService {
      * 获得谱面文件在本地缓存中的文件名, 支持获取 音频/背景图片/谱面.osu文件
      */
     public Path getPath(long sid, long bid, BeatmapFileService.Type type) throws IOException {
-        Path basePath;
-        try {
-            basePath = AsyncMethodExecutor.<Path>execute(
-                    () -> getPath(sid),
-                    sid,
-                    () -> Path.of(OSU_FILE_PATH, String.valueOf(sid)));
-        } catch (IOException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("download error", e);
-            throw new HttpTipException("下载/解析文件出错");
-        }
+        Path basePath = getPathAsync(sid);
         var fOpt = osuFileLogRepository.findById(bid);
-        if (fOpt.isEmpty() || !Files.isDirectory(basePath)) {
-            FileSystemUtils.deleteRecursively(basePath);
-            throw new HttpTipException("文件缓存失效, 正在更新, 请稍候尝试");
+
+        int retryTime = 0;
+
+        while (fOpt.isEmpty() || !Files.isDirectory(basePath)) {
+            retryTime++;
+            basePath = getPathAsync(sid);
+            fOpt = osuFileLogRepository.findById(bid);
+            if (retryTime >= 3) throw new HttpTipException("文件缓存失效, 正在更新, 请稍候尝试");
         }
+
         var fLog = fOpt.get();
         String fileLocal = switch (type) {
             case FILE -> fLog.getFile();
@@ -193,18 +189,7 @@ public class OsuFileService {
      * 将 .osz 文件写入到输出流, 优先从本地缓存中读取
      */
     public void outOsuZipFile(long sid, OutputStream out) throws IOException {
-        Path dir;
-        try {
-            dir = AsyncMethodExecutor.<Path>execute(
-                    () -> getPath(sid),
-                    sid,
-                    () -> Path.of(OSU_FILE_PATH, String.valueOf(sid)));
-        } catch (IOException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("download error", e);
-            throw new HttpTipException("下载/解析文件出错");
-        }
+        Path dir = getPathAsync(sid);
         if (Objects.isNull(out)) return;
         var zipOut = new ZipOutputStream(out);
         try {
@@ -216,18 +201,7 @@ public class OsuFileService {
     }
 
     public FileOut outOsuZipFile(long sid) throws IOException {
-        Path dir;
-        try {
-            dir = AsyncMethodExecutor.<Path>execute(
-                    () -> getPath(sid),
-                    sid,
-                    () -> Path.of(OSU_FILE_PATH, String.valueOf(sid)));
-        } catch (IOException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("download error", e);
-            throw new HttpTipException("下载/解析文件出错");
-        }
+        Path dir = getPathAsync(sid);
         return outStream -> {
             var zipOut = new ZipOutputStream(outStream);
             try {
@@ -247,9 +221,23 @@ public class OsuFileService {
 
         if (OSU_COPY_DIR.isEmpty()) return true;
 
-        var dotOsu = OSU_COPY_DIR.map(p->p.resolve(bid+".osu")).get();
+        var dotOsu = OSU_COPY_DIR.map(p -> p.resolve(bid + ".osu")).get();
 
         return Files.isRegularFile(dotOsu);
+    }
+
+    private Path getPathAsync(long sid) throws IOException {
+        try {
+            return AsyncMethodExecutor.<Path>execute(
+                    () -> getPath(sid),
+                    sid,
+                    () -> Path.of(OSU_FILE_PATH, String.valueOf(sid)));
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("download error", e);
+            throw new HttpTipException("下载/解析文件出错");
+        }
     }
 
     private Path getPath(long sid) throws IOException {
@@ -274,10 +262,10 @@ public class OsuFileService {
         // rank/approved/loved 直接不用更新
         if (
                 Objects.nonNull(firstBeatmap.getStatus()) &&
-                (firstBeatmap.getStatus() == 1
-                || firstBeatmap.getStatus() == 2
-                || firstBeatmap.getStatus() == 4)
-                && !needDownload
+                        (firstBeatmap.getStatus() == 1
+                                || firstBeatmap.getStatus() == 2
+                                || firstBeatmap.getStatus() == 4)
+                        && !needDownload
         ) {
             return path;
         }
@@ -358,6 +346,7 @@ public class OsuFileService {
 
     /**
      * 下载时通过 zip 流 写入所有文件, 包括音效/背景
+     *
      * @throws IOException 写入异常
      */
     private int loopWriteFile(ZipInputStream zip, String basePath, HashMap<String, Path> fileMap) throws IOException {
@@ -406,7 +395,8 @@ public class OsuFileService {
                         .forEach(path1 -> {
                             try {
                                 Files.deleteIfExists(path1);
-                            } catch (IOException ignore) { }
+                            } catch (IOException ignore) {
+                            }
                         });
             }
             if (Files.isDirectory(path)) {
@@ -433,13 +423,14 @@ public class OsuFileService {
 
     /**
      * 将创建符号链接到 复制文件夹里
-     * @param bid bid
+     *
+     * @param bid    bid
      * @param source 源文件路径
      */
     public void copyLink(long bid, Path source) {
         if (OSU_COPY_DIR.isEmpty()) return;
 
-        var target = OSU_COPY_DIR.map(p->p.resolve(bid+".osu")).get();
+        var target = OSU_COPY_DIR.map(p -> p.resolve(bid + ".osu")).get();
         try {
             Files.deleteIfExists(target);
         } catch (IOException e) {
