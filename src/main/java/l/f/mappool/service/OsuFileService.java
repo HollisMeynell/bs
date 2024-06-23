@@ -138,7 +138,7 @@ public class OsuFileService {
                 copyLink(log.getBid(), path);
                 osuFileLogRepository.saveAndFlush(log);
             } catch (IOException | RuntimeException err) {
-                log.error("解析数据时出错", err);
+                log.error("解析数据时出错, 源文件: [{}]", path.toString(), err);
                 // 不处理, 跳过
             }
         });
