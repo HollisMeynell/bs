@@ -10,6 +10,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.annotations.DynamicUpdate;
+import org.springframework.util.StringUtils;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -54,8 +55,11 @@ public class OsuFileRecord {
         OsuFileRecord obj = new OsuFileRecord();
         try (read) {
             var versionStr = read.readLine();
-            if (versionStr == null || !versionStr.startsWith("osu file format v")) {
-                throw new RuntimeException("解析错误,文件无效");
+            while (!StringUtils.hasText(versionStr)) {
+                versionStr = read.readLine();
+            }
+            if (!versionStr.startsWith("osu file format v")) {
+                throw new RuntimeException(STR."解析错误,文件无效, 首行为\n\{versionStr}");
             }
             int version = Integer.parseInt(versionStr.substring(17));
             if (version < 5) {
