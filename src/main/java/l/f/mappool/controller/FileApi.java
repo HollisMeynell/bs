@@ -294,7 +294,7 @@ public class FileApi {
     }
 
     @Open(bot = true)
-    @GetMapping("local/{type}/{bid}")
+    @RequestMapping(value = "local/{type}/{bid}", method = {RequestMethod.GET, RequestMethod.POST})
     public String getLocalPath(@PathVariable Long bid, @PathVariable String type) throws IOException {
         var atype = switch (type) {
             case "bg" -> BeatmapFileService.Type.BACKGROUND;
