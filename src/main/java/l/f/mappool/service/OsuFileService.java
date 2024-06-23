@@ -440,13 +440,12 @@ public class OsuFileService {
         if (OSU_COPY_DIR.isEmpty()) return;
 
         var target = OSU_COPY_DIR.map(p->p.resolve(bid+".osu")).get();
-        if (Files.isRegularFile(target, LinkOption.NOFOLLOW_LINKS)) {
-            try {
-                Files.deleteIfExists(target);
-            } catch (IOException e) {
-                log.error("删除原文件出错", e);
-            }
+        try {
+            Files.deleteIfExists(target);
+        } catch (IOException e) {
+            log.error("删除原文件出错", e);
         }
+
         if (Files.isRegularFile(source)) try {
             Files.createSymbolicLink(target, source);
         } catch (IOException e) {
