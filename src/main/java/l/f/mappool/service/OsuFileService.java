@@ -157,6 +157,12 @@ public class OsuFileService {
         Path basePath = getPathAsync(sid);
         var fOpt = osuFileLogRepository.findById(bid);
 
+        // 防止 sid 与 bid 不匹配
+        if (fOpt.isEmpty()) {
+            var s = osuApiService.getMapInfoByDB(bid);
+            sid = s.getMapsetId();
+        }
+
         int retryTime = 0;
 
         while (fOpt.isEmpty() || !Files.isDirectory(basePath)) {
