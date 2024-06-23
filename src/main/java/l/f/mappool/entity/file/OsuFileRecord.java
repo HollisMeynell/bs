@@ -59,7 +59,7 @@ public class OsuFileRecord {
                 versionStr = read.readLine();
             }
             if (!versionStr.startsWith("osu file format v")) {
-                throw new RuntimeException(STR."解析错误,文件无效, 首行为\n\{versionStr}");
+                throw new RuntimeException("解析错误,文件无效, 首行为\n" + versionStr);
             }
             int version = Integer.parseInt(versionStr.substring(17));
             if (version < 5) {
