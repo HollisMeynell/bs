@@ -159,7 +159,7 @@ public enum OsuMod {
     }
 
     public static boolean hasDt(int i) {
-        return DoubleTime.check(i);
+        return ((DoubleTime.value | Nightcore.value) & i) != 0;
     }
 
     public static boolean hasHt(int i) {

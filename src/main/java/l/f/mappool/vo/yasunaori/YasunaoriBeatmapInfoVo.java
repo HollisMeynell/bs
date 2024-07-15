@@ -45,7 +45,7 @@ public class YasunaoriBeatmapInfoVo {
         this.status = beatMap.getStatus();
         this.mode = beatMap.getMode();
 
-        this.stats = new Stats(beatMap.getLength(), beatMap.getBeatMapSet().getBpm(), beatMap.getCs(), beatMap.getAr(), beatMap.getOd(), beatMap.getHp());
+            this.stats = new Stats(beatMap.getTotalLength(), beatMap.getBeatMapSet().getBpm(), beatMap.getCs(), beatMap.getAr(), beatMap.getOd(), beatMap.getHp());
         this.difficulty = new Difficulty(beatMap.getDifficulty(), beatMap.getVersion());
     }
 
