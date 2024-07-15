@@ -1,13 +1,14 @@
 package l.f.mappool.enums;
 
 import l.f.mappool.exception.ModsCatchException;
+import org.springframework.util.StringUtils;
 
 import java.util.Arrays;
 import java.util.List;
 
 @SuppressWarnings("unused")
-public enum Mod {
-    None(0, ""),
+public enum OsuMod {
+    None(0, "NM"),
     NoFail(1, "NF"),
     Easy(1 << 1, "EZ"),
     //替换未使用的 No Video
@@ -52,25 +53,26 @@ public enum Mod {
     //    ScoreIncreaseMods(Hidden.value | HardRock.value | Flashlight.value | DoubleTime.value | FadeIn.value)
     ScoreIncreaseMods(1049688, "IM"),
     // 其他未上传的mod
-    Other(0, "?");
+    Other(0, "");
     public final int value;
     public final String abbreviation;
 
-    Mod(int i, String name) {
+    OsuMod(int i, String name) {
         value = i;
         abbreviation = name;
     }
 
-    public static List<Mod> getModsList(String modsStr) {
+    public static List<OsuMod> getModsList(String modsStr) {
         var modStrArray = getModsString(modsStr);
-        var mList = Arrays.stream(modStrArray).map(Mod::fromStr).filter(e -> e != Other).toList();
+        var mList = Arrays.stream(modStrArray).map(OsuMod::fromStr).filter(e -> e != Other).toList();
         check(mList);
         return mList;
     }
 
     public static int getModsValue(String modsStr) {
+        if (!StringUtils.hasText(modsStr)) return 0;
         var modStrArray = getModsString(modsStr);
-        var mList = Arrays.stream(modStrArray).map(Mod::fromStr).filter(e -> e != Other).toList();
+        var mList = Arrays.stream(modStrArray).map(OsuMod::fromStr).filter(e -> e != Other).toList();
         return getModsValue(mList);
     }
 
@@ -82,33 +84,36 @@ public enum Mod {
         return newStr.split("(?<=\\w)(?=(\\w{2})+$)");
     }
 
-    private static void check(List<Mod> modList) {
-        if (modList.contains(None) && modList.size() > 1) {
+    private static void check(List<OsuMod> osuModList) {
+        if (osuModList.contains(None) && osuModList.size() > 1) {
             throw ModsCatchException.Create.ConflictException(None);
         }
-        if (modList.contains(DoubleTime) && modList.contains(HalfTime)) {
+        int modValue = osuModList.stream().map(m -> m.value).reduce(0, (i, s) -> s | i);
+
+        if ((modValue & 320) == 320) {
             throw ModsCatchException.Create.ConflictException(DoubleTime, HalfTime);
         }
-        if (modList.contains(HardRock) && modList.contains(Easy)) {
+
+        if ((modValue & 18) == 18) {
             throw ModsCatchException.Create.ConflictException(HardRock, Easy);
         }
-        if (modList.contains(NoFail) && (modList.contains(SuddenDeath) || modList.contains(Perfect))) {
+        if ((modValue & 1) != 0 && (modValue & 16416) != 0) {
             throw ModsCatchException.Create.ConflictException(NoFail, SuddenDeath, Perfect);
         }
     }
 
     public static int getModsValueFromStr(List<String> mList) {
-        return getModsValue(mList.stream().map(Mod::fromStr).toList());
+        return getModsValue(mList.stream().map(OsuMod::fromStr).toList());
     }
 
-    public static int getModsValue(List<Mod> mList) {
+    public static int getModsValue(List<OsuMod> mList) {
         check(mList);
         return mList.stream().map(m -> m.value).reduce(0, (i, s) -> s | i);
     }
 
-    public static Mod fromStr(String modStr) {
+    public static OsuMod fromStr(String modStr) {
         return switch (modStr.toUpperCase()) {
-            case "" -> None;
+            case "NM" -> None;
             case "NF" -> NoFail;
             case "EZ" -> Easy;
             case "HT" -> HalfTime;
@@ -134,6 +139,21 @@ public enum Mod {
         };
     }
 
+    private static final int changeRatingValue = Easy.value | HalfTime.value | TouchDevice.value |
+            HardRock.value | DoubleTime.value | Nightcore.value | Flashlight.value;
+
+    public static boolean hasChangeRating(int i) {
+        return (changeRatingValue & i) != 0;
+    }
+
+    private static final int changePPValue = NoFail.value | Easy.value | HalfTime.value | TouchDevice.value |
+            HardRock.value | DoubleTime.value | Nightcore.value | Hidden.value | Flashlight.value |
+            SpunOut.value;
+
+    public static boolean hasChangePP(int i) {
+        return (ScoreIncreaseMods.value & i) != 0;
+    }
+
     public boolean check(int i) {
         return (value & i) != 0;
     }
@@ -154,8 +174,8 @@ public enum Mod {
         return Easy.check(i);
     }
 
-    public static int add(int old, Mod mod) {
-        return old | mod.value;
+    public static int add(int old, OsuMod osuMod) {
+        return old | osuMod.value;
     }
 
     public int add(int old) {

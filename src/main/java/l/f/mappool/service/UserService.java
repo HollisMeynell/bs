@@ -1,29 +1,32 @@
 package l.f.mappool.service;
 
-import jakarta.annotation.Resource;
 import l.f.mappool.entity.LoginUser;
 import l.f.mappool.entity.osu.OsuOauthUser;
 import l.f.mappool.properties.BeatmapSelectionProperties;
 import l.f.mappool.repository.UserRepository;
 import l.f.mappool.repository.osu.OsuUserRepository;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@AllArgsConstructor
 public class UserService {
-    @Resource
+
     OsuApiService osuApiService;
-    @Resource
+
     OsuUserRepository osuUserRepository;
-    @Resource
+
     UserRepository userRepository;
-    @Resource
+
     BeatmapSelectionProperties properties;
 
     public OsuOauthUser doLogin(String code) {
         var user = osuApiService.getToken(code);
-        user = osuApiService.getMeInfo(user);
+        var userInfo = osuApiService.getMeInfo(user);
+        user.setName(userInfo.getUserName());
+        user.setOsuId(userInfo.getId());
         osuUserRepository.saveAndFlush(user);
         return user;
     }

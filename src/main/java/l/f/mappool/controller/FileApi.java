@@ -7,7 +7,7 @@ import l.f.mappool.config.interceptor.Open;
 import l.f.mappool.entity.file.FileRecord;
 import l.f.mappool.exception.HttpError;
 import l.f.mappool.exception.HttpTipException;
-import l.f.mappool.service.BeatmapFileService;
+import l.f.mappool.service.DownloadOsuFileService;
 import l.f.mappool.service.LocalFileService;
 import l.f.mappool.service.OsuApiService;
 import l.f.mappool.service.OsuFileService;
@@ -161,15 +161,15 @@ public class FileApi {
         var atype = switch (type) {
             case "bg" -> {
                 mediaType = "image/jpeg";
-                yield BeatmapFileService.Type.BACKGROUND;
+                yield DownloadOsuFileService.Type.BACKGROUND;
             }
             case "song" -> {
                 mediaType = "audio/mpeg";
-                yield BeatmapFileService.Type.AUDIO;
+                yield DownloadOsuFileService.Type.AUDIO;
             }
             case "osufile" -> {
                 mediaType = "application/octet-stream";
-                yield BeatmapFileService.Type.FILE;
+                yield DownloadOsuFileService.Type.FILE;
             }
             default -> throw new HttpTipException(400, "未知类型");
         };
@@ -300,9 +300,9 @@ public class FileApi {
                                @RequestHeader(value = "SET_ID", required = false) Long sid
     ) throws IOException {
         var atype = switch (type) {
-            case "bg" -> BeatmapFileService.Type.BACKGROUND;
-            case "song" -> BeatmapFileService.Type.AUDIO;
-            case "osufile" -> BeatmapFileService.Type.FILE;
+            case "bg" -> DownloadOsuFileService.Type.BACKGROUND;
+            case "song" -> DownloadOsuFileService.Type.AUDIO;
+            case "osufile" -> DownloadOsuFileService.Type.FILE;
             default -> throw new HttpTipException(400, "未知类型");
         };
         if (Objects.isNull(sid)) {

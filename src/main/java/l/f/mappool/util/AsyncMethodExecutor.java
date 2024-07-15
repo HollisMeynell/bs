@@ -1,5 +1,6 @@
 package l.f.mappool.util;
 
+import l.f.mappool.exception.HttpTipException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Collection;
@@ -215,6 +216,19 @@ public class AsyncMethodExecutor {
         return results;
     }
 
+    public static void sleep(int time) throws HttpTipException {
+        if (time < 0) time = 10;
+        sleep((long)time);
+    }
+
+    public static void sleep(long time) throws HttpTipException {
+        if (time < 0) time = 10L;
+        try {
+            Thread.sleep(time);
+        } catch (InterruptedException e) {
+            throw new HttpTipException(500, "服务处理遭到中断");
+        }
+    }
 /*
     public static <T> Optional<T> anyWork(Collection<Callable<T>> works){
         try (var scope = new StructuredTaskScope.ShutdownOnSuccess<T>()) {

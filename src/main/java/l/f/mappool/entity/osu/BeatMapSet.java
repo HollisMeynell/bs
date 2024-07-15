@@ -39,6 +39,10 @@ public class BeatMapSet {
     @Column(name = "mapper_name", columnDefinition = "text")
     String mapperName;
 
+    @JsonProperty("bpm")
+    @Column(name = "bpm")
+    Float bpm;
+
     @JsonProperty("artist")
     @Column(name = "artist", columnDefinition = "text")
     String artist;

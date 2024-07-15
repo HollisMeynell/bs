@@ -9,7 +9,6 @@ import l.f.mappool.repository.file.OsuFileLogRepository;
 import l.f.mappool.util.AsyncMethodExecutor;
 import l.f.mappool.util.DataUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.FileSystemUtils;
@@ -17,7 +16,6 @@ import org.springframework.util.StringUtils;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.zip.ZipEntry;
@@ -31,8 +29,8 @@ import java.util.zip.ZipOutputStream;
 @Component
 public class OsuFileService {
     private final OsuApiService        osuApiService;
-    private final OsuFileLogRepository osuFileLogRepository;
-    private final BeatmapFileService   beatmapFileService;
+    private final OsuFileLogRepository   osuFileLogRepository;
+    private final DownloadOsuFileService downloadOsuFileService;
 
     /**
      * 下载 .osz 的缓存路径, 最终保存格式为 OSU_FILE_PATH/sid/*
@@ -41,18 +39,17 @@ public class OsuFileService {
 
     private final Optional<Path> OSU_COPY_DIR;
 
-    @Autowired
     public OsuFileService(
             OsuApiService osuApiService,
             BeatmapSelectionProperties properties,
             OsuFileLogRepository osuFileLogRepository,
-            BeatmapFileService beatmapFileService
+            DownloadOsuFileService downloadOsuFileService
     ) throws IOException {
         this.osuApiService = osuApiService;
         String SAVE_PATH = properties.getFilePath();
         OSU_FILE_PATH = properties.getFilePath() + "/osu";
         this.osuFileLogRepository = osuFileLogRepository;
-        this.beatmapFileService = beatmapFileService;
+        this.downloadOsuFileService = downloadOsuFileService;
         Path p = Path.of(SAVE_PATH);
         if (!Files.isDirectory(p)) {
             Files.createDirectories(p);
@@ -72,7 +69,7 @@ public class OsuFileService {
     }
 
     @SuppressWarnings("unused")
-    public long sizeOfOsuFile(long bid, BeatmapFileService.Type type) throws IOException {
+    public long sizeOfOsuFile(long bid, DownloadOsuFileService.Type type) throws IOException {
         long sid = osuApiService.getMapInfoByDB(bid).getMapsetId();
         var file = getPath(sid, bid, type);
         return Files.size(file);
@@ -84,7 +81,7 @@ public class OsuFileService {
      * @param type 类型
      */
     @SuppressWarnings("unused")
-    public byte[] getOsuFile(long bid, BeatmapFileService.Type type) throws IOException {
+    public byte[] getOsuFile(long bid, DownloadOsuFileService.Type type) throws IOException {
         long sid = osuApiService.getMapInfoByDB(bid).getMapsetId();
         Path file = getPath(sid, bid, type);
         return Files.readAllBytes(file);
@@ -96,7 +93,7 @@ public class OsuFileService {
      * @param type 类型
      */
     @SuppressWarnings("unused")
-    public InputStream outOsuFile(long bid, BeatmapFileService.Type type) throws IOException {
+    public InputStream outOsuFile(long bid, DownloadOsuFileService.Type type) throws IOException {
         return new FileInputStream(getPathByBid(bid, type).toFile());
     }
 
@@ -110,7 +107,7 @@ public class OsuFileService {
         if (Files.isDirectory(osuPath)) FileSystemUtils.deleteRecursively(osuPath);
         HashMap<String, Path> fileMap = new HashMap<>();
         int writeFile = 0;
-        try (var in = beatmapFileService.downloadOsz(sid, beatmapFileService.getRandomAccount())) {
+        try (var in = downloadOsuFileService.downloadOsz(sid, downloadOsuFileService.getRandomAccount())) {
             Files.createDirectories(osuPath);
             var zip = new ZipInputStream(in);
             writeFile = loopWriteFile(zip, osuPath.toString(), fileMap);
@@ -144,7 +141,7 @@ public class OsuFileService {
         });
     }
 
-    public Path getPathByBid(long bid, BeatmapFileService.Type type) throws IOException {
+    public Path getPathByBid(long bid, DownloadOsuFileService.Type type) throws IOException {
         long sid = osuApiService.getMapInfoByDB(bid).getMapsetId();
         var file = getPath(sid, bid, type);
         return file.toAbsolutePath();
@@ -153,7 +150,7 @@ public class OsuFileService {
     /**
      * 获得谱面文件在本地缓存中的文件名, 支持获取 音频/背景图片/谱面.osu文件
      */
-    public Path getPath(long sid, long bid, BeatmapFileService.Type type) throws IOException {
+    public Path getPath(long sid, long bid, DownloadOsuFileService.Type type) throws IOException {
         Path basePath = getPathAsync(sid);
         var fOpt = osuFileLogRepository.findById(bid);
 
@@ -167,6 +164,7 @@ public class OsuFileService {
 
         while (fOpt.isEmpty() || !Files.isDirectory(basePath)) {
             retryTime++;
+            AsyncMethodExecutor.sleep(retryTime * retryTime * 1000);
             basePath = getPathAsync(sid);
             fOpt = osuFileLogRepository.findById(bid);
             if (retryTime >= 3) throw new HttpTipException("文件缓存失效, 正在更新, 请稍候尝试");
@@ -412,10 +410,6 @@ public class OsuFileService {
             log.error("清空 map 文件夹出错", e);
         }
         osuFileLogRepository.deleteAllBySid(delSid);
-    }
-
-    public void queryById() {
-//        osuFileLogRepository.findOsuFileLogBySid()
     }
 
     public BeatmapSetCount getCount() {

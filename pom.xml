@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.0</version>
+        <version>3.3.1</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>l.f</groupId>
@@ -104,7 +104,12 @@
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-hibernate6</artifactId>
         </dependency>
-
+<!--        计算库-->
+        <dependency>
+            <groupId>rosu.pp.jni</groupId>
+            <artifactId>rosu-pp-jni</artifactId>
+            <version>0.1.2</version>
+        </dependency>
     </dependencies>
 
     <build>

@@ -1,6 +1,5 @@
 package l.f.mappool.service;
 
-import jakarta.annotation.Resource;
 import jakarta.transaction.Transactional;
 import l.f.mappool.dao.MapPoolDao;
 import l.f.mappool.dto.map.QueryMapPoolDto;
@@ -17,6 +16,7 @@ import l.f.mappool.repository.pool.PoolUserRepository;
 import l.f.mappool.vo.DataListVo;
 import l.f.mappool.vo.DataVo;
 import l.f.mappool.vo.PoolVo;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -29,15 +29,15 @@ import java.util.Optional;
 
 @Slf4j
 @Service
+@AllArgsConstructor
 public class MapPoolService {
-    @Resource
+
     MapPoolDao mapPoolDao;
-    @Resource
+
     PoolUserRepository poolUserRepository;
-    @Resource
+
     UserService userService;
 
-    @Resource
     PoolMark4UserRepository poolMark4UserRepository;
 
     /***

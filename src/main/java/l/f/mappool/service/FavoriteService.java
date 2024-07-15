@@ -7,24 +7,16 @@ import l.f.mappool.entity.LoginUser;
 import l.f.mappool.exception.HttpError;
 import l.f.mappool.vo.DataVo;
 import l.f.mappool.vo.FavoritesVo;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@AllArgsConstructor
 public class FavoriteService {
     final OsuApiService osuApiService;
     final FavoriteDao   favoriteDao;
-
-    @Autowired
-    public FavoriteService(
-            OsuApiService apiService,
-            FavoriteDao favoriteDao
-    ) {
-        this.osuApiService = apiService;
-        this.favoriteDao = favoriteDao;
-    }
 
     public FavoritesVo addFavorite(LoginUser loginUser, FavoriteDto data) {
         var favorite = favoriteDao.addFavorite(loginUser.getOsuId(), data.getBid(), data.getInfo(), data.getTags());

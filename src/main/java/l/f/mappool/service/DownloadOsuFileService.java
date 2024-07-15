@@ -1,13 +1,13 @@
 package l.f.mappool.service;
 
 import jakarta.annotation.Nullable;
-import jakarta.annotation.Resource;
 import l.f.mappool.entity.osu.OsuAccountUser;
+import l.f.mappool.exception.ClientException;
 import l.f.mappool.exception.HttpTipException;
 import l.f.mappool.repository.osu.OsuAccountUserRepository;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.buffer.DataBufferUtils;
-import org.springframework.core.io.buffer.NettyDataBuffer;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -16,13 +16,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
+import org.springframework.web.reactive.function.BodyExtractors;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.scheduler.Schedulers;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.transport.ProxyProvider;
 
 import java.io.*;
 import java.time.Duration;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 /**
@@ -30,13 +33,14 @@ import java.util.regex.Pattern;
  */
 @Slf4j
 @Service
+@AllArgsConstructor
 @SuppressWarnings("unused")
-public class BeatmapFileService {
+public class DownloadOsuFileService {
     public enum Type {
         BACKGROUND, AUDIO, FILE,
     }
 
-    private static final HttpClient httpClient = HttpClient.create()
+    private static final HttpClient                 httpClient       = HttpClient.create()
             .baseUrl("https://osu.ppy.sh/")
             .proxy(proxy ->
                     proxy.type(ProxyProvider.Proxy.HTTP)
@@ -45,17 +49,16 @@ public class BeatmapFileService {
             )
             .followRedirect(true)
             .responseTimeout(Duration.ofSeconds(60));
-    private static final ReactorClientHttpConnector connector = new ReactorClientHttpConnector(httpClient);
-    private static final WebClient webClient = WebClient.builder()
+    private static final ReactorClientHttpConnector connector        = new ReactorClientHttpConnector(httpClient);
+    private static final WebClient                  webClient        = WebClient.builder()
             .clientConnector(connector)
             .defaultHeaders(headers -> headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED))
             .build();
-    private static final String HOME_PAGE_URL = "/home";
-    private static final String LOGIN_URL        = "/session";
-    private static final String DOWNLOAD_OSZ_URL = "/beatmapsets/{bid}/download";
-    private static final String DOWNLOAD_OSR_URL = "/scores/{mode}/{bid}/download";
+    private static final String                     HOME_PAGE_URL    = "/home";
+    private static final String                     LOGIN_URL        = "/session";
+    private static final String                     DOWNLOAD_OSZ_URL = "/beatmapsets/{bid}/download";
+    private static final String                     DOWNLOAD_OSR_URL = "/scores/{mode}/{bid}/download";
 
-    @Resource
     OsuAccountUserRepository accountUserRepository;
 
     public OsuAccountUser getRandomAccount() {
@@ -70,14 +73,14 @@ public class BeatmapFileService {
     }
 
     public InputStream downloadOsz(long sid, OsuAccountUser account) throws IOException {
-        return doDownload(sid, account, null);
+        return doDownloadOsz(sid, account, null);
     }
 
-    public InputStream downloadOsr(long scoreId, String mode,  OsuAccountUser account) throws IOException {
-        return doDownload(scoreId, account, mode);
+    public InputStream downloadOsr(long scoreId, String mode, OsuAccountUser account) throws IOException {
+        return doDownloadOsz(scoreId, account, mode);
     }
 
-    private InputStream doDownload(long sid,  OsuAccountUser account,@Nullable String mode) throws IOException {
+    private InputStream doDownloadOsz(long sid, OsuAccountUser account, @Nullable String mode) throws IOException {
         if (account.getSession() == null) initAccount(account);
 
         PipedOutputStream outputStream = new PipedOutputStream();
@@ -87,19 +90,25 @@ public class BeatmapFileService {
         if (mode == null) {
             consumer = i -> downloadBody(account, outputStream, DOWNLOAD_OSZ_URL, sid);
         } else {
-            consumer = i -> downloadBody(account, outputStream, DOWNLOAD_OSR_URL,  mode, sid);
+            consumer = i -> downloadBody(account, outputStream, DOWNLOAD_OSR_URL, mode, sid);
         }
-        try {
-            consumer.accept(null);
-        } catch (Exception e) {
-            log.error("下载文件失败, 重试中", e);
-            initAccount(account);
-            consumer.accept(null);
-        }
+        consumer.accept(null);
         return inputStream;
     }
-    @SuppressWarnings("all")
-    private void downloadBody(OsuAccountUser account, OutputStream out, String url, Object ... params) {
+
+    public byte[] downloadAvatar(String url) {
+        var account = getRandomAccount();
+        return webClient.get()
+                .uri(url)
+                .headers(headers -> setHeaders(headers, account))
+                .retrieve()
+                .bodyToMono(byte[].class)
+                .doOnCancel(() -> log.error("download {} cancelled", url))
+                .block();
+    }
+
+    private void downloadBody(OsuAccountUser account, OutputStream out, String url, Object... params) {
+        AtomicInteger n = new AtomicInteger(0);
         var body = webClient.get()
                 .uri(url, params)
                 .headers(h -> {
@@ -107,25 +116,35 @@ public class BeatmapFileService {
                     h.set("referer", "https://osu.ppy.sh/home");
                 })
                 .exchangeToFlux(clientResponse -> {
+                    if (clientResponse.statusCode().value() == 401) {
+                        throw new ClientException();
+                    }
                     parseCookie(clientResponse.headers().asHttpHeaders(), account);
-                    return clientResponse.body((e,r) -> e.getBody());
+                    return clientResponse.body(BodyExtractors.toDataBuffers());
+//                    return clientResponse.body((e,r) -> {
+//                        var ll = e.getBody();
+//                        log.error("download body: {}", n.getAndIncrement());
+//                        return ll;
+//                    });
                 })
                 .doOnCancel(() -> log.error("download cancelled"))
+                .publishOn(Schedulers.boundedElastic())
                 .doFinally((s) -> {
-                    try {
+                    try (out) {
                         out.flush();
-                        out.close();
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
                 });
         DataBufferUtils
                 .write(body, out)
-                .subscribe(b -> {
-                    if (b instanceof NettyDataBuffer nb) {
-                        nb.release();
+                .onErrorMap(e -> {
+                    if (e instanceof ClientException) {
+                        onError(account);
                     }
-                });
+                    return e;
+                })
+                .subscribe(DataBufferUtils.releaseConsumer());
     }
 
     private void login(OsuAccountUser accountUser) {
@@ -195,5 +214,10 @@ public class BeatmapFileService {
             account.setSession(session);
         }
         accountUserRepository.save(account);
+    }
+
+    private void onError(OsuAccountUser account) {
+        log.error("身份认证失效, 尝试重新登陆.");
+        initAccount(account);
     }
 }

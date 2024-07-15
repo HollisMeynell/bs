@@ -1,10 +1,13 @@
 package l.f.mappool.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import l.f.mappool.dto.osu.OsuUser;
+import l.f.mappool.dto.osu.OsuUserOptional;
 import l.f.mappool.entity.osu.BeatMap;
 import l.f.mappool.entity.osu.BeatMapSet;
 import l.f.mappool.entity.osu.MatchesSearch;
 import l.f.mappool.entity.osu.OsuOauthUser;
+import l.f.mappool.enums.OsuMode;
 import l.f.mappool.properties.BeatmapSelectionProperties;
 import l.f.mappool.properties.OsuProperties;
 import l.f.mappool.repository.osu.BeatMapRepository;
@@ -171,19 +174,39 @@ public class OsuApiService {
         return s;
     }
 
-    public OsuOauthUser getMeInfo(OsuOauthUser user) {
-        var data = webClient.get()
+    public OsuUser getMeInfo(OsuOauthUser user) {
+        return webClient.get()
                 .uri("/me")
                 .header("Authorization", "Bearer " + user.getAccessToken(this))
                 .retrieve()
-                .bodyToMono(JsonNode.class)
+                .bodyToMono(OsuUser.class)
                 .block();
-        if (data != null) {
-            user.setName(data.get("username").asText("unknown"));
-            user.setOsuId(data.get("id").asLong(0));
-        }
-        osuUserRepository.saveAndFlush(user);
-        return user;
+    }
+
+    public OsuUserOptional getUserInfo(String name, OsuMode mode) {
+        return webClient.get()
+                .uri(l -> l
+                        .path("users/{name}/{mode}")
+                        .queryParam("key", "username")
+                        .build(name, mode.getName())
+                )
+                .headers(this::insertHeader)
+                .retrieve()
+                .bodyToMono(OsuUserOptional.class)
+                .block();
+    }
+
+    public OsuUserOptional getUserInfo(Long uid, OsuMode mode) {
+        return webClient.get()
+                .uri(l -> l
+                        .path("users/{uid}/{mode}")
+                        .queryParam("key", "id")
+                        .build(uid, mode.getName())
+                )
+                .headers(this::insertHeader)
+                .retrieve()
+                .bodyToMono(OsuUserOptional.class)
+                .block();
     }
 
     public BeatMapSet getMapsetInfo(long sid) {

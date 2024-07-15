@@ -5,7 +5,6 @@ import l.f.mappool.exception.HttpError;
 import l.f.mappool.properties.BeatmapSelectionProperties;
 import l.f.mappool.repository.file.FileLogRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -38,7 +37,6 @@ public class LocalFileService {
      */
     private final String STATIC_PATH;
 
-    @Autowired
     public LocalFileService(BeatmapSelectionProperties properties, FileLogRepository fileLogRepository) throws IOException {
         String SAVE_PATH = properties.getFilePath();
         UPLOAD_PATH = properties.getFilePath() + "/upload";
@@ -57,7 +55,6 @@ public class LocalFileService {
             Files.createDirectories(p);
         }
     }
-
 
     /**
      * 通过文件记录 key 来获得上传时提供的文件名

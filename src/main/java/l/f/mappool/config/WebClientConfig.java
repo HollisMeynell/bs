@@ -29,8 +29,8 @@ import java.util.Collections;
 @Configuration
 public class WebClientConfig implements WebFluxConfigurer {
 
-    @Bean("osuApiWebClient")
     @Primary
+    @Bean("osuApiWebClient")
     public WebClient OsuApiWebClient(WebClient.Builder builder) {
         /*
          * Setting maxIdleTime as 30s, because servers usually have a keepAliveTimeout of 60s, after which the connection gets closed.

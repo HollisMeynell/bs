@@ -1,12 +1,15 @@
 package l.f.mappool.util;
 
-import l.f.mappool.enums.Mod;
+import l.f.mappool.entity.osu.BeatMap;
+import l.f.mappool.enums.OsuMod;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.util.DigestUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
+import java.util.Optional;
 
 public class DataUtil {
     private static int AR2MS(float ar){
@@ -32,15 +35,15 @@ public class DataUtil {
     public static float AR(float ar, int mod){
         int ms;
 //      1800  -  1200  -  450  -  300
-        if (Mod.hasHr(mod)){
+        if (OsuMod.hasHr(mod)){
             ar *= 1.4f;
-        } else if (Mod.hasEz(mod)) {
+        } else if (OsuMod.hasEz(mod)) {
             ar /= 2;
         }
         ms = AR2MS(ar);
-        if (Mod.hasDt(mod)){
+        if (OsuMod.hasDt(mod)){
             ms /= (3d/2);
-        } else if (Mod.hasHt(mod)) {
+        } else if (OsuMod.hasHt(mod)) {
             ms /= (3d/4);
         }
         ar = MS2AR(ms);
@@ -59,16 +62,16 @@ public class DataUtil {
     @SuppressWarnings("lossy-conversions")
     public static float OD(float od, int mod){
         float ms;
-        if (Mod.hasHr(mod)){
+        if (OsuMod.hasHr(mod)){
             od *= 1.4f;
-        } else if (Mod.hasEz(mod)) {
+        } else if (OsuMod.hasEz(mod)) {
             od /= 2f;
         }
         ms = OD2MS(od);
 
-        if (Mod.hasDt(mod)){
+        if (OsuMod.hasDt(mod)){
             ms /= (3d/2);
-        } else if (Mod.hasHt(mod)) {
+        } else if (OsuMod.hasHt(mod)) {
             ms /= (3d/4);
         }
         return (int)Math.ceil(MS2OD(ms)*100) / 100f;
@@ -76,20 +79,38 @@ public class DataUtil {
 
 
     public static float CS(float cs, int mod){
-        if (Mod.hasHr(mod)){
+        if (OsuMod.hasHr(mod)){
             cs *= 1.3f;
-        } else if (Mod.hasEz(mod)) {
+        } else if (OsuMod.hasEz(mod)) {
             cs /= 2f;
         }
         return cs;
     }
     public static float HP(float hp, int mod){
-        if (Mod.hasHr(mod)){
+        if (OsuMod.hasHr(mod)){
             hp *= 1.3f;
-        } else if (Mod.hasEz(mod)) {
+        } else if (OsuMod.hasEz(mod)) {
             hp /= 1.3f;
         }
         return hp;
+    }
+
+    public static float BPM(float bpm, int mod){
+        if (OsuMod.hasDt(mod)){
+            bpm *= 1.5f;
+        } else if (OsuMod.hasHt(mod)) {
+            bpm *= 0.75f;
+        }
+        return bpm;
+    }
+
+    public static int Length(float length, int mod){
+        if (OsuMod.hasDt(mod)){
+            length /= 1.5f;
+        } else if (OsuMod.hasHt(mod)) {
+            length /= 0.75f;
+        }
+        return Math.round(length);
     }
 
     @NotNull
@@ -111,5 +132,19 @@ public class DataUtil {
             return "";
         }
     }
-
+    public static void applyBeatMapChanges(BeatMap beatMap, int mods) {
+        if (Objects.isNull(beatMap)) return;
+        if (!OsuMod.hasChangeRating(mods)) {
+            return;
+        }
+        if (Objects.nonNull(beatMap.getBeatMapSet())) {
+            var set = beatMap.getBeatMapSet();
+            set.setBpm(DataUtil.BPM(set.getBpm(), mods));
+        }
+        beatMap.setAr(DataUtil.AR(Optional.ofNullable(beatMap.getAr()).orElse(0f), mods));
+        beatMap.setCs(DataUtil.CS(Optional.ofNullable(beatMap.getCs()).orElse(0f), mods));
+        beatMap.setOd(DataUtil.OD(Optional.ofNullable(beatMap.getOd()).orElse(0f), mods));
+        beatMap.setHp(DataUtil.HP(Optional.ofNullable(beatMap.getHp()).orElse(0f), mods));
+        beatMap.setTotalLength(DataUtil.Length(beatMap.getTotalLength(), mods));
+    }
 }
