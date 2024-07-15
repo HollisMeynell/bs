@@ -98,7 +98,7 @@ public class YasunaoriApi {
             var score =  new JniScore();
             score.setMods(modsValue);
             var result = Rosu.calculate(fileData, score);
-            map.setDifficulty((float) result.getPp());
+            map.setDifficulty((float) result.getStar());
             DataUtil.applyBeatMapChanges(map, modsValue);
         }
         return new YasunaoriBeatmapInfoVo(map);
