@@ -2,6 +2,7 @@ package l.f.mappool.entity.osu;
 
 
 import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
 import l.f.mappool.enums.ReankStatus;
 import lombok.Getter;
@@ -21,7 +22,7 @@ public class BeatMap {
     @Id
     Long id;
 
-    @JsonIgnore
+    @JsonProperty("beatmapset_id")
     @Column(name = "beatmapset_id", insertable=false, updatable=false)
     String mapsetId;
 
@@ -85,14 +86,6 @@ public class BeatMap {
     )
     @JoinColumn(name = "beatmapset_id")
     BeatMapSet beatMapSet;
-
-    @JsonGetter("beatmapset_id")
-    public Long getMapsetId() {
-        if (mapsetId == null) {
-            return beatMapSet.getId();
-        }
-        return Long.parseLong(mapsetId);
-    }
 
     @JsonGetter("status")
     public String getStatus() {

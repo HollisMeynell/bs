@@ -1,14 +1,18 @@
 package l.f.mappool.entity.osu;
 
 import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
+import l.f.mappool.util.JsonUtil;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.DynamicUpdate;
 import org.springframework.util.CollectionUtils;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 //import org.hibernate.type.TextType;
 
 //import javax.persistence.Convert;
@@ -59,18 +63,20 @@ public class BeatMapSet {
     @Column(name = "title_unicode", columnDefinition = "text")
     String titleUTF8;
 
-    @JsonProperty("beatmaps")
-    @JsonIdentityInfo(
-            generator = ObjectIdGenerators.PropertyGenerator.class,
-            property = "id"
-    )
+    @JsonIgnore
     @OneToMany(mappedBy = "beatMapSet",cascade = {CascadeType.REFRESH}, orphanRemoval = true)
     List<BeatMap> beatMaps;
 
     @JsonSetter("beatmaps")
-    public void setBeatMaps(List<BeatMap> beatMaps) {
+    public void jsonSetBeatMaps(List<JsonNode> beatMaps) {
         if (CollectionUtils.isEmpty(beatMaps)) return;
-        this.beatMaps = beatMaps;
+        this.beatMaps = beatMaps.stream().map(m -> JsonUtil.parseObject(m, BeatMap.class)).collect(Collectors.toList());
+    }
+
+    @JsonGetter("beatmaps")
+    public List<BeatMap> jsonGetBeatMaps(List<BeatMap> beatMaps) {
+        beatMaps.forEach(m -> m.setBeatMapSet(null));
+        return beatMaps;
     }
 
     @JsonProperty("last_updated")
