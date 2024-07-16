@@ -68,7 +68,6 @@ public class BeatMapSet {
     @JsonSetter("beatmaps")
     public void jsonSetBeatMaps(List<JsonNode> beatMaps) {
         if (CollectionUtils.isEmpty(beatMaps)) return;
-        System.out.println("beatMaps: \n" + beatMaps.getFirst().toPrettyString());
         this.beatMaps = beatMaps.stream().map(m -> JsonUtil.parseObject(m, BeatMap.class)).collect(Collectors.toList());
     }
 
