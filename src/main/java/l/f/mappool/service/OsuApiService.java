@@ -226,7 +226,7 @@ public class OsuApiService {
                 .bodyToMono(BeatMap.class)
                 .block();
         if (map != null) {
-            beatMapRepository.saveAndFlush(map);
+            saveBeatMap(map);
         }
         return map;
     }
