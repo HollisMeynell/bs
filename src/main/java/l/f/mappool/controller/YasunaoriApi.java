@@ -2,7 +2,7 @@ package l.f.mappool.controller;
 
 import jakarta.annotation.PostConstruct;
 import l.f.mappool.config.interceptor.Open;
-import l.f.mappool.dto.osu.OsuUserOptional;
+import l.f.mappool.entity.osu.OsuUserOptional;
 import l.f.mappool.entity.osu.BeatMap;
 import l.f.mappool.enums.OsuMod;
 import l.f.mappool.enums.OsuMode;
@@ -23,7 +23,6 @@ import rosu.Rosu;
 import rosu.parameter.JniScore;
 
 import java.io.IOException;
-import java.nio.file.Files;
 
 @Open
 @Controller
@@ -90,8 +89,7 @@ public class YasunaoriApi {
         if (OsuMod.hasChangeRating(modsValue)) {
             byte[] fileData;
             try {
-                var file = osuFileService.getPath(map.getBeatMapSet().getId(), map.getId(), DownloadOsuFileService.Type.FILE);
-                fileData = Files.readAllBytes(file);
+                fileData = osuFileService.getOsuFile(map.getId(), DownloadOsuFileService.Type.FILE);
             } catch (IOException e) {
                 return new YasunaoriBeatmapInfoVo("计算出错, 请稍后尝试或者联系管理员.");
             }

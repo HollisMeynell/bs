@@ -1,8 +1,8 @@
 package l.f.mappool.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import l.f.mappool.dto.osu.OsuUser;
-import l.f.mappool.dto.osu.OsuUserOptional;
+import l.f.mappool.entity.osu.OsuUser;
+import l.f.mappool.entity.osu.OsuUserOptional;
 import l.f.mappool.entity.osu.BeatMap;
 import l.f.mappool.entity.osu.BeatMapSet;
 import l.f.mappool.entity.osu.MatchesSearch;
@@ -219,12 +219,16 @@ public class OsuApiService {
     }
 
     public BeatMap getMapInfo(long bid) {
-        return webClient.get()
+        var map = webClient.get()
                 .uri("/beatmaps/{bid}", bid)
                 .headers(this::insertHeader)
                 .retrieve()
                 .bodyToMono(BeatMap.class)
                 .block();
+        if (map != null) {
+            beatMapRepository.saveAndFlush(map);
+        }
+        return map;
     }
 
     public BeatMap getMapInfoByDB(long bid) {

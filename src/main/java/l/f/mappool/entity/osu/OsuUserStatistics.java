@@ -1,4 +1,4 @@
-package l.f.mappool.dto.osu;
+package l.f.mappool.entity.osu;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;

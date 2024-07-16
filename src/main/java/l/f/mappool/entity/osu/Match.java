@@ -14,8 +14,8 @@ public class Match {
     @JsonProperty("match")
     MatchMetaInfo match;
 
-    List<Object> events;
-    List<PlayerUser> users;
+    List<Object>  events;
+    List<OsuUser> users;
 
     @JsonProperty("first_event_id")
     Long firstEvent;

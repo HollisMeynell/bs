@@ -296,8 +296,7 @@ public class FileApi {
     @Open(bot = true)
     @RequestMapping(value = "local/{type}/{bid}", method = {RequestMethod.GET, RequestMethod.POST})
     public String getLocalPath(@PathVariable Long bid,
-                               @PathVariable String type,
-                               @RequestHeader(value = "SET_ID", required = false) Long sid
+                               @PathVariable String type
     ) throws IOException {
         var atype = switch (type) {
             case "bg" -> DownloadOsuFileService.Type.BACKGROUND;
@@ -305,11 +304,8 @@ public class FileApi {
             case "osufile" -> DownloadOsuFileService.Type.FILE;
             default -> throw new HttpTipException(400, "未知类型");
         };
-        if (Objects.isNull(sid)) {
-            sid = osuApiService.getMapInfoByDB(bid).getMapsetId();
-        }
         try {
-            return osuFileService.getPath(sid, bid, atype).toString();
+            return osuFileService.getPath(bid, atype).toString();
         } catch (WebClientResponseException e) {
             log.error("bot 下载出现异常:", e);
             throw new HttpTipException(400, e.getMessage());

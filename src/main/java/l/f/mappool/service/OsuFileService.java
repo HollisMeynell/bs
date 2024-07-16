@@ -70,8 +70,7 @@ public class OsuFileService {
 
     @SuppressWarnings("unused")
     public long sizeOfOsuFile(long bid, DownloadOsuFileService.Type type) throws IOException {
-        long sid = osuApiService.getMapInfoByDB(bid).getMapsetId();
-        var file = getPath(sid, bid, type);
+        var file = getPath(bid, type);
         return Files.size(file);
     }
 
@@ -80,10 +79,8 @@ public class OsuFileService {
      *
      * @param type 类型
      */
-    @SuppressWarnings("unused")
     public byte[] getOsuFile(long bid, DownloadOsuFileService.Type type) throws IOException {
-        long sid = osuApiService.getMapInfoByDB(bid).getMapsetId();
-        Path file = getPath(sid, bid, type);
+        Path file = getPath(bid, type);
         return Files.readAllBytes(file);
     }
 
@@ -142,23 +139,22 @@ public class OsuFileService {
     }
 
     public Path getPathByBid(long bid, DownloadOsuFileService.Type type) throws IOException {
-        long sid = osuApiService.getMapInfoByDB(bid).getMapsetId();
-        var file = getPath(sid, bid, type);
+        var file = getPath(bid, type);
         return file.toAbsolutePath();
     }
 
     /**
      * 获得谱面文件在本地缓存中的文件名, 支持获取 音频/背景图片/谱面.osu文件
      */
-    public Path getPath(long sid, long bid, DownloadOsuFileService.Type type) throws IOException {
-        Path basePath = getPathAsync(sid);
+    public Path getPath(long bid, DownloadOsuFileService.Type type) throws IOException {
         var fOpt = osuFileLogRepository.findById(bid);
 
-        // 防止 sid 与 bid 不匹配
-        if (fOpt.isEmpty()) {
-            var s = osuApiService.getMapInfoByDB(bid);
-            sid = s.getMapsetId();
-        }
+        long sid = fOpt.map(OsuFileRecord::getSid)
+                .orElseGet(() -> osuApiService.getMapInfoByDB(bid).getMapsetId());
+
+        Path basePath = getPathAsync(sid);
+
+        fOpt = osuFileLogRepository.findById(bid);
 
         int retryTime = 0;
 

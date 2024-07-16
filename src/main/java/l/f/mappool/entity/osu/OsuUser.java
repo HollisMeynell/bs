@@ -1,9 +1,11 @@
-package l.f.mappool.dto.osu;
+package l.f.mappool.entity.osu;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
+
+import java.time.OffsetDateTime;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -37,7 +39,7 @@ public class OsuUser {
     Boolean isSupporter;
 
     @JsonProperty("last_visit")
-    String lastTime;
+    OffsetDateTime lastTime;
 
     @JsonProperty("pm_friends_only")
     Boolean pmFriendsOnly;

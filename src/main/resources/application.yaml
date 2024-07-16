@@ -19,10 +19,10 @@ spring:
       max-file-size: 20MB
       max-request-size: 40MB
   jpa:
+    properties.hibernate.session.events.log.LOG_QUERIES_SLOWER_THAN_MS: 1
     database-platform: org.hibernate.dialect.PostgreSQLDialect
-    hibernate:
-      ddl-auto: update
-    show-sql: true
+    hibernate.ddl-auto: update
+    show-sql: false
   profiles:
     active: tmp
   task:

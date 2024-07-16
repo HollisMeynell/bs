@@ -26,6 +26,9 @@ public interface OsuFileLogRepository extends JpaRepository<OsuFileRecord, Long>
     @Transactional
     void deleteAllBySid(long sid);
 
+    @Query("select osu.sid from OsuFileRecord osu where osu.bid = :bid")
+    Optional<Long> querySidByBid(Long bid);
+
     @Query("select count(osu)from OsuFileRecord osu")
     int countAll();
 

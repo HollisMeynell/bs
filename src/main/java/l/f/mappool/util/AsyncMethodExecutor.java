@@ -111,7 +111,7 @@ public class AsyncMethodExecutor {
         } finally {
             reentrantLock.lock();
             int locksSum = Util.getAndRemove(lock);
-            log.info("sum : {}", locksSum);
+            log.debug("sum: {}", locksSum);
             CountDownLatch count = countDownLocks.computeIfAbsent(key, k -> new CountDownLatch(locksSum));
             lock.signalAll();
             reentrantLock.unlock();

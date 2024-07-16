@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import l.f.mappool.controller.YasunaoriApi;
-import l.f.mappool.dto.osu.OsuUserOptional;
+import l.f.mappool.entity.osu.OsuUserOptional;
 import lombok.*;
 
 @Data
