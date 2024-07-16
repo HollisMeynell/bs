@@ -23,7 +23,7 @@ public class BeatMap {
 
     @JsonIgnore
     @Column(name = "beatmapset_id", insertable=false, updatable=false)
-    Long mapsetId;
+    String mapsetId;
 
     /***
      * maybe it is different from beatmapset.mapperId
@@ -85,6 +85,14 @@ public class BeatMap {
     )
     @JoinColumn(name = "beatmapset_id")
     BeatMapSet beatMapSet;
+
+    @JsonGetter("beatmapset_id")
+    public Long getMapsetId() {
+        if (mapsetId == null) {
+            return beatMapSet.getId();
+        }
+        return Long.parseLong(mapsetId);
+    }
 
     @JsonGetter("status")
     public String getStatus() {
