@@ -326,8 +326,6 @@ public class FileApi {
             return ResponseEntity.ok("ok");
         }
 
-        log.info("异步任务: 开始下载 [{}]", sid);
-
         Long finalSid = sid;
         Thread.startVirtualThread(() -> {
             try {

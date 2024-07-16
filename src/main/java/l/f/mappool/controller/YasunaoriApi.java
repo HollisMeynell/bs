@@ -70,7 +70,7 @@ public class YasunaoriApi {
     }
 
     @GetMapping("beatmap/{bid}")
-    YasunaoriBeatmapInfoVo gerBeatmap(@PathVariable("bid") long bid, @RequestParam(value = "mods", required = false) String mods) {
+    YasunaoriBeatmapInfoVo getBeatmap(@PathVariable("bid") long bid, @RequestParam(value = "mods", required = false) String mods) {
         int modsValue;
         try {
             modsValue = Integer.parseInt(mods);
@@ -105,7 +105,7 @@ public class YasunaoriApi {
     }
 
     @GetMapping("avatar/{file}")
-    ResponseEntity<byte[]> getAvatar(@PathVariable("file") String file) {
+    ResponseEntity<byte[]> avatar(@PathVariable("file") String file) {
         var data = downloadOsuFileService.downloadAvatar("https://a.ppy.sh/" + file);
         return ResponseEntity.ok()
                 .header("Content-Type", "image/jpeg")
