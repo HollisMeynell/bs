@@ -20,7 +20,7 @@ import java.util.List;
 @DynamicUpdate
 @Table(name = "beatmapset")
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonIgnoreProperties(ignoreUnknown = true, allowSetters = true)
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public class BeatMapSet {
     @JsonProperty("id")

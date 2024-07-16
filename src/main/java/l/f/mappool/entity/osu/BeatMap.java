@@ -14,7 +14,7 @@ import org.hibernate.annotations.DynamicUpdate;
 @Setter
 @DynamicUpdate
 @Table(name = "beatmap")
-@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonIgnoreProperties(ignoreUnknown = true, allowSetters = true)
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public class BeatMap {
     @JsonProperty("id")

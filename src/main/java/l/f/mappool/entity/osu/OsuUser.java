@@ -8,7 +8,7 @@ import lombok.Data;
 import java.time.OffsetDateTime;
 
 @Data
-@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonIgnoreProperties(ignoreUnknown = true, allowSetters = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class OsuUser {
 
