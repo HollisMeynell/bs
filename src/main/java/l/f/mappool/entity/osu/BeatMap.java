@@ -21,7 +21,7 @@ public class BeatMap {
     @Id
     Long id;
 
-    @JsonProperty("beatmapset_id")
+    @JsonIgnore
     @Column(name = "beatmapset_id", insertable=false, updatable=false)
     Long mapsetId;
 

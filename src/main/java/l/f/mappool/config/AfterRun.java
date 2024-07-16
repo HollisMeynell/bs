@@ -28,6 +28,7 @@ public class AfterRun implements CommandLineRunner {
     @Override
     public void run(String... args) {
         log.info("ok!");
+        /*
         // 用于临时解决mapSet 的json反序列化问题, 触发原因未知
         // 必须启动时调用一次
         Thread.startVirtualThread(() -> {
@@ -41,7 +42,7 @@ public class AfterRun implements CommandLineRunner {
                 log.error("get mapset service error");
             }
         });
-
+        */
         Runnable run = ()->{
             TokenBucketUtil.closeTask();
             log.info("error count: [{}], shutdown!", ERROR_COUNT);
