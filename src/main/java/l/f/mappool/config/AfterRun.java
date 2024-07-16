@@ -1,6 +1,5 @@
 package l.f.mappool.config;
 
-import jakarta.annotation.Resource;
 import l.f.mappool.entity.osu.BeatMapSet;
 import l.f.mappool.properties.BeatmapSelectionProperties;
 import l.f.mappool.repository.file.OsuFileLogRepository;
@@ -10,13 +9,8 @@ import l.f.mappool.util.TokenBucketUtil;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Objects;
 
