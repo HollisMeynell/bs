@@ -10,11 +10,9 @@ import org.hibernate.annotations.DynamicUpdate;
 import org.springframework.util.CollectionUtils;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 //import org.hibernate.type.TextType;
-
 //import javax.persistence.Convert;
 
 
@@ -70,6 +68,7 @@ public class BeatMapSet {
     @JsonSetter("beatmaps")
     public void jsonSetBeatMaps(List<JsonNode> beatMaps) {
         if (CollectionUtils.isEmpty(beatMaps)) return;
+        System.out.println("beatMaps: \n" + beatMaps.getFirst().toPrettyString());
         this.beatMaps = beatMaps.stream().map(m -> JsonUtil.parseObject(m, BeatMap.class)).collect(Collectors.toList());
     }
 
