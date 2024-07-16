@@ -46,7 +46,7 @@ public class PublicApi {
     WebClient webClient;
     @Resource
     WebClient osuApiWebClient;
-/*
+
     @PostConstruct
     public void getAMap() {
         // 用于临时解决mapSet 的json反序列化问题, 触发原因未知
@@ -62,8 +62,6 @@ public class PublicApi {
             }
         });
     }
-
- */
 
     /**
      * 获取公开图池
