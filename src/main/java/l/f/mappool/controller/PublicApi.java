@@ -46,22 +46,6 @@ public class PublicApi {
     WebClient webClient;
     @Resource
     WebClient osuApiWebClient;
-/*
-    @PostConstruct
-    public void getAMap() {
-        // 用于临时解决mapSet 的json反序列化问题, 触发原因未知
-        Thread.startVirtualThread(() -> {
-            BeatMapSet data = null;
-            try {
-                Thread.sleep(Duration.ofSeconds(3));
-                data = osuService.getMapsetInfo(725853);
-            } catch (Exception ignore) {
-            }
-            if (Objects.isNull(data)) {
-                log.error("get mapset service error");
-            }
-        });
-    }
 
     /**
      * 获取公开图池
