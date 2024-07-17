@@ -40,6 +40,7 @@ public class DataUtil {
         } else if (OsuMod.hasEz(mod)) {
             ar /= 2;
         }
+        ar = Math.min(10f, ar);
         ms = AR2MS(ar);
         if (OsuMod.hasDt(mod)){
             ms /= (3d/2);
@@ -47,11 +48,11 @@ public class DataUtil {
             ms /= (3d/4);
         }
         ar = MS2AR(ms);
+        ar = Math.min(11f, ar);
         return (int)Math.ceil(ar * 100)/100f;
     }
 
     private static float OD2MS(float od){
-        if (od > 10) return 20;
         return 80 - (6 * od);
     }
 
@@ -67,8 +68,8 @@ public class DataUtil {
         } else if (OsuMod.hasEz(mod)) {
             od /= 2f;
         }
+        od = Math.min(10f, od);
         ms = OD2MS(od);
-
         if (OsuMod.hasDt(mod)){
             ms /= (3d/2);
         } else if (OsuMod.hasHt(mod)) {
@@ -84,7 +85,7 @@ public class DataUtil {
         } else if (OsuMod.hasEz(mod)) {
             cs /= 2f;
         }
-        return cs;
+        return (int) Math.ceil(cs * 100) / 100f;
     }
     public static float HP(float hp, int mod){
         if (OsuMod.hasHr(mod)){
