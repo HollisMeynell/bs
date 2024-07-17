@@ -58,10 +58,12 @@ public class OsuFileRecord {
             while (!StringUtils.hasText(versionStr)) {
                 versionStr = read.readLine();
             }
-            if (!versionStr.startsWith("osu file format v")) {
+            if (!versionStr.contains("osu file format v")) {
                 throw new RuntimeException("解析错误,文件无效, 首行为\n" + versionStr);
             }
-            int version = Integer.parseInt(versionStr.substring(17));
+            int version = Integer.parseInt(
+                    versionStr.substring(versionStr.indexOf("osu file format v") + 17)
+            );
             if (version < 5) {
                 parse(read, obj);
                 BeatMap beatMap = set.getBeatMaps()
