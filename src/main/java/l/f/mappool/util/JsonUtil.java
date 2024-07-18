@@ -1,8 +1,13 @@
 package l.f.mappool.util;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.json.JsonReadFeature;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.hibernate6.Hibernate6Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -35,8 +40,15 @@ public class JsonUtil {
             .enable(JsonReadFeature.ALLOW_TRAILING_DECIMAL_POINT_FOR_NUMBERS)
             // 允许数字前置加号
             .enable(JsonReadFeature.ALLOW_LEADING_PLUS_SIGN_FOR_NUMBERS)
-
+            // 序列化时忽略 null 字段
+            .serializationInclusion(JsonInclude.Include.NON_NULL)
             .build()
+            // 设置允许忽略未知的字段
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .configure(DeserializationFeature.READ_ENUMS_USING_TO_STRING, true)
+            // 设置可见性
+            .setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY)
+            .setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
             .registerModules(new Hibernate6Module())
             .registerModules(new JavaTimeModule());
 

@@ -1,7 +1,6 @@
 package l.f.mappool.vo;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import l.f.mappool.entity.osu.BeatMap;
 import l.f.mappool.entity.pool.Pool;
 import l.f.mappool.entity.pool.PoolCategoryGroup;
@@ -19,7 +18,6 @@ import java.util.Objects;
 
 @Data
 @Accessors(chain = true)
-@JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode(callSuper = true)
 @SuppressWarnings("unused")
 public class PoolVo extends Pool {

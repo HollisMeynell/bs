@@ -1,6 +1,5 @@
 package l.f.mappool.config;
 
-import l.f.mappool.entity.osu.BeatMapSet;
 import l.f.mappool.properties.BeatmapSelectionProperties;
 import l.f.mappool.repository.file.OsuFileLogRepository;
 import l.f.mappool.service.OsuApiService;
@@ -10,9 +9,6 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
-
-import java.time.Duration;
-import java.util.Objects;
 
 import static l.f.mappool.config.AspectConfig.ERROR_COUNT;
 
@@ -28,21 +24,6 @@ public class AfterRun implements CommandLineRunner {
     @Override
     public void run(String... args) {
         log.info("ok!");
-        /*
-        // 用于临时解决mapSet 的json反序列化问题, 触发原因未知
-        // 必须启动时调用一次
-        Thread.startVirtualThread(() -> {
-            BeatMapSet data = null;
-            try {
-                Thread.sleep(Duration.ofSeconds(3));
-                data = osuService.getMapsetInfo(725853);
-            } catch (Exception ignore) {
-            }
-            if (Objects.isNull(data)) {
-                log.error("get mapset service error");
-            }
-        });
-        */
         Runnable run = ()->{
             TokenBucketUtil.closeTask();
             log.info("error count: [{}], shutdown!", ERROR_COUNT);

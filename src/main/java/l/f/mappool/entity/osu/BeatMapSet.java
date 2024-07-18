@@ -21,9 +21,7 @@ import java.util.stream.Collectors;
 @Setter
 @DynamicUpdate
 @Table(name = "beatmapset")
-@JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true, allowSetters = true)
-@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public class BeatMapSet {
     @JsonProperty("id")
     @Id

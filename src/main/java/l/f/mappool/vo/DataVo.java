@@ -1,12 +1,10 @@
 package l.f.mappool.vo;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
 @Data
 @Accessors(chain = true)
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class DataVo<T> {
     int code = 200;
     String message = "ok";
