@@ -147,6 +147,9 @@ public class OsuFileService {
      * 获得谱面文件在本地缓存中的文件名, 支持获取 音频/背景图片/谱面.osu文件
      */
     public Path getPath(long bid, DownloadOsuFileService.Type type) throws IOException {
+        if (bid < 75) {
+            throw new HttpTipException("bid 不合法");
+        }
         var fOpt = osuFileLogRepository.findById(bid);
 
         long sid = fOpt.map(OsuFileRecord::getSid)
