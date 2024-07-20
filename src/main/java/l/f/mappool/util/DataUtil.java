@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.util.DigestUtils;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
@@ -49,7 +51,7 @@ public class DataUtil {
         }
         ar = MS2AR(ms);
         ar = Math.min(11f, ar);
-        return (int)Math.ceil(ar * 100)/100f;
+        return getTo(ar);
     }
 
     private static float OD2MS(float od){
@@ -75,7 +77,7 @@ public class DataUtil {
         } else if (OsuMod.hasHt(mod)) {
             ms /= (3d/4);
         }
-        return (int)Math.ceil(MS2OD(ms)*100) / 100f;
+        return getTo(MS2OD(ms));
     }
 
 
@@ -85,7 +87,7 @@ public class DataUtil {
         } else if (OsuMod.hasEz(mod)) {
             cs /= 2f;
         }
-        return (int) Math.ceil(cs * 100) / 100f;
+        return getTo(cs);
     }
     public static float HP(float hp, int mod){
         if (OsuMod.hasHr(mod)){
@@ -93,7 +95,7 @@ public class DataUtil {
         } else if (OsuMod.hasEz(mod)) {
             hp /= 1.3f;
         }
-        return hp;
+        return getTo(hp);
     }
 
     public static float BPM(float bpm, int mod){
@@ -102,7 +104,7 @@ public class DataUtil {
         } else if (OsuMod.hasHt(mod)) {
             bpm *= 0.75f;
         }
-        return bpm;
+        return getTo(bpm);
     }
 
     public static int Length(float length, int mod){
@@ -132,6 +134,10 @@ public class DataUtil {
         } catch (IOException e) {
             return "";
         }
+    }
+
+    private static float getTo(float value) {
+        return new BigDecimal(value).setScale(2, RoundingMode.HALF_EVEN).floatValue();
     }
     public static void applyBeatMapChanges(BeatMap beatMap, int mods) {
         if (Objects.isNull(beatMap)) return;

@@ -45,6 +45,14 @@ public class YasunaoriApi {
         AVATAR_URL_PREFIX = BeatmapSelectionProperties.URL + "/api/yasunaori/avatar/";
     }
 
+    public static String getAvatarUrl(long uid) {
+        return AVATAR_URL_PREFIX + Long.toHexString(uid);
+    }
+
+    private static String getOsuAvatarUrl(String key) {
+        return OSU_AVATAR_PREFIX + Long.parseLong(key, 16);
+    }
+
     @GetMapping("user")
     YasunaoriUserInfoVo getUser(
             @RequestParam(value = "uid", required = false)Long uid,
@@ -103,12 +111,10 @@ public class YasunaoriApi {
     }
 
     @GetMapping("avatar/{file}")
-    ResponseEntity<byte[]> avatar(@PathVariable("file") String file) {
-        var data = downloadOsuFileService.downloadAvatar("https://a.ppy.sh/" + file);
+    ResponseEntity<byte[]> avatar(@PathVariable("file") String key) {
+        var data = downloadOsuFileService.downloadAvatar(getOsuAvatarUrl(key));
         return ResponseEntity.ok()
                 .header("Content-Type", "image/jpeg")
                 .body(data);
     }
-
-
 }

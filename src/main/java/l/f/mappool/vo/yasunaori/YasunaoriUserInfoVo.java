@@ -4,6 +4,8 @@ import l.f.mappool.controller.YasunaoriApi;
 import l.f.mappool.entity.osu.OsuUserOptional;
 import lombok.*;
 
+import java.util.Objects;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -24,8 +26,7 @@ public class YasunaoriUserInfoVo {
     public YasunaoriUserInfoVo(OsuUserOptional info) {
         this.id = info.getId();
         this.username = info.getUserName();
-        this.avatarUrl = info.getAvatarUrl()
-                .replace(YasunaoriApi.OSU_AVATAR_PREFIX, YasunaoriApi.AVATAR_URL_PREFIX);
+        this.avatarUrl = YasunaoriApi.getAvatarUrl(Objects.requireNonNullElse(info.getId(), 0L));
         this.countryCode = info.getCountryCode();
         this.globalRank = info.getStatistics().getGlobalRank();
         this.countryRank = info.getStatistics().getCountryRank();
