@@ -51,7 +51,7 @@ public class DataUtil {
         }
         ar = MS2AR(ms);
         ar = Math.min(11f, ar);
-        return getTo(ar);
+        return roundTwoDecimals(ar);
     }
 
     private static float OD2MS(float od){
@@ -77,7 +77,7 @@ public class DataUtil {
         } else if (OsuMod.hasHt(mod)) {
             ms /= (3d/4);
         }
-        return getTo(MS2OD(ms));
+        return roundTwoDecimals(MS2OD(ms));
     }
 
 
@@ -87,7 +87,7 @@ public class DataUtil {
         } else if (OsuMod.hasEz(mod)) {
             cs /= 2f;
         }
-        return getTo(cs);
+        return roundTwoDecimals(cs);
     }
     public static float HP(float hp, int mod){
         if (OsuMod.hasHr(mod)){
@@ -95,7 +95,7 @@ public class DataUtil {
         } else if (OsuMod.hasEz(mod)) {
             hp /= 1.3f;
         }
-        return getTo(hp);
+        return roundTwoDecimals(hp);
     }
 
     public static float BPM(float bpm, int mod){
@@ -104,7 +104,7 @@ public class DataUtil {
         } else if (OsuMod.hasHt(mod)) {
             bpm *= 0.75f;
         }
-        return getTo(bpm);
+        return roundTwoDecimals(bpm);
     }
 
     public static int Length(float length, int mod){
@@ -136,9 +136,10 @@ public class DataUtil {
         }
     }
 
-    private static float getTo(float value) {
+    private static float roundTwoDecimals(float value) {
         return new BigDecimal(value).setScale(2, RoundingMode.HALF_EVEN).floatValue();
     }
+
     public static void applyBeatMapChanges(BeatMap beatMap, int mods) {
         if (Objects.isNull(beatMap)) return;
         if (!OsuMod.hasChangeRating(mods)) {
