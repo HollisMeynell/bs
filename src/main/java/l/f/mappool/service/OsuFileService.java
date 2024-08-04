@@ -9,6 +9,10 @@ import l.f.mappool.repository.file.OsuFileLogRepository;
 import l.f.mappool.util.AsyncMethodExecutor;
 import l.f.mappool.util.DataUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.apache.commons.io.IOUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.FileSystemUtils;
@@ -18,9 +22,6 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
 
 /**
  * 所有Osu相关文件操作的工具集合类
@@ -106,8 +107,8 @@ public class OsuFileService {
         int writeFile = 0;
         try (var in = downloadOsuFileService.downloadOsz(sid, downloadOsuFileService.getRandomAccount())) {
             Files.createDirectories(osuPath);
-            var zip = new ZipInputStream(in);
-            writeFile = loopWriteFile(zip, osuPath.toString(), fileMap);
+            var zipInput = new ZipArchiveInputStream(in);
+            writeFile = loopWriteFile(zipInput, osuPath.toString(), fileMap);
         } finally {
             if (writeFile == 0 && Files.isDirectory(osuPath)) {
                 FileSystemUtils.deleteRecursively(osuPath);
@@ -194,24 +195,22 @@ public class OsuFileService {
     public void outOsuZipFile(long sid, OutputStream out) throws IOException {
         Path dir = getPathAsync(sid);
         if (Objects.isNull(out)) return;
-        var zipOut = new ZipOutputStream(out);
+        var zipOut = new ZipArchiveOutputStream(out);
         try {
             writeDirToZip(zipOut, dir, "");
         } finally {
             zipOut.finish();
-            zipOut.closeEntry();
         }
     }
 
     public FileOut outOsuZipFile(long sid) throws IOException {
         Path dir = getPathAsync(sid);
         return outStream -> {
-            var zipOut = new ZipOutputStream(outStream);
+            var zipOut = new ZipArchiveOutputStream(outStream);
             try {
                 writeDirToZip(zipOut, dir, "");
             } finally {
                 zipOut.finish();
-                zipOut.closeEntry();
             }
         };
     }
@@ -299,17 +298,17 @@ public class OsuFileService {
      * @throws IOException 当下载出错/并不存在该谱面时报错
      */
     public void zipOsuFiles(OutputStream out, long... sids) throws IOException {
-        var zipOut = new ZipOutputStream(out);
+        var zipOut = new ZipArchiveOutputStream(out);
         try {
             for (var sid : sids) {
-                var zip = new ZipEntry(sid + ".osz");
-                zipOut.putNextEntry(zip);
+                var zip = new ZipArchiveEntry(sid + ".osz");
+                zipOut.putArchiveEntry(zip);
                 outOsuZipFile(sid, zipOut);
             }
         } finally {
             zipOut.flush();
             zipOut.finish();
-            zipOut.closeEntry();
+            zipOut.closeArchiveEntry();
         }
 
     }
@@ -327,19 +326,19 @@ public class OsuFileService {
             files.put(sid, outOsuZipFile(sid));
         }
         return outStream -> {
-            var zipOut = new ZipOutputStream(outStream);
+            var zipOut = new ZipArchiveOutputStream(outStream);
             files.forEach((key, out) -> {
                 try {
-                    var zip = new ZipEntry(key + ".osz");
-                    zipOut.putNextEntry(zip);
+                    var zip = new ZipArchiveEntry(key + ".osz");
+                    zipOut.putArchiveEntry(zip);
                     out.write(zipOut);
                 } catch (IOException e) {
                     log.error("写入文件时异常: ", e);
                 }
             });
+            zipOut.closeArchiveEntry();
             zipOut.flush();
             zipOut.finish();
-            zipOut.closeEntry();
         };
     }
 
@@ -352,8 +351,8 @@ public class OsuFileService {
      *
      * @throws IOException 写入异常
      */
-    private int loopWriteFile(ZipInputStream zip, String basePath, HashMap<String, Path> fileMap) throws IOException {
-        ZipEntry zipFile;
+    private int loopWriteFile(ZipArchiveInputStream zip, String basePath, HashMap<String, Path> fileMap) throws IOException {
+        ZipArchiveEntry zipFile;
         int count = 0;
         while ((zipFile = zip.getNextEntry()) != null) {
             try {
@@ -371,16 +370,17 @@ public class OsuFileService {
         return count;
     }
 
-    private void writeDirToZip(ZipOutputStream zipOut, Path dir, String basePath) throws IOException {
+    private void writeDirToZip(ZipArchiveOutputStream zipOut, Path dir, String basePath) throws IOException {
         try (var allFile = Files.list(dir)) {
             for (var file : allFile.toList()) {
                 if (Files.isDirectory(file)) {
                     writeDirToZip(zipOut, file, basePath + file.getFileName() + "/");
                     continue;
                 }
-                var zip = new ZipEntry(basePath + file.getFileName().toString());
-                zipOut.putNextEntry(zip);
-                zipOut.write(Files.readAllBytes(file));
+                var zip = new ZipArchiveEntry(basePath + file.getFileName().toString());
+                zipOut.putArchiveEntry(zip);
+                IOUtils.copy(Files.newInputStream(file), zipOut);
+                zipOut.closeArchiveEntry();
             }
         }
     }

@@ -12,8 +12,6 @@ import org.springframework.util.CollectionUtils;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
-//import org.hibernate.type.TextType;
-//import javax.persistence.Convert;
 
 
 @Entity
