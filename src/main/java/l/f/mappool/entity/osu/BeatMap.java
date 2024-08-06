@@ -3,7 +3,7 @@ package l.f.mappool.entity.osu;
 
 import com.fasterxml.jackson.annotation.*;
 import jakarta.persistence.*;
-import l.f.mappool.enums.ReankStatus;
+import l.f.mappool.enums.RankStatus;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.DynamicUpdate;
@@ -88,12 +88,12 @@ public class BeatMap {
 
     @JsonGetter("status")
     public String getStatus() {
-        return ReankStatus.fromInteger(this.status).name();
+        return RankStatus.fromInteger(this.status).name();
     }
 
     @JsonSetter("status")
     public void setStatus(String status) {
-        this.status = ReankStatus.valueOf(status).getStatusInt();
+        this.status = RankStatus.valueOf(status).getStatusInt();
     }
 
     @JsonGetter("mode")

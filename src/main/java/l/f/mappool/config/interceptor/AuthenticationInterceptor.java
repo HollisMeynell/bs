@@ -46,8 +46,6 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
                 throw new HttpTipException(429, "Too Many Requests");
             }
 
-            WebUtil.originAllow(request, response);
-
             if (WebUtil.isPublic(methodAnnotation) || PUBLIC_PATH.contains(request.getRequestURI())) {
                 // 公开访问，无需验证身份
                 return true;
@@ -61,7 +59,7 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
 
     @Override
     public void afterCompletion(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull Object handler, Exception ex) throws Exception {
-        HandlerInterceptor.super.afterCompletion(request, response, handler, ex);
+        WebUtil.originAllow(request, response);
         ContextUtil.clearContext();
     }
 }

@@ -4,6 +4,7 @@ import l.f.mappool.entity.file.OsuFileRecord;
 import l.f.mappool.entity.osu.BeatMap;
 import l.f.mappool.entity.osu.BeatMapSet;
 import l.f.mappool.exception.HttpTipException;
+import l.f.mappool.exception.NotFoundException;
 import l.f.mappool.properties.BeatmapSelectionProperties;
 import l.f.mappool.repository.file.OsuFileLogRepository;
 import l.f.mappool.util.AsyncMethodExecutor;
@@ -177,7 +178,7 @@ public class OsuFileService {
             case BACKGROUND -> fLog.getBackground();
         };
 
-        if (fileLocal == null) throw new IOException("no file in this beatmap");
+        if (fileLocal == null) throw new NotFoundException();
 
         return basePath.resolve(fileLocal);
     }

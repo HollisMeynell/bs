@@ -10,7 +10,6 @@ beatmap-selection:
     oauth:
       id: 80
       token: yourToken
-
 spring:
   codec:
     max-in-memory-size: 20MB

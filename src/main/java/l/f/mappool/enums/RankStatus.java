@@ -1,6 +1,6 @@
 package l.f.mappool.enums;
 
-public enum ReankStatus {
+public enum RankStatus {
     graveyard(-2),
     wip(-1),
     pending(0),
@@ -10,10 +10,10 @@ public enum ReankStatus {
     loved(4),
     unknown(5);
     final int value;
-    ReankStatus(int i) {
+    RankStatus(int i) {
         value = i;
     }
-    public static ReankStatus fromInteger(int i) {
+    public static RankStatus fromInteger(int i) {
         return switch (i){
             case -2 -> graveyard;
             case -1 -> wip;
