@@ -48,6 +48,7 @@ public class JsonUtil {
             .configure(DeserializationFeature.READ_ENUMS_USING_TO_STRING, true)
             // 设置可见性
             .setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY)
+            // 默认使用驼峰转下划线命名
             .setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
             .registerModules(new Hibernate6Module())
             .registerModules(new JavaTimeModule());

@@ -20,7 +20,7 @@ public enum OsuMod {
     Relax(1 << 7, "RL"),
     HalfTime(1 << 8, "HT"),
     //总是和 DT 一起使用 : 512 + 64 = 576
-    Nightcore(1 << 9, "NC"),
+    Nightcore((1 << 9) | (1 << 6), "NC"),
     Flashlight(1 << 10, "FL"),
     Autoplay(1 << 11, "AT"),
     SpunOut(1 << 12, "SO"),

@@ -44,7 +44,7 @@ public class OsuFileRecord {
     Integer mode;
 
 
-    @Column(name = "`check`", columnDefinition = "text")
+    @Column(name = "`check`", columnDefinition = "char(32)")
     String check;
     @Column(columnDefinition = "int4")
     Integer status;
