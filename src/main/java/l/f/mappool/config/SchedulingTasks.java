@@ -26,4 +26,11 @@ public class SchedulingTasks {
         int deleteCount = localFileService.deleteAllOldFile();
         log.info("清理文件完成, 删除文件数: {}", deleteCount);
     }
+
+    @Scheduled(cron = "0 0 3 1/3 * *")
+    public void removeOsuFile() {
+        log.info("开始清理osu文件");
+        var size = osuFileService.clearGraveyardFile();
+        log.info("清理osu文件完成, 删除文件数: {}", size);
+    }
 }

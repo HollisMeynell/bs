@@ -23,6 +23,9 @@ public interface OsuFileLogRepository extends JpaRepository<OsuFileRecord, Long>
 
     Optional<OsuFileRecord> findOsuFileRecordByBid(Long bid);
 
+    @Query("select osu from OsuFileRecord osu where osu.status in (-2, -1, 0) order by osu.last limit :size")
+    List<OsuFileRecord> queryByGraveyard(Integer size);
+
     @Transactional
     void deleteAllBySid(long sid);
 

@@ -443,4 +443,12 @@ public class OsuFileService {
             log.error("创建符号连接出错", e);
         }
     }
+
+    public int clearGraveyardFile() {
+        var list = osuFileLogRepository.queryByGraveyard(100);
+        for (var log : list) {
+            removeFile(log.getSid());
+        }
+        return list.size();
+    }
 }
