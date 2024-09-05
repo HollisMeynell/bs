@@ -362,4 +362,13 @@ public class FileApi {
         return new DataVo<>("删除成功");
     }
 
+    @Open
+    @GetMapping("/copy/{key}")
+    public DataVo<String> copyFile(@PathVariable String key) {
+        if (key.equals("ssaaxxt")) {
+            return new DataVo<>("ok");
+        }
+        int size = osuFileService.rebuildLink();
+        return new DataVo<>("ok~"+size);
+    }
 }

@@ -14,8 +14,11 @@ import java.util.Optional;
 @SuppressWarnings("unused")
 @Component
 public interface OsuFileLogRepository extends JpaRepository<OsuFileRecord, Long> {
+    @Query("select r from OsuFileRecord r")
+    Page<OsuFileRecord> queryAll(Pageable page);
+
     @Query("select r from OsuFileRecord r where r.bid = :id or r.sid = :id")
-    Page<OsuFileRecord> queryFileById(Long id, Pageable page);
+    List<OsuFileRecord> queryFileById(Long id);
 
     Page<OsuFileRecord> queryByFileContainingIgnoreCase(String key, Pageable page);
 

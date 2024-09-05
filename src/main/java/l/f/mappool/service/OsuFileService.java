@@ -14,6 +14,9 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.commons.io.IOUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.FileSystemUtils;
@@ -421,6 +424,23 @@ public class OsuFileService {
     public record BeatmapSetCount(int countMapSet, int countBeatmap) {
     }
 
+    public int rebuildLink() {
+        Pageable pageable = PageRequest.of(0, 300);
+        Page<OsuFileRecord> page;
+        int size = 0;
+        do {
+            page = osuFileLogRepository.queryAll(pageable);
+            pageable = page.nextOrLastPageable();
+            for (var data : page) {
+                copyLink(
+                        data.getBid(),
+                        Path.of(OSU_FILE_PATH, String.valueOf(data.getSid()), data.getFile())
+                );
+                size++;
+            }
+        }while (page.hasNext());
+        return size;
+    }
     /**
      * 将创建符号链接到 复制文件夹里
      *
