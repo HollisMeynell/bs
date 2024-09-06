@@ -33,7 +33,7 @@ import java.util.*;
 @Slf4j
 @Component
 public class OsuFileService {
-    private final OsuApiService        osuApiService;
+    private final OsuApiService          osuApiService;
     private final OsuFileLogRepository   osuFileLogRepository;
     private final DownloadOsuFileService downloadOsuFileService;
 
@@ -438,9 +438,10 @@ public class OsuFileService {
                 );
                 size++;
             }
-        }while (page.hasNext());
+        } while (page.hasNext());
         return size;
     }
+
     /**
      * 将创建符号链接到 复制文件夹里
      *
@@ -451,13 +452,22 @@ public class OsuFileService {
         if (OSU_COPY_DIR.isEmpty()) return;
 
         var target = OSU_COPY_DIR.map(p -> p.resolve(bid + ".osu")).get();
-        try {
-            Files.deleteIfExists(target);
-        } catch (IOException e) {
-            log.error("删除原文件出错", e);
+
+        if (Files.isSymbolicLink(target)) return;
+
+        if (Files.isRegularFile(target)) {
+            try {
+                Files.deleteIfExists(target);
+            } catch (IOException e) {
+                log.error("删除原文件出错", e);
+            }
         }
 
-        if (Files.isRegularFile(source)) try {
+        if (!Files.isRegularFile(source)) {
+            log.error("源文件不存在: [{}]", source);
+        }
+
+        try {
             Files.createSymbolicLink(target, source);
         } catch (IOException e) {
             log.error("创建符号连接出错", e);

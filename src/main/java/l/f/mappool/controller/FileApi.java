@@ -30,6 +30,7 @@ import java.io.RandomAccessFile;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -177,7 +178,12 @@ public class FileApi {
         WebUtil.setOriginAllow(request, response);
         File localFile;
         try {
-            localFile = osuFileService.getPathByBid(bid, atype).toFile();
+            var path = osuFileService.getPathByBid(bid, atype);
+            if (!Files.isRegularFile(path)) throw new IOException("not file");
+            if (atype == DownloadOsuFileService.Type.FILE) {
+                osuFileService.copyLink(bid, path);
+            }
+            localFile = path.toFile();
         } catch (IOException | WebClientResponseException e) {
             localFile = switch (atype) {
                 case BACKGROUND -> localFileService.getStaticFilePath("default/bg.png").toFile();
@@ -188,11 +194,7 @@ public class FileApi {
         var in = new RandomAccessFile(localFile, "r");
         var size = in.length();
         long needWriteSize;
-        if (Objects.isNull(range)) {
-            response.setHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(size));
-            response.setStatus(200);
-            needWriteSize = size;
-        } else {
+        if (Objects.nonNull(range)) {
             var f = range.substring(6).split("-");
             long bytesStart;
             long bytesEnd;
@@ -212,17 +214,10 @@ public class FileApi {
             response.setHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(needWriteSize));
             response.setHeader(HttpHeaders.ACCEPT_RANGES, "bytes");
             response.setHeader(HttpHeaders.CONTENT_RANGE, rangeValue);
-//            return ResponseEntity
-//                    .ok()
-//                    .contentLength(bytesEnd - bytesStart)
-//                    .contentType(MediaType.valueOf(mediaType))
-//                    .header(HttpHeaders.ACCEPT_RANGES,
-//                            "bytes")
-//                    .header(HttpHeaders.CONTENT_DISPOSITION,
-//                            String.format("attachment; filename=\"%s\"", bid))
-//                    .header(HttpHeaders.CONTENT_RANGE,
-//                            rangeValue)
-//                    .body(new InputStreamResource(in));
+        } else {
+            response.setHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(size));
+            response.setStatus(200);
+            needWriteSize = size;
         }
 
         response.setHeader(HttpHeaders.CONTENT_TYPE, mediaType);
@@ -365,10 +360,10 @@ public class FileApi {
     @Open
     @GetMapping("/copy/{key}")
     public DataVo<String> copyFile(@PathVariable String key) {
-        if (key.equals("ssaaxxt")) {
+        if (!key.equals("ssaaxxt")) {
             return new DataVo<>("ok");
         }
         int size = osuFileService.rebuildLink();
-        return new DataVo<>("ok~"+size);
+        return new DataVo<>("ok~" + size);
     }
 }
