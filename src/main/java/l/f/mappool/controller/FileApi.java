@@ -149,6 +149,19 @@ public class FileApi {
         return localFileService.getStaticFile(name);
     }
 
+    @Open
+    @GetMapping(value = "/map/fileName/{type}/{bid}")
+    public ResponseEntity<String> getFileName(@PathVariable Long bid, @PathVariable String type) throws IOException {
+        var atype = switch (type) {
+            case "bg" -> DownloadOsuFileService.Type.BACKGROUND;
+            case "song" -> DownloadOsuFileService.Type.AUDIO;
+            case "osufile" -> DownloadOsuFileService.Type.FILE;
+            default -> throw new HttpTipException(400, "未知类型");
+        };
+        var filePath = osuFileService.getPath(bid, atype).getFileName();
+        return ResponseEntity.ok(filePath.toString());
+    }
+
     /**
      * 下载谱面bg
      */

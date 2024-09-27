@@ -39,14 +39,14 @@ public class OsuApiService {
      * https://osu.ppy.sh/users/17064371/scores/recent?mode=osu&limit=51&offset=0 24h打图
      */
     long time = System.currentTimeMillis();
-    private String accessToken;
-    private final WebClient webClient;
-    private final OsuUserRepository osuUserRepository;
-    private final BeatMapRepository beatMapRepository;
+    private       String               accessToken;
+    private final WebClient            webClient;
+    private final OsuUserRepository    osuUserRepository;
+    private final BeatMapRepository    beatMapRepository;
     private final BeatMapSetRepository beatMapSetRepository;
-    private final String redirectUrl;
-    private final int oauthId;
-    private final String oauthToken;
+    private final String               redirectUrl;
+    private final int                  oauthId;
+    private final String               oauthToken;
 
     @Autowired
     public OsuApiService(
@@ -74,7 +74,13 @@ public class OsuApiService {
      * 获取用于用户绑定的 Oauth 授权链接
      */
     public String getOauthUrl(String state) {
-        return UriComponentsBuilder.fromHttpUrl("https://osu.ppy.sh/oauth/authorize").queryParam("client_id", oauthId).queryParam("redirect_uri", redirectUrl).queryParam("response_type", "code").queryParam("scope", "friends.read identify public").queryParam("state", state).build().encode().toUriString();
+        return UriComponentsBuilder.fromHttpUrl("https://osu.ppy.sh/oauth/authorize")
+                .queryParam("client_id", oauthId)
+                .queryParam("redirect_uri", redirectUrl)
+                .queryParam("response_type", "code")
+                .queryParam("scope", "friends.read identify public")
+                .queryParam("state", state)
+                .build().encode().toUriString();
     }
 
     /**
@@ -233,7 +239,7 @@ public class OsuApiService {
 
     public BeatMap getMapInfoByDB(long bid) {
         var map = beatMapRepository.findById(bid);
-        return map.orElseGet(()->{
+        return map.orElseGet(() -> {
             var get = getMapInfo(bid);
             if (get.getStatus().equals("ranked")) {
                 saveBeatMap(get);
@@ -252,7 +258,7 @@ public class OsuApiService {
                 .block();
     }
 
-    private void saveBeatMap(BeatMap map){
+    private void saveBeatMap(BeatMap map) {
         var mapSet = beatMapSetRepository.findById(map.getMapsetId());
         if (mapSet.isEmpty()) {
             beatMapSetRepository.save(map.getBeatMapSet());
