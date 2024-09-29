@@ -186,6 +186,7 @@ public class DownloadOsuFileService {
     }
 
     private void setHeaders(HttpHeaders headers, OsuAccountUser user) {
+        headers.set("sec-ch-ua-platform", "Spring");
         if (user.getToken() != null && user.getSession() != null) {
             headers.set("cookie", "XSRF-TOKEN=" + user.getToken() + "; osu_session=" + user.getSession());
         }
