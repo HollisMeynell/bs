@@ -1,5 +1,6 @@
 package l.f.mappool.controller;
 
+import jakarta.annotation.Nonnull;
 import jakarta.annotation.PostConstruct;
 import l.f.mappool.config.interceptor.Open;
 import l.f.mappool.entity.osu.OsuUserOptional;
@@ -15,6 +16,7 @@ import l.f.mappool.util.DataUtil;
 import l.f.mappool.vo.yasunaori.YasunaoriBeatmapInfoVo;
 import l.f.mappool.vo.yasunaori.YasunaoriUserInfoVo;
 import lombok.AllArgsConstructor;
+import lombok.val;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -35,6 +37,7 @@ public class YasunaoriApi {
     public static String AVATAR_URL_PREFIX;
     public static String BACKGROUND_URL_PREFIX;
 
+    @Nonnull
     private final OsuApiService          osuApiService;
     private final OsuFileService         osuFileService;
     private final DownloadOsuFileService downloadOsuFileService;
@@ -77,8 +80,13 @@ public class YasunaoriApi {
     }
 
     @GetMapping("beatmap/{bid}")
-    YasunaoriBeatmapInfoVo getBeatmap(@PathVariable("bid") long bid, @RequestParam(value = "mods", required = false) String mods) {
+    YasunaoriBeatmapInfoVo getBeatmap(
+            @PathVariable("bid") long bid,
+            @RequestParam(value = "mods", required = false) String mods,
+            @RequestParam(value = "mode", required = false) String mode
+    ) {
         int modsValue;
+        OsuMode osuMode = OsuMode.getMode(mode);
         try {
             modsValue = Integer.parseInt(mods);
         } catch (NumberFormatException e) {
@@ -102,6 +110,7 @@ public class YasunaoriApi {
                 return new YasunaoriBeatmapInfoVo("计算出错, 请稍后尝试或者联系管理员.");
             }
             var score =  new JniScore();
+            if (osuMode != OsuMode.DEFAULT) score.setMode(osuMode.toMode());
             score.setMods(modsValue);
             var result = Rosu.calculate(fileData, score);
             map.setDifficulty((float) result.getStar());

@@ -1,6 +1,7 @@
 package l.f.mappool.enums;
 
 import lombok.Getter;
+import rosu.osu.Mode;
 
 @Getter
 public enum OsuMode {
@@ -12,6 +13,16 @@ public enum OsuMode {
 
     final String name;
     final short  value;
+
+    public Mode toMode() {
+        return switch (this) {
+            case OSU -> Mode.Osu;
+            case TAIKO -> Mode.Taiko;
+            case CATCH -> Mode.Catch;
+            case MANIA -> Mode.Mania;
+            default -> Mode.Default;
+        };
+    }
 
     OsuMode(String mode, int i) {
         name = mode;
