@@ -115,7 +115,7 @@
         <dependency>
             <groupId>rosu.pp.jni</groupId>
             <artifactId>rosu-pp-jni</artifactId>
-            <version>0.1.5</version>
+            <version>0.2.1</version>
         </dependency>
     </dependencies>
 
