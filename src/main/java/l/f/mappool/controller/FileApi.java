@@ -162,6 +162,23 @@ public class FileApi {
         return ResponseEntity.ok(filePath.toString());
     }
 
+    @Open
+    @PostMapping("upload/map/{sid}")
+    public DataVo<String> onUploadMap(
+            @PathVariable Long sid,
+            HttpServletRequest request
+    ) {
+        boolean isOk;
+        try {
+            isOk = osuFileService.onUploadMap(sid, request.getInputStream());
+        } catch (Exception e) {
+            throw new HttpTipException("上传失败: " + e.getMessage());
+        }
+        if (!isOk) {
+            throw new HttpTipException("上传失败, 文件不存在内容");
+        }
+        return new DataVo<>("ok", "upload ok");
+    }
     /**
      * 下载谱面bg
      */

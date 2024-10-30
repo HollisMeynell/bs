@@ -99,8 +99,17 @@ public class OsuFileService {
         return new FileInputStream(getPathByBid(bid, type).toFile());
     }
 
-    private void doDownload(long sid, BeatMapSet mapSet) throws IOException {
+    public boolean onUploadMap(long sid, InputStream in) throws IOException {
+        var mapSet = osuApiService.getMapsetInfo(sid);
+        return doDownloadStream(sid, mapSet, in);
+    }
 
+    private void doDownload(long sid, BeatMapSet mapSet) throws IOException {
+        var in = downloadOsuFileService.downloadOsz(sid, downloadOsuFileService.getRandomAccount());
+        doDownloadStream(sid, mapSet, in);
+    }
+
+    private boolean doDownloadStream(long sid, BeatMapSet mapSet, InputStream in) throws IOException {
         var maps = new HashMap<Long, BeatMap>(mapSet.getBeatMaps().size());
         for (var m : mapSet.getBeatMaps()) {
             maps.put(m.getId(), m);
@@ -109,7 +118,7 @@ public class OsuFileService {
         if (Files.isDirectory(osuPath)) FileSystemUtils.deleteRecursively(osuPath);
         HashMap<String, Path> fileMap = new HashMap<>();
         int writeFile = 0;
-        try (var in = downloadOsuFileService.downloadOsz(sid, downloadOsuFileService.getRandomAccount())) {
+        try (in) {
             Files.createDirectories(osuPath);
             var zipInput = new ZipArchiveInputStream(in);
             writeFile = loopWriteFile(zipInput, osuPath.toString(), fileMap);
@@ -141,6 +150,7 @@ public class OsuFileService {
                 // 不处理, 跳过
             }
         });
+        return writeFile != 0;
     }
 
     public Path getPathByBid(long bid, DownloadOsuFileService.Type type) throws IOException {

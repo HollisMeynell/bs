@@ -11,6 +11,9 @@ beatmap-selection:
       id: 80
       token: yourToken
 spring:
+  threads:
+    virtual:
+      enabled: true
   codec:
     max-in-memory-size: 20MB
   servlet:
