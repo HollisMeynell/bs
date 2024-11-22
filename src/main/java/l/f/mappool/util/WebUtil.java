@@ -43,7 +43,7 @@ public class WebUtil {
     }
 
     public static boolean limitRequest(HttpServletRequest request, HandlerMethod handlerMethod) {
-        if (!TokenBucketUtil.getToken(request.getRemoteAddr(), 60, 2)) {
+        if (!TokenBucketUtil.getToken(request.getRemoteAddr(), 120, 5)) {
             return true;
         }
 
