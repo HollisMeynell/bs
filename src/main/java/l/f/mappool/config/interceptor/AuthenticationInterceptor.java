@@ -1,5 +1,6 @@
 package l.f.mappool.config.interceptor;
 
+import io.hypersistence.utils.hibernate.type.json.internal.JacksonUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import l.f.mappool.exception.HttpTipException;
@@ -40,7 +41,6 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
             if (WebUtil.checkBot(methodAnnotation, request)) {
                 return true;
             }
-
             if (WebUtil.limitRequest(request, handlerMethod)) {
                 // 对请求限速
                 throw new HttpTipException(429, "Too Many Requests");
