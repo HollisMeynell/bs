@@ -1,12 +1,12 @@
 package l.f.mappool.repository.file;
 
-import jakarta.transaction.Transactional;
 import l.f.mappool.entity.file.OsuFileRecord;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -29,7 +29,7 @@ public interface OsuFileLogRepository extends JpaRepository<OsuFileRecord, Long>
     @Query("select osu from OsuFileRecord osu where osu.status in (-2, -1, 0) order by osu.last limit :size")
     List<OsuFileRecord> queryByGraveyard(Integer size);
 
-    @Transactional
+    @Transactional()
     void deleteAllBySid(long sid);
 
     @Query("select osu.sid from OsuFileRecord osu where osu.bid = :bid")

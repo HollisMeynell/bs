@@ -1,6 +1,5 @@
 package l.f.mappool.service;
 
-import jakarta.transaction.Transactional;
 import l.f.mappool.dao.MapPoolDao;
 import l.f.mappool.dto.map.QueryMapPoolDto;
 import l.f.mappool.entity.osu.OsuOauthUser;
@@ -19,6 +18,7 @@ import l.f.mappool.vo.PoolVo;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -92,7 +92,7 @@ public class MapPoolService {
             throw new HttpError(403, "已被删除");
         }
         var pool = poolOpt.get();
-        if (! pool.getGroups().isEmpty()) {
+        if (!pool.getGroups().isEmpty()) {
             throw new HttpError(403, "图池不为空,请删掉全部内容.");
         }
         if (pool.getUsers().size() > 1) {
@@ -128,7 +128,7 @@ public class MapPoolService {
         }
 
         var pool = poolOptional.get();
-        if (! pool.getStatus().equals(PoolStatus.OPEN)) {
+        if (!pool.getStatus().equals(PoolStatus.OPEN)) {
             throw new HttpError(403, "无法导出非编辑中的图池");
         }
 
@@ -231,7 +231,7 @@ public class MapPoolService {
             throw new PermissionException();
         }
 
-        if (name != null && ! name.isBlank()) {
+        if (name != null && !name.isBlank()) {
             category.setName(name);
         }
 
@@ -272,7 +272,7 @@ public class MapPoolService {
     }
 
     public PoolCategoryItem createCategoryItem(long uid, int categoryId, long bid, String info) {
-        if (! mapPoolDao.notChooserByCategory(categoryId, uid)) {
+        if (!mapPoolDao.notChooserByCategory(categoryId, uid)) {
             throw new PermissionException();
         }
         return mapPoolDao.createCategoryItem(uid, categoryId, bid, info);
